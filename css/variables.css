@@ -1,0 +1,25 @@
+:root {
+  --alansa-950: #0b1f0e;
+  --alansa-900: #102a13;
+  --alansa-800: #17391c;
+  --alansa-700: #1f4b26;
+  --alansa-600: #2f6b3a;
+  --alansa-100: #eaf2eb;
+  --alansa-50: #f4f8f4;
+
+  --bg: #f4f6f3;
+  --surface: #ffffff;
+  --surface-2: #f8faf8;
+  --text: #172019;
+  --muted: #667068;
+  --border: #e1e7e1;
+  --danger: #b83a3a;
+  --warning: #a86d17;
+  --success: #2e7d32;
+
+  --sidebar: 248px;
+  --radius: 16px;
+  --radius-sm: 11px;
+  --shadow: 0 8px 28px rgba(16,42,19,.07);
+  --top-sticky: 0px;
+}

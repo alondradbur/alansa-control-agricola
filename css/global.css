@@ -1,0 +1,17 @@
+* { box-sizing: border-box; }
+html { background: var(--bg); }
+body {
+  margin: 0;
+  color: var(--text);
+  background: var(--bg);
+  font-family: Tahoma, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+button, input, select, textarea { font: inherit; }
+button { cursor: pointer; }
+a { color: inherit; text-decoration: none; }
+h1,h2,h3,p { margin-top: 0; }
+.hidden { display: none !important; }
+.muted { color: var(--muted); }
+.money-secondary { color: var(--muted); font-size: .78rem; margin-top: 5px; }
+.empty-state { padding: 34px 18px; text-align: center; color: var(--muted); }
