@@ -354,6 +354,14 @@ function openPlantingForm(
               'required min="0.01" step="0.01"'
             )}
 
+${inputField(
+  'expected_yield_boxes_ha',
+  'Rendimiento esperado (cajas/ha)',
+  '',
+  'number',
+  'required min="1" step="1"'
+)}
+
             ${inputField(
   'expected_yield_boxes_ha',
   'Rendimiento esperado (cajas/ha)',
