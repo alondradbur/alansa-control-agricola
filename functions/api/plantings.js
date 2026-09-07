@@ -66,6 +66,10 @@ export async function onRequestPost({
     data.hectares || 0
   );
 
+   const expectedYield = Number(
+  data.expected_yield_boxes_ha || 0
+);
+
   const density = Number(
     data.density_per_ha || 0
   );
@@ -108,13 +112,14 @@ export async function onRequestPost({
   }
 
   if (
-    hectares <= 0 ||
-    density <= 0
-  ) {
-    return error(
-      'Hectáreas y densidad deben ser mayores a cero.'
-    );
-  }
+  hectares <= 0 ||
+  density <= 0 ||
+  expectedYield <= 0
+) {
+  return error(
+    'Hectáreas, rendimiento esperado y densidad deben ser mayores a cero.'
+  );
+}
 
   if (
     !data.harvest_start ||
@@ -156,7 +161,8 @@ export async function onRequestPost({
           product_id,
           client_id,
           hectares,
-          density_per_ha,
+expected_yield_boxes_ha,
+density_per_ha,
           seed_cost_per_thousand,
           estimated_seed_cost,
           actual_seed_cost,
@@ -170,19 +176,20 @@ export async function onRequestPost({
           status,
           notes
         )
-        VALUES (
-          ?, ?, ?, ?, ?, ?, ?, ?, ?,
-          ?, ?, ?, ?, ?, ?, ?, ?
-        )
+       VALUES (
+  ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+  ?, ?, ?, ?, ?, ?, ?, ?
+)
       `)
-      .bind(
-        data.contract_number.trim(),
-        Number(data.product_id),
-        Number(data.client_id),
-        hectares,
-        density,
-        seedCost,
-        estimatedSeedCost,
+     .bind(
+  data.contract_number.trim(),
+  Number(data.product_id),
+  Number(data.client_id),
+  hectares,
+  expectedYield,
+  density,
+  seedCost,
+  estimatedSeedCost,
         actualSeedCost,
         seedCurrency,
         data.harvest_start,
@@ -292,13 +299,14 @@ export async function onRequestPut({
         WHERE id = ?
       `)
       .bind(
-        data.contract_number.trim(),
-        Number(data.product_id),
-        Number(data.client_id),
-        hectares,
-        density,
-        seedCost,
-        estimatedSeedCost,
+  data.contract_number.trim(),
+  Number(data.product_id),
+  Number(data.client_id),
+  hectares,
+  expectedYield,
+  density,
+  seedCost,
+  estimatedSeedCost,
         parseMoney(
           data.actual_seed_cost
         ),
