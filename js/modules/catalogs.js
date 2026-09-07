@@ -2,16 +2,10 @@
    ALANSA - SISTEMA DE CONTROL AGRÍCOLA
    MÓDULO: CATÁLOGOS
 
-   Archivo:
-   js/modules/catalogs.js
-
-   Funciones:
-   - Consultar catálogos.
-   - Mostrar productos, clientes, proveedores,
-     categorías de gasto y formas de pago.
-   - Abrir formularios de alta.
-   - Guardar nuevos registros.
-   - Eliminar registros permitidos.
+   Ajuste:
+   - Los importes aceptan separadores de miles.
+   - Todo importe solicita moneda MXN o USD.
+   - Los importes se muestran formateados en las tablas.
    ========================================================= */
 
 
@@ -20,7 +14,11 @@
    ========================================================= */
 
 import { api } from '../core/api.js';
-import { escapeHtml } from '../core/format.js';
+import {
+  escapeHtml,
+  money
+} from '../core/format.js';
+
 import {
   moduleHeader,
   empty,
@@ -132,8 +130,10 @@ function card(
             .map(field => {
               return `
                 <td>
-                  ${escapeHtml(
-                    row[field] ?? '—'
+                  ${formatCell(
+                    entity,
+                    field,
+                    row
                   )}
                 </td>
               `;
@@ -221,7 +221,41 @@ function card(
 
 
 /* =========================================================
-   5. EVENTOS DEL MÓDULO
+   5. FORMATO DE CELDAS
+   ========================================================= */
+
+function formatCell(
+  entity,
+  field,
+  row
+) {
+  if (
+    entity === 'expense_categories' &&
+    field === 'default_amount'
+  ) {
+    if (
+      row.default_amount === null ||
+      row.default_amount === ''
+    ) {
+      return '—';
+    }
+
+    return escapeHtml(
+      money(
+        row.default_amount,
+        row.default_currency || 'MXN'
+      )
+    );
+  }
+
+  return escapeHtml(
+    row[field] ?? '—'
+  );
+}
+
+
+/* =========================================================
+   6. EVENTOS DEL MÓDULO
    ========================================================= */
 
 export function bindCatalogs(
@@ -287,7 +321,7 @@ export function bindCatalogs(
 
 
 /* =========================================================
-   6. FORMULARIO DE ALTA
+   7. FORMULARIO DE ALTA
    ========================================================= */
 
 function form(
@@ -346,6 +380,8 @@ function form(
     </div>
   `;
 
+  bindMoneyInputs(root);
+
   document
     .querySelector(
       '#closeCat'
@@ -400,7 +436,7 @@ function form(
 
 
 /* =========================================================
-   7. GENERADOR DE CAMPOS
+   8. GENERADORES DE CAMPOS
    ========================================================= */
 
 function inputField(
@@ -430,8 +466,74 @@ function inputField(
 }
 
 
+function moneyField(
+  name,
+  label,
+  value = ''
+) {
+  return `
+    <div class="field">
+
+      <label>
+        ${label}
+      </label>
+
+      <input
+        class="input money-input"
+        name="${name}"
+        type="text"
+        inputmode="decimal"
+        autocomplete="off"
+        value="${value}"
+        placeholder="0.00"
+      >
+
+    </div>
+  `;
+}
+
+
+function currencyField(
+  name,
+  label,
+  selected = 'MXN'
+) {
+  return `
+    <div class="field">
+
+      <label>
+        ${label}
+      </label>
+
+      <select
+        class="input"
+        name="${name}"
+        required
+      >
+
+        <option
+          value="MXN"
+          ${selected === 'MXN' ? 'selected' : ''}
+        >
+          MXN
+        </option>
+
+        <option
+          value="USD"
+          ${selected === 'USD' ? 'selected' : ''}
+        >
+          USD
+        </option>
+
+      </select>
+
+    </div>
+  `;
+}
+
+
 /* =========================================================
-   8. CAMPOS POR TIPO DE CATÁLOGO
+   9. CAMPOS POR TIPO DE CATÁLOGO
    ========================================================= */
 
 function fields(
@@ -439,7 +541,7 @@ function fields(
 ) {
 
   /* ---------------------------------------------------------
-     8.1. PRODUCTOS
+     9.1. PRODUCTOS
      --------------------------------------------------------- */
 
   if (entity === 'products') {
@@ -464,44 +566,41 @@ function fields(
         'default_density_per_ha',
         'Semillas por ha',
         100000,
-        'number'
-      )}
-
-      ${inputField(
-        'seed_cost_per_thousand',
-        'Costo por millar',
-        400,
         'number',
-        'step="0.01"'
+        'min="0" step="1"'
       )}
 
-      <input
-        type="hidden"
-        name="seed_currency"
-        value="USD"
-      >
+      ${moneyField(
+        'seed_cost_per_thousand',
+        'Costo de semilla por millar',
+        '400.00'
+      )}
+
+      ${currencyField(
+        'seed_currency',
+        'Moneda del costo de semilla',
+        'USD'
+      )}
 
       ${inputField(
         'standard_box_lbs',
         'Peso caja lb',
         12,
         'number',
-        'step="0.01"'
+        'min="0" step="0.01"'
       )}
 
-      ${inputField(
+      ${moneyField(
         'default_price_per_box',
         'Precio por caja',
-        14,
-        'number',
-        'step="0.01"'
+        '14.00'
       )}
 
-      <input
-        type="hidden"
-        name="price_currency"
-        value="USD"
-      >
+      ${currencyField(
+        'price_currency',
+        'Moneda del precio por caja',
+        'USD'
+      )}
 
       <div class="field">
 
@@ -528,7 +627,7 @@ function fields(
 
 
   /* ---------------------------------------------------------
-     8.2. CLIENTES
+     9.2. CLIENTES
      --------------------------------------------------------- */
 
   if (entity === 'clients') {
@@ -545,7 +644,8 @@ function fields(
         'credit_days',
         'Días de crédito',
         0,
-        'number'
+        'number',
+        'min="0" step="1"'
       )}
 
       <div class="field span-2">
@@ -565,7 +665,7 @@ function fields(
 
 
   /* ---------------------------------------------------------
-     8.3. PROVEEDORES
+     9.3. PROVEEDORES
      --------------------------------------------------------- */
 
   if (entity === 'suppliers') {
@@ -587,7 +687,7 @@ function fields(
 
 
   /* ---------------------------------------------------------
-     8.4. CATEGORÍAS DE GASTO
+     9.4. CATEGORÍAS DE GASTO
      --------------------------------------------------------- */
 
   if (entity === 'expense_categories') {
@@ -600,40 +700,22 @@ function fields(
         'required'
       )}
 
-      ${inputField(
+      ${moneyField(
         'default_amount',
-        'Monto predeterminado',
-        '',
-        'number',
-        'step="0.01"'
+        'Monto predeterminado'
       )}
 
-      <div class="field">
-
-        <label>
-          Moneda
-        </label>
-
-        <select
-          class="input"
-          name="default_currency"
-        >
-          <option>
-            MXN
-          </option>
-
-          <option>
-            USD
-          </option>
-        </select>
-
-      </div>
+      ${currencyField(
+        'default_currency',
+        'Moneda',
+        'MXN'
+      )}
     `;
   }
 
 
   /* ---------------------------------------------------------
-     8.5. FORMAS DE PAGO
+     9.5. FORMAS DE PAGO
      --------------------------------------------------------- */
 
   return inputField(
@@ -643,4 +725,75 @@ function fields(
     'text',
     'required'
   );
+}
+
+
+/* =========================================================
+   10. FORMATO DE CAMPOS MONETARIOS
+   ========================================================= */
+
+function bindMoneyInputs(
+  root
+) {
+  root
+    .querySelectorAll(
+      '.money-input'
+    )
+    .forEach(input => {
+      input.addEventListener(
+        'focus',
+        () => {
+          input.value = normalizeMoneyText(
+            input.value
+          );
+        }
+      );
+
+      input.addEventListener(
+        'blur',
+        () => {
+          input.value = formatMoneyText(
+            input.value
+          );
+        }
+      );
+    });
+}
+
+
+function normalizeMoneyText(
+  value
+) {
+  return String(value || '')
+    .replaceAll(',', '')
+    .replace(/[^\d.-]/g, '');
+}
+
+
+function formatMoneyText(
+  value
+) {
+  const normalized = normalizeMoneyText(
+    value
+  );
+
+  if (!normalized) {
+    return '';
+  }
+
+  const amount = Number(
+    normalized
+  );
+
+  if (!Number.isFinite(amount)) {
+    return '';
+  }
+
+  return new Intl.NumberFormat(
+    'en-US',
+    {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }
+  ).format(amount);
 }
