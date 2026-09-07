@@ -1,45 +1,276 @@
+/* =========================================================
+   1. TABLET
+   ========================================================= */
+
 @media (max-width: 1100px) {
-  .kpi-grid { grid-template-columns:repeat(3,1fr); }
-  .filters { grid-template-columns:repeat(2,1fr); }
+
+  .kpi-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .filters {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
+
+
+/* =========================================================
+   2. EXPERIENCIA MÓVIL PRINCIPAL
+   ========================================================= */
+
 @media (max-width: 760px) {
-  :root { --sidebar: 0px; }
-  .sidebar { display:none; }
-  .main { margin-left:0; padding:0 12px 92px; }
-  .module-sticky { padding-top:14px; }
-  .module-head { align-items:center; }
-  .module-head h1 { font-size:1.22rem; }
-  .module-head p { display:none; }
-  .filters { grid-template-columns:1fr 1fr; padding:10px; }
-  .filters .wide-mobile { grid-column:1 / -1; }
-  .kpi-grid { grid-template-columns:1fr 1fr; gap:10px; }
-  .kpi { min-height:105px; padding:12px; }
-  .kpi .value { font-size:1.08rem; }
-  .grid-2 { grid-template-columns:1fr; }
+
+  :root {
+    --sidebar: 0px;
+  }
+
+  body {
+    background: var(--surface-2);
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .sidebar {
+    display: none;
+  }
+
+  .main {
+    margin-left: 0;
+
+    padding:
+      0
+      12px
+      calc(92px + env(safe-area-inset-bottom));
+  }
+
+
+  /* =======================================================
+     ENCABEZADO DEL MÓDULO
+     ======================================================= */
+
+  .module-sticky {
+    padding: 12px 0 10px;
+
+    background: rgba(246, 247, 245, .96);
+
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+  }
+
+  .module-head {
+    align-items: center;
+    gap: 10px;
+
+    margin-bottom: 10px;
+  }
+
+  .module-head h1 {
+    margin: 0;
+
+    font-size: 1.22rem;
+    line-height: 1.2;
+  }
+
+  .module-head p {
+    display: none;
+  }
+
+  .module-head .btn {
+    min-height: 40px;
+
+    padding: 8px 11px;
+
+    font-size: .76rem;
+
+    white-space: nowrap;
+  }
+
+
+  /* =======================================================
+     CONTENIDO
+     ======================================================= */
+
+  .content {
+    gap: 12px;
+  }
+
+  .card {
+    border-radius: 14px;
+
+    box-shadow:
+      0 1px 3px rgba(16, 42, 19, .05);
+  }
+
+
+  /* =======================================================
+     FILTROS
+     ======================================================= */
+
+  .filters {
+    grid-template-columns: 1fr 1fr;
+    gap: 9px;
+
+    padding: 11px;
+  }
+
+  .filters .wide-mobile {
+    grid-column: 1 / -1;
+  }
+
+  .filters .btn {
+    min-height: 42px;
+  }
+
+  .field label {
+    font-size: .68rem;
+  }
+
+  .input,
+  select.input,
+  textarea.input {
+    min-height: 44px;
+
+    font-size: 16px;
+  }
+
+
+  /* =======================================================
+     KPIs
+     ======================================================= */
+
+  .kpi-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .kpi {
+    min-height: 105px;
+
+    padding: 12px;
+  }
+
+  .kpi .value {
+    font-size: 1.08rem;
+  }
+
+  .grid-2 {
+    grid-template-columns: 1fr;
+  }
+
+
+  /* =======================================================
+     NAVEGACIÓN INFERIOR
+     ======================================================= */
+
   .mobile-bar {
-    position:fixed;
-    display:grid;
-    grid-template-columns:repeat(5,1fr);
-    inset:auto 0 0 0;
-    z-index:60;
-    padding:8px 6px calc(8px + env(safe-area-inset-bottom));
-    background:rgba(255,255,255,.97);
-    border-top:1px solid var(--border);
-    backdrop-filter:blur(12px);
+    position: fixed;
+    inset: auto 0 0 0;
+    z-index: 60;
+
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+
+    min-height: 66px;
+
+    padding:
+      7px
+      5px
+      calc(7px + env(safe-area-inset-bottom));
+
+    border-top: 1px solid rgba(0, 0, 0, .07);
+
+    background: rgba(255, 255, 255, .97);
+
+    box-shadow:
+      0 -8px 30px rgba(16, 42, 19, .06);
+
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
   }
+
   .mobile-bar button {
-    border:0; background:transparent; color:var(--muted);
-    display:grid; gap:3px; place-items:center; font-size:.63rem;
+    min-width: 0;
+    min-height: 48px;
+
+    display: grid;
+    place-items: center;
+    align-content: center;
+    gap: 3px;
+
+    padding: 2px;
+
+    border: 0;
+    background: transparent;
+
+    color: var(--muted);
+
+    font-size: .64rem;
+
+    cursor: pointer;
   }
-  .mobile-bar button.active { color:var(--alansa-900); font-weight:800; }
+
+  .mobile-bar button span:not(.plus) {
+    font-size: .62rem;
+    font-weight: 650;
+  }
+
+  .mobile-bar button.active {
+    color: var(--alansa-900);
+
+    font-weight: 800;
+  }
+
   .mobile-bar .plus {
-    width:46px; height:46px; border-radius:50%;
-    background:var(--alansa-900); color:white; font-size:1.4rem;
-    margin-top:-24px; box-shadow:var(--shadow);
+    width: 46px;
+    height: 46px;
+
+    display: grid;
+    place-items: center;
+
+    margin-top: -25px;
+
+    border-radius: 50%;
+
+    background: var(--alansa-900);
+
+    color: #fff;
+
+    font-size: 1.4rem;
+
+    box-shadow:
+      0 5px 15px rgba(16, 42, 19, .22);
   }
-  .table-scroll { max-height:58vh; }
 }
+
+
+/* =========================================================
+   3. CELULARES PEQUEÑOS
+   ========================================================= */
+
 @media (max-width: 430px) {
-  .filters { grid-template-columns:1fr; }
-  .kpi-grid { grid-template-columns:1fr 1fr; }
+
+  .main {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .filters {
+    grid-template-columns: 1fr;
+  }
+
+  .filters .wide-mobile {
+    grid-column: auto;
+  }
+
+  .kpi-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .module-head h1 {
+    font-size: 1.16rem;
+  }
+
+  .module-head .btn {
+    padding-left: 9px;
+    padding-right: 9px;
+  }
 }
