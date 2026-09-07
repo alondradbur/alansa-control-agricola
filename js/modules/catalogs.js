@@ -1,11 +1,13 @@
 /* =========================================================
-   ALANSA - SISTEMA DE CONTROL AGRÍCOLA
+   SISTEMA DE CONTROL AGRÍCOLA
    MÓDULO: CATÁLOGOS
 
-   Ajuste:
-   - Los importes aceptan separadores de miles.
-   - Todo importe solicita moneda MXN o USD.
-   - Los importes se muestran formateados en las tablas.
+   Funciones:
+   - Crear registros.
+   - Editar registros existentes.
+   - Guardar cambios en D1.
+   - Eliminar registros no relacionados.
+   - Normalizar importes con separadores de miles.
    ========================================================= */
 
 
@@ -14,6 +16,7 @@
    ========================================================= */
 
 import { api } from '../core/api.js';
+
 import {
   escapeHtml,
   money
@@ -145,13 +148,32 @@ function card(
               ${cells}
 
               <td>
-                <button
-                  class="btn danger"
-                  data-del-cat="${entity}"
-                  data-id="${row.id}"
+                <div
+                  style="
+                    display:flex;
+                    gap:7px;
+                    align-items:center;
+                    white-space:nowrap;
+                  "
                 >
-                  Eliminar
-                </button>
+                  <button
+                    class="btn soft"
+                    type="button"
+                    data-edit-cat="${entity}"
+                    data-id="${row.id}"
+                  >
+                    Editar
+                  </button>
+
+                  <button
+                    class="btn danger"
+                    type="button"
+                    data-del-cat="${entity}"
+                    data-id="${row.id}"
+                  >
+                    Eliminar
+                  </button>
+                </div>
               </td>
             </tr>
           `;
@@ -171,7 +193,7 @@ function card(
     .map(field => {
       return `
         <th>
-          ${field.replaceAll('_', ' ')}
+          ${fieldLabel(field)}
         </th>
       `;
     })
@@ -187,6 +209,7 @@ function card(
 
         <button
           class="btn primary"
+          type="button"
           data-add-cat="${entity}"
         >
           ＋ Agregar
@@ -254,6 +277,23 @@ function formatCell(
 }
 
 
+function fieldLabel(
+  field
+) {
+  const labels = {
+    name: 'Nombre',
+    short_code: 'Código',
+    credit_days: 'Días de crédito',
+    contact: 'Contacto',
+    default_amount: 'Monto predeterminado',
+    default_currency: 'Moneda'
+  };
+
+  return labels[field] ||
+    field.replaceAll('_', ' ');
+}
+
+
 /* =========================================================
    6. EVENTOS DEL MÓDULO
    ========================================================= */
@@ -261,18 +301,68 @@ function formatCell(
 export function bindCatalogs(
   rerender
 ) {
+
+  /* ---------------------------------------------------------
+     6.1. AGREGAR
+     --------------------------------------------------------- */
+
   document
     .querySelectorAll(
       '[data-add-cat]'
     )
     .forEach(button => {
       button.onclick = () => {
-        form(
+        openForm(
           button.dataset.addCat,
           rerender
         );
       };
     });
+
+
+  /* ---------------------------------------------------------
+     6.2. EDITAR
+     --------------------------------------------------------- */
+
+  document
+    .querySelectorAll(
+      '[data-edit-cat]'
+    )
+    .forEach(button => {
+      button.onclick = () => {
+        const entity =
+          button.dataset.editCat;
+
+        const id = Number(
+          button.dataset.id
+        );
+
+        const row = (
+          data[entity] || []
+        ).find(item => {
+          return Number(item.id) === id;
+        });
+
+        if (!row) {
+          toast(
+            'No se encontró el registro.'
+          );
+
+          return;
+        }
+
+        openForm(
+          entity,
+          rerender,
+          row
+        );
+      };
+    });
+
+
+  /* ---------------------------------------------------------
+     6.3. ELIMINAR
+     --------------------------------------------------------- */
 
   document
     .querySelectorAll(
@@ -280,8 +370,24 @@ export function bindCatalogs(
     )
     .forEach(button => {
       button.onclick = async () => {
+        const entity =
+          button.dataset.delCat;
+
+        const id = Number(
+          button.dataset.id
+        );
+
+        const row = (
+          data[entity] || []
+        ).find(item => {
+          return Number(item.id) === id;
+        });
+
+        const label =
+          row?.name || 'este registro';
+
         const confirmed = confirm(
-          '¿Eliminar este registro?'
+          `¿Eliminar "${label}"?`
         );
 
         if (!confirmed) {
@@ -294,13 +400,8 @@ export function bindCatalogs(
             {
               method: 'DELETE',
               body: JSON.stringify({
-                entity:
-                  button.dataset.delCat,
-
-                id:
-                  Number(
-                    button.dataset.id
-                  )
+                entity,
+                id
               })
             }
           );
@@ -310,6 +411,7 @@ export function bindCatalogs(
           );
 
           await rerender();
+
         } catch (error) {
           toast(
             error.message
@@ -321,16 +423,25 @@ export function bindCatalogs(
 
 
 /* =========================================================
-   7. FORMULARIO DE ALTA
+   7. FORMULARIO NUEVO / EDITAR
    ========================================================= */
 
-function form(
+function openForm(
   entity,
-  rerender
+  rerender,
+  row = null
 ) {
+  const editing = Boolean(
+    row?.id
+  );
+
   const root = document.querySelector(
     '#catModal'
   );
+
+  if (!root) {
+    return;
+  }
 
   root.innerHTML = `
     <div class="modal-backdrop">
@@ -339,9 +450,25 @@ function form(
 
         <div class="modal-head">
 
-          <h2>
-            Agregar ${cfg[entity][0]}
-          </h2>
+          <div>
+            <h2>
+              ${
+                editing
+                  ? `Editar ${cfg[entity][0]}`
+                  : `Agregar ${cfg[entity][0]}`
+              }
+            </h2>
+
+            ${
+              editing
+                ? `
+                  <p class="muted">
+                    Modifica los datos y guarda los cambios.
+                  </p>
+                `
+                : ''
+            }
+          </div>
 
           <button
             class="btn"
@@ -358,8 +485,17 @@ function form(
           id="catForm"
         >
 
+          <input
+            type="hidden"
+            name="id"
+            value="${row?.id || ''}"
+          >
+
           <div class="form-grid">
-            ${fields(entity)}
+            ${fields(
+              entity,
+              row
+            )}
           </div>
 
           <div class="modal-actions">
@@ -368,7 +504,11 @@ function form(
               class="btn primary"
               type="submit"
             >
-              Guardar
+              ${
+                editing
+                  ? 'Guardar cambios'
+                  : 'Guardar'
+              }
             </button>
 
           </div>
@@ -380,63 +520,329 @@ function form(
     </div>
   `;
 
-  bindMoneyInputs(root);
+  bindMoneyInputs(
+    root
+  );
 
-  document
+  root
     .querySelector(
       '#closeCat'
     )
-    .onclick = () => {
-      root.innerHTML = '';
-    };
+    ?.addEventListener(
+      'click',
+      () => {
+        root.innerHTML = '';
+      }
+    );
 
-  document
+  root
     .querySelector(
       '#catForm'
     )
-    .onsubmit = async event => {
-      event.preventDefault();
+    ?.addEventListener(
+      'submit',
+      async event => {
+        event.preventDefault();
 
-      try {
-        const formData = new FormData(
-          event.currentTarget
-        );
+        try {
+          const formData = new FormData(
+            event.currentTarget
+          );
 
-        const payload = {
-          entity,
-          data: Object.fromEntries(
-            formData.entries()
-          )
-        };
+          const formObject =
+            Object.fromEntries(
+              formData.entries()
+            );
 
-        await api(
-          'catalogs',
-          {
-            method: 'POST',
-            body: JSON.stringify(
-              payload
-            )
-          }
-        );
+          delete formObject.id;
 
-        root.innerHTML = '';
+          const payload = {
+            entity,
+            id: editing
+              ? Number(row.id)
+              : undefined,
+            data: formObject
+          };
 
-        toast(
-          'Registro guardado.'
-        );
+          await api(
+            'catalogs',
+            {
+              method:
+                editing
+                  ? 'PUT'
+                  : 'POST',
 
-        await rerender();
-      } catch (error) {
-        toast(
-          error.message
-        );
+              body: JSON.stringify(
+                payload
+              )
+            }
+          );
+
+          root.innerHTML = '';
+
+          toast(
+            editing
+              ? 'Cambios guardados correctamente.'
+              : 'Registro guardado.'
+          );
+
+          await rerender();
+
+        } catch (error) {
+          toast(
+            error.message
+          );
+        }
       }
-    };
+    );
 }
 
 
 /* =========================================================
-   8. GENERADORES DE CAMPOS
+   8. CAMPOS POR TIPO DE CATÁLOGO
+   ========================================================= */
+
+function fields(
+  entity,
+  row = {}
+) {
+
+  /* ---------------------------------------------------------
+     8.1. PRODUCTOS
+     --------------------------------------------------------- */
+
+  if (entity === 'products') {
+    return `
+      ${inputField(
+        'name',
+        'Producto',
+        row.name || '',
+        'text',
+        'required'
+      )}
+
+      ${inputField(
+        'short_code',
+        'Código',
+        row.short_code || '',
+        'text',
+        'required'
+      )}
+
+      ${inputField(
+        'default_density_per_ha',
+        'Semillas por ha',
+        row.default_density_per_ha ?? 100000,
+        'number',
+        'min="0" step="1"'
+      )}
+
+      ${moneyField(
+        'seed_cost_per_thousand',
+        'Costo de semilla por millar',
+        formatMoneyText(
+          row.seed_cost_per_thousand ?? 400
+        )
+      )}
+
+      ${currencyField(
+        'seed_currency',
+        'Moneda del costo de semilla',
+        row.seed_currency || 'USD'
+      )}
+
+      ${inputField(
+        'standard_box_lbs',
+        'Peso caja lb',
+        row.standard_box_lbs ?? 12,
+        'number',
+        'min="0" step="0.01"'
+      )}
+
+      ${moneyField(
+        'default_price_per_box',
+        'Precio por caja',
+        formatMoneyText(
+          row.default_price_per_box ?? 14
+        )
+      )}
+
+      ${currencyField(
+        'price_currency',
+        'Moneda del precio por caja',
+        row.price_currency || 'USD'
+      )}
+
+      <div class="field">
+
+        <label>
+          Predeterminado
+        </label>
+
+        <select
+          class="input"
+          name="is_default"
+        >
+          <option
+            value="0"
+            ${
+              Number(
+                row.is_default || 0
+              ) !== 1
+                ? 'selected'
+                : ''
+            }
+          >
+            No
+          </option>
+
+          <option
+            value="1"
+            ${
+              Number(
+                row.is_default || 0
+              ) === 1
+                ? 'selected'
+                : ''
+            }
+          >
+            Sí
+          </option>
+        </select>
+
+      </div>
+    `;
+  }
+
+
+  /* ---------------------------------------------------------
+     8.2. CLIENTES
+     --------------------------------------------------------- */
+
+  if (entity === 'clients') {
+    return `
+      ${inputField(
+        'name',
+        'Cliente',
+        row.name || '',
+        'text',
+        'required'
+      )}
+
+      ${inputField(
+        'credit_days',
+        'Días de crédito',
+        row.credit_days ?? 0,
+        'number',
+        'min="0" step="1"'
+      )}
+
+      <div class="field span-2">
+
+        <label>
+          Notas
+        </label>
+
+        <textarea
+          class="input"
+          name="notes"
+        >${escapeHtml(
+          row.notes || ''
+        )}</textarea>
+
+      </div>
+    `;
+  }
+
+
+  /* ---------------------------------------------------------
+     8.3. PROVEEDORES
+     --------------------------------------------------------- */
+
+  if (entity === 'suppliers') {
+    return `
+      ${inputField(
+        'name',
+        'Proveedor',
+        row.name || '',
+        'text',
+        'required'
+      )}
+
+      ${inputField(
+        'contact',
+        'Contacto',
+        row.contact || ''
+      )}
+
+      <div class="field span-2">
+
+        <label>
+          Notas
+        </label>
+
+        <textarea
+          class="input"
+          name="notes"
+        >${escapeHtml(
+          row.notes || ''
+        )}</textarea>
+
+      </div>
+    `;
+  }
+
+
+  /* ---------------------------------------------------------
+     8.4. CATEGORÍAS DE GASTO
+     --------------------------------------------------------- */
+
+  if (entity === 'expense_categories') {
+    return `
+      ${inputField(
+        'name',
+        'Categoría',
+        row.name || '',
+        'text',
+        'required'
+      )}
+
+      ${moneyField(
+        'default_amount',
+        'Monto predeterminado',
+        row.default_amount === null ||
+        row.default_amount === undefined
+          ? ''
+          : formatMoneyText(
+              row.default_amount
+            )
+      )}
+
+      ${currencyField(
+        'default_currency',
+        'Moneda',
+        row.default_currency || 'MXN'
+      )}
+    `;
+  }
+
+
+  /* ---------------------------------------------------------
+     8.5. FORMAS DE PAGO
+     --------------------------------------------------------- */
+
+  return inputField(
+    'name',
+    'Nombre',
+    row.name || '',
+    'text',
+    'required'
+  );
+}
+
+
+/* =========================================================
+   9. GENERADORES DE CAMPOS
    ========================================================= */
 
 function inputField(
@@ -457,7 +863,9 @@ function inputField(
         class="input"
         name="${name}"
         type="${type}"
-        value="${value}"
+        value="${escapeHtml(
+          value ?? ''
+        )}"
         ${extra}
       >
 
@@ -484,7 +892,9 @@ function moneyField(
         type="text"
         inputmode="decimal"
         autocomplete="off"
-        value="${value}"
+        value="${escapeHtml(
+          value
+        )}"
         placeholder="0.00"
       >
 
@@ -533,202 +943,6 @@ function currencyField(
 
 
 /* =========================================================
-   9. CAMPOS POR TIPO DE CATÁLOGO
-   ========================================================= */
-
-function fields(
-  entity
-) {
-
-  /* ---------------------------------------------------------
-     9.1. PRODUCTOS
-     --------------------------------------------------------- */
-
-  if (entity === 'products') {
-    return `
-      ${inputField(
-        'name',
-        'Producto',
-        '',
-        'text',
-        'required'
-      )}
-
-      ${inputField(
-        'short_code',
-        'Código',
-        '',
-        'text',
-        'required'
-      )}
-
-      ${inputField(
-        'default_density_per_ha',
-        'Semillas por ha',
-        100000,
-        'number',
-        'min="0" step="1"'
-      )}
-
-      ${moneyField(
-        'seed_cost_per_thousand',
-        'Costo de semilla por millar',
-        '400.00'
-      )}
-
-      ${currencyField(
-        'seed_currency',
-        'Moneda del costo de semilla',
-        'USD'
-      )}
-
-      ${inputField(
-        'standard_box_lbs',
-        'Peso caja lb',
-        12,
-        'number',
-        'min="0" step="0.01"'
-      )}
-
-      ${moneyField(
-        'default_price_per_box',
-        'Precio por caja',
-        '14.00'
-      )}
-
-      ${currencyField(
-        'price_currency',
-        'Moneda del precio por caja',
-        'USD'
-      )}
-
-      <div class="field">
-
-        <label>
-          Predeterminado
-        </label>
-
-        <select
-          class="input"
-          name="is_default"
-        >
-          <option value="0">
-            No
-          </option>
-
-          <option value="1">
-            Sí
-          </option>
-        </select>
-
-      </div>
-    `;
-  }
-
-
-  /* ---------------------------------------------------------
-     9.2. CLIENTES
-     --------------------------------------------------------- */
-
-  if (entity === 'clients') {
-    return `
-      ${inputField(
-        'name',
-        'Cliente',
-        '',
-        'text',
-        'required'
-      )}
-
-      ${inputField(
-        'credit_days',
-        'Días de crédito',
-        0,
-        'number',
-        'min="0" step="1"'
-      )}
-
-      <div class="field span-2">
-
-        <label>
-          Notas
-        </label>
-
-        <textarea
-          class="input"
-          name="notes"
-        ></textarea>
-
-      </div>
-    `;
-  }
-
-
-  /* ---------------------------------------------------------
-     9.3. PROVEEDORES
-     --------------------------------------------------------- */
-
-  if (entity === 'suppliers') {
-    return `
-      ${inputField(
-        'name',
-        'Proveedor',
-        '',
-        'text',
-        'required'
-      )}
-
-      ${inputField(
-        'contact',
-        'Contacto'
-      )}
-    `;
-  }
-
-
-  /* ---------------------------------------------------------
-     9.4. CATEGORÍAS DE GASTO
-     --------------------------------------------------------- */
-
-  if (entity === 'expense_categories') {
-    return `
-      ${inputField(
-        'name',
-        'Categoría',
-        '',
-        'text',
-        'required'
-      )}
-
-      ${moneyField(
-        'default_amount',
-        'Monto predeterminado'
-      )}
-
-      ${currencyField(
-        'default_currency',
-        'Moneda',
-        'MXN'
-      )}
-    `;
-  }
-
-
-  /* ---------------------------------------------------------
-     9.5. FORMAS DE PAGO
-     --------------------------------------------------------- */
-
-  return inputField(
-    'name',
-    'Nombre',
-    '',
-    'text',
-    'required'
-  );
-}
-
-
-/* =========================================================
    10. FORMATO DE CAMPOS MONETARIOS
    ========================================================= */
 
@@ -743,18 +957,20 @@ function bindMoneyInputs(
       input.addEventListener(
         'focus',
         () => {
-          input.value = normalizeMoneyText(
-            input.value
-          );
+          input.value =
+            normalizeMoneyText(
+              input.value
+            );
         }
       );
 
       input.addEventListener(
         'blur',
         () => {
-          input.value = formatMoneyText(
-            input.value
-          );
+          input.value =
+            formatMoneyText(
+              input.value
+            );
         }
       );
     });
@@ -773,9 +989,10 @@ function normalizeMoneyText(
 function formatMoneyText(
   value
 ) {
-  const normalized = normalizeMoneyText(
-    value
-  );
+  const normalized =
+    normalizeMoneyText(
+      value
+    );
 
   if (!normalized) {
     return '';
@@ -797,3 +1014,4 @@ function formatMoneyText(
     }
   ).format(amount);
 }
+
