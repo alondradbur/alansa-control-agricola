@@ -25,7 +25,11 @@ function renderLogin() {
   app.innerHTML = `
     <section class="login">
       <div class="card login-card">
-        <img src="/assets/logo-alansa.png" alt="ALANSA">
+       <img
+  src="/assets/icon-512.png"
+  alt="Sistema Agrícola"
+  class="login-app-icon"
+>
         <h1>Sistema de Control Agrícola</h1>
         <p class="muted">Selecciona quién está ingresando.</p>
 
