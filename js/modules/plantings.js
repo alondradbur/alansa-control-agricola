@@ -73,7 +73,7 @@ export async function plantings() {
         .join('')
     : `
         <tr>
-          <td colspan="8">
+          <td colspan="9">
             ${empty(
               'Todavía no hay siembras registradas.'
             )}
@@ -115,7 +115,8 @@ export async function plantings() {
                 <th>Cliente</th>
                 <th>Producto</th>
                 <th>Hectáreas</th>
-                <th>Periodo de cosecha</th>
+<th>Rendimiento esperado</th>
+<th>Periodo de cosecha</th>
                 <th>Semilla estimada</th>
                 <th>Precio / caja</th>
                 <th>Estado</th>
@@ -175,7 +176,13 @@ function createRow(
           2
         )}
       </td>
-
+<td>
+  ${number(
+    row.expected_yield_boxes_ha,
+    0
+  )}
+  cajas/ha
+</td>
       <td>
         ${date(
           row.harvest_start
@@ -346,6 +353,14 @@ function openPlantingForm(
               'number',
               'required min="0.01" step="0.01"'
             )}
+
+            ${inputField(
+  'expected_yield_boxes_ha',
+  'Rendimiento esperado (cajas/ha)',
+  '',
+  'number',
+  'required min="1" step="1"'
+)}
 
             ${inputField(
               'density_per_ha',
