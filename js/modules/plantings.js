@@ -1,18 +1,11 @@
 /* =========================================================
    ALANSA - SISTEMA DE CONTROL AGRÍCOLA
+   MÓDULO: SIEMBRAS / CONTRATOS
 
-   MÓDULO:
-   SIEMBRAS / CONTRATOS
-
-   Archivo:
-   js/modules/plantings.js
-
-   Funciones:
-   - Mostrar siembras.
-   - Abrir formulario de nueva siembra.
-   - Cargar Minibell como producto predeterminado.
-   - Registrar contratos.
-   - Calcular el costo estimado desde la API.
+   Ajuste:
+   - Los importes aceptan separadores de miles.
+   - Todo importe solicita moneda MXN o USD.
+   - Los importes se muestran formateados.
    ========================================================= */
 
 
@@ -20,9 +13,7 @@
    1. IMPORTACIONES
    ========================================================= */
 
-import {
-  api
-} from '../core/api.js';
+import { api } from '../core/api.js';
 
 import {
   escapeHtml,
@@ -55,90 +46,45 @@ let catalogs = {
    ========================================================= */
 
 export async function plantings() {
-
-  /* ---------------------------------------------------------
-     3.1. CARGAR DATOS
-     --------------------------------------------------------- */
-
   try {
+    const responses = await Promise.all([
+      api('plantings'),
+      api('catalogs')
+    ]);
 
-    const responses =
-      await Promise.all([
-        api(
-          'plantings'
-        ),
+    rows = responses[0] || [];
 
-        api(
-          'catalogs'
-        )
-      ]);
-
-
-    rows =
-      responses[0] || [];
-
-
-    catalogs =
-      responses[1] || {
-        products: [],
-        clients: []
-      };
-
+    catalogs = responses[1] || {
+      products: [],
+      clients: []
+    };
   } catch {
-
     rows = [];
 
     catalogs = {
       products: [],
       clients: []
     };
-
   }
 
-
-  /* ---------------------------------------------------------
-     3.2. CONSTRUIR FILAS DE LA TABLA
-     --------------------------------------------------------- */
-
-  const tableBody =
-    rows.length > 0
-
-      ? rows
-          .map(
-            row =>
-              createRow(
-                row
-              )
-          )
-          .join('')
-
-      : `
-          <tr>
-
-            <td colspan="8">
-
-              ${empty(
-                'Todavía no hay siembras registradas.'
-              )}
-
-            </td>
-
-          </tr>
-        `;
-
-
-  /* ---------------------------------------------------------
-     3.3. INTERFAZ
-     --------------------------------------------------------- */
+  const tableBody = rows.length
+    ? rows
+        .map(row => createRow(row))
+        .join('')
+    : `
+        <tr>
+          <td colspan="8">
+            ${empty(
+              'Todavía no hay siembras registradas.'
+            )}
+          </td>
+        </tr>
+      `;
 
   return `
-
     ${moduleHeader(
-
       'Siembras',
-
       'Contratos, hectáreas y periodos de cosecha',
-
       `
         <button
           class="btn primary"
@@ -147,219 +93,125 @@ export async function plantings() {
           ＋ Nueva siembra
         </button>
       `
-
     )}
-
 
     <div class="content">
 
+      <section class="card table-card">
 
-      <section
-        class="card table-card"
-      >
-
-
-        <div
-          class="table-toolbar"
-        >
-
+        <div class="table-toolbar">
           <strong>
             Siembras / contratos
           </strong>
-
         </div>
 
-
-        <div
-          class="table-scroll"
-        >
-
+        <div class="table-scroll">
 
           <table>
 
-
             <thead>
-
               <tr>
-
-                <th>
-                  Contrato
-                </th>
-
-                <th>
-                  Cliente
-                </th>
-
-                <th>
-                  Producto
-                </th>
-
-                <th>
-                  Hectáreas
-                </th>
-
-                <th>
-                  Periodo de cosecha
-                </th>
-
-                <th>
-                  Semilla estimada
-                </th>
-
-                <th>
-                  Precio / caja
-                </th>
-
-                <th>
-                  Estado
-                </th>
-
+                <th>Contrato</th>
+                <th>Cliente</th>
+                <th>Producto</th>
+                <th>Hectáreas</th>
+                <th>Periodo de cosecha</th>
+                <th>Semilla estimada</th>
+                <th>Precio / caja</th>
+                <th>Estado</th>
               </tr>
-
             </thead>
 
-
             <tbody>
-
               ${tableBody}
-
             </tbody>
-
 
           </table>
 
-
         </div>
-
 
       </section>
 
-
     </div>
 
-
-    <div
-      id="plantingModalRoot"
-    ></div>
-
+    <div id="plantingModalRoot"></div>
   `;
-
 }
 
 
 /* =========================================================
-   4. CREAR FILA DE SIEMBRA
+   4. FILA DE SIEMBRA
    ========================================================= */
 
 function createRow(
   row
 ) {
-
   return `
-
     <tr>
 
-
       <td>
-
         <strong>
-
           ${escapeHtml(
             row.contract_number
           )}
-
         </strong>
-
       </td>
 
-
       <td>
-
         ${escapeHtml(
           row.client_name
         )}
-
       </td>
 
-
       <td>
-
         ${escapeHtml(
           row.product_name
         )}
-
       </td>
 
-
       <td>
-
         ${number(
           row.hectares,
           2
         )}
-
       </td>
 
-
       <td>
-
         ${date(
           row.harvest_start
         )}
-
         –
-
         ${date(
           row.harvest_end
         )}
-
       </td>
 
-
       <td>
-
         ${money(
           row.estimated_seed_cost,
           row.seed_currency
         )}
-
       </td>
 
-
       <td>
-
         ${money(
           row.price_per_box,
           row.price_currency
         )}
-
       </td>
 
-
       <td>
-
-        <span
-          class="
-            status
-            ${escapeHtml(
-              row.status
-            )}
-          "
-        >
-
+        <span class="status ${escapeHtml(
+          row.status
+        )}">
           ${escapeHtml(
             row.status
           )}
-
         </span>
-
       </td>
 
-
     </tr>
-
   `;
-
 }
 
 
@@ -370,101 +222,58 @@ function createRow(
 export function bindPlantings(
   rerender
 ) {
-
-  const newButton =
-    document.querySelector(
+  document
+    .querySelector(
       '#newPlantingBtn'
-    );
-
-
-  newButton
+    )
     ?.addEventListener(
       'click',
       () => {
-
         openPlantingForm(
           rerender
         );
-
       }
     );
-
 }
 
 
 /* =========================================================
-   6. ABRIR FORMULARIO DE NUEVA SIEMBRA
+   6. FORMULARIO DE NUEVA SIEMBRA
    ========================================================= */
 
 function openPlantingForm(
   rerender
 ) {
-
-  /* ---------------------------------------------------------
-     6.1. BUSCAR PRODUCTO PREDETERMINADO
-     --------------------------------------------------------- */
-
   const defaultProduct =
     catalogs.products
-      ?.find(
-        product =>
-          Number(
-            product.is_default
-          ) === 1
-      )
-
+      ?.find(product => {
+        return Number(
+          product.is_default
+        ) === 1;
+      })
     ||
-
     catalogs.products?.[0]
-
     ||
-
     {};
 
+  const modalRoot = document.querySelector(
+    '#plantingModalRoot'
+  );
 
-  /* ---------------------------------------------------------
-     6.2. CONTENEDOR DEL MODAL
-     --------------------------------------------------------- */
-
-  const modalRoot =
-    document.querySelector(
-      '#plantingModalRoot'
-    );
-
-
-  if (
-    !modalRoot
-  ) {
-
+  if (!modalRoot) {
     return;
-
   }
 
-
-  /* ---------------------------------------------------------
-     6.3. FORMULARIO
-     --------------------------------------------------------- */
-
   modalRoot.innerHTML = `
+    <div class="modal-backdrop">
 
-    <div
-      class="modal-backdrop"
-    >
+      <div class="modal">
 
-
-      <div
-        class="modal"
-      >
-
-
-        <div
-          class="modal-head"
-        >
+        <div class="modal-head">
 
           <h2>
             Nueva siembra
           </h2>
-
 
           <button
             class="btn"
@@ -476,270 +285,140 @@ function openPlantingForm(
 
         </div>
 
-
         <form
           class="modal-body"
           id="plantingForm"
         >
 
-
-          <div
-            class="form-grid"
-          >
-
+          <div class="form-grid">
 
             ${inputField(
-
               'contract_number',
-
               'Contrato / folio',
-
               '',
-
               'text',
-
               'required'
-
             )}
 
-
-            <div
-              class="field"
-            >
+            <div class="field">
 
               <label>
                 Cliente
               </label>
-
 
               <select
                 class="input"
                 name="client_id"
                 required
               >
-
                 <option value="">
                   Seleccionar cliente
                 </option>
 
-
                 ${clientOptions()}
-
-
               </select>
 
             </div>
 
-
-            <div
-              class="field"
-            >
+            <div class="field">
 
               <label>
                 Producto
               </label>
 
-
               <select
                 class="input"
                 name="product_id"
+                id="plantingProduct"
                 required
               >
-
                 ${productOptions(
                   defaultProduct.id
                 )}
-
               </select>
 
             </div>
 
-
             ${inputField(
-
               'hectares',
-
               'Hectáreas',
-
               '',
-
               'number',
-
-              `
-                required
-                min="0.01"
-                step="0.01"
-              `
-
+              'required min="0.01" step="0.01"'
             )}
 
-
             ${inputField(
-
               'density_per_ha',
-
               'Semillas por hectárea',
-
-              defaultProduct.default_density_per_ha
-                || 100000,
-
+              defaultProduct.default_density_per_ha || 100000,
               'number',
-
-              `
-                required
-                min="1"
-                step="1"
-              `
-
+              'required min="1" step="1"'
             )}
 
-
-            ${inputField(
-
+            ${moneyField(
               'seed_cost_per_thousand',
-
               'Costo de semilla por millar',
-
-              defaultProduct.seed_cost_per_thousand
-                || 400,
-
-              'number',
-
-              `
-                min="0"
-                step="0.01"
-              `
-
+              formatMoneyText(
+                defaultProduct.seed_cost_per_thousand || 400
+              )
             )}
 
+            ${currencyField(
+              'seed_currency',
+              'Moneda del costo de semilla',
+              defaultProduct.seed_currency || 'USD'
+            )}
 
-            ${inputField(
-
+            ${moneyField(
               'actual_seed_cost',
-
-              'Costo real de semilla',
-
-              '',
-
-              'number',
-
-              `
-                min="0"
-                step="0.01"
-              `
-
+              'Costo real de semilla'
             )}
 
-
             ${inputField(
-
               'harvest_start',
-
               'Inicio de cosecha',
-
               '',
-
               'date',
-
               'required'
-
             )}
 
-
             ${inputField(
-
               'harvest_end',
-
               'Fin de cosecha',
-
               '',
-
               'date',
-
               'required'
-
             )}
 
-
-            ${inputField(
-
+            ${moneyField(
               'price_per_box',
-
               'Precio por caja',
-
-              defaultProduct.default_price_per_box
-                || 14,
-
-              'number',
-
-              `
-                min="0"
-                step="0.01"
-              `
-
+              formatMoneyText(
+                defaultProduct.default_price_per_box || 14
+              )
             )}
 
+            ${currencyField(
+              'price_currency',
+              'Moneda del precio por caja',
+              defaultProduct.price_currency || 'USD'
+            )}
 
             ${inputField(
-
               'standard_box_lbs',
-
               'Peso estándar por caja (lb)',
-
-              defaultProduct.standard_box_lbs
-                || 12,
-
+              defaultProduct.standard_box_lbs || 12,
               'number',
-
-              `
-                min="0"
-                step="0.01"
-              `
-
+              'min="0" step="0.01"'
             )}
-
 
             ${inputField(
-
               'trailers_per_week',
-
               'Meta de tráileres por semana',
-
               1,
-
               'number',
-
-              `
-                min="0"
-                step="0.01"
-              `
-
+              'min="0" step="0.01"'
             )}
-
-
-            <input
-              type="hidden"
-              name="seed_currency"
-              value="${
-                escapeHtml(
-                  defaultProduct.seed_currency
-                    || 'USD'
-                )
-              }"
-            >
-
-
-            <input
-              type="hidden"
-              name="price_currency"
-              value="${
-                escapeHtml(
-                  defaultProduct.price_currency
-                    || 'USD'
-                )
-              }"
-            >
-
 
             <input
               type="hidden"
@@ -747,13 +426,9 @@ function openPlantingForm(
               value="Activa"
             >
 
-
           </div>
 
-
-          <div
-            class="modal-actions"
-          >
+          <div class="modal-actions">
 
             <button
               class="btn primary"
@@ -764,246 +439,381 @@ function openPlantingForm(
 
           </div>
 
-
         </form>
-
 
       </div>
 
-
     </div>
-
   `;
 
+  bindMoneyInputs(
+    modalRoot
+  );
 
-  /* ---------------------------------------------------------
-     6.4. CERRAR MODAL
-     --------------------------------------------------------- */
+  bindProductDefaults(
+    modalRoot
+  );
 
-  const closeButton =
-    document.querySelector(
+  document
+    .querySelector(
       '#closePlantingModal'
-    );
-
-
-  closeButton
+    )
     ?.addEventListener(
       'click',
       () => {
-
-        modalRoot.innerHTML =
-          '';
-
+        modalRoot.innerHTML = '';
       }
     );
 
-
-  /* ---------------------------------------------------------
-     6.5. GUARDAR FORMULARIO
-     --------------------------------------------------------- */
-
-  const form =
-    document.querySelector(
+  document
+    .querySelector(
       '#plantingForm'
-    );
-
-
-  form
+    )
     ?.addEventListener(
       'submit',
       async event => {
-
         event.preventDefault();
-
 
         if (
           catalogs.clients.length === 0
         ) {
-
           toast(
             'Primero agrega un cliente en Catálogos.'
           );
 
           return;
-
         }
 
+        const formData = new FormData(
+          event.currentTarget
+        );
 
-        const formData =
-          new FormData(
-            event.currentTarget
-          );
-
-
-        const payload =
-          Object.fromEntries(
-            formData.entries()
-          );
-
+        const payload = Object.fromEntries(
+          formData.entries()
+        );
 
         try {
-
           await api(
             'plantings',
             {
-              method:
-                'POST',
-
-              body:
-                JSON.stringify(
-                  payload
-                )
+              method: 'POST',
+              body: JSON.stringify(
+                payload
+              )
             }
           );
 
-
-          modalRoot.innerHTML =
-            '';
-
+          modalRoot.innerHTML = '';
 
           toast(
             'Siembra guardada correctamente.'
           );
 
-
           await rerender();
-
-        } catch (
-          exception
-        ) {
-
+        } catch (exception) {
           toast(
             exception.message
           );
-
         }
-
       }
     );
-
 }
 
 
 /* =========================================================
-   7. OPCIONES DE CLIENTES
+   7. OPCIONES DE CLIENTES Y PRODUCTOS
    ========================================================= */
 
 function clientOptions() {
-
   return catalogs.clients
-    .map(
-      client => `
-
-        <option
-          value="${client.id}"
-        >
-
+    .map(client => {
+      return `
+        <option value="${client.id}">
           ${escapeHtml(
             client.name
           )}
-
         </option>
-
-      `
-    )
+      `;
+    })
     .join('');
-
 }
 
-
-/* =========================================================
-   8. OPCIONES DE PRODUCTOS
-   ========================================================= */
 
 function productOptions(
   selectedId
 ) {
-
   return catalogs.products
-    .map(
-      product => `
+    .map(product => {
+      const selected =
+        Number(product.id) ===
+        Number(selectedId);
 
+      return `
         <option
-
           value="${product.id}"
-
-          ${
-            Number(
-              product.id
-            ) ===
-            Number(
-              selectedId
-            )
-
-              ? 'selected'
-
-              : ''
-          }
-
+          ${selected ? 'selected' : ''}
         >
-
           ${escapeHtml(
             product.name
           )}
-
         </option>
-
-      `
-    )
+      `;
+    })
     .join('');
-
 }
 
 
 /* =========================================================
-   9. GENERADOR DE CAMPOS
+   8. GENERADORES DE CAMPOS
    ========================================================= */
 
 function inputField(
-
   name,
-
   label,
-
   value = '',
-
   type = 'text',
-
   extra = ''
-
 ) {
-
   return `
-
-    <div
-      class="field"
-    >
+    <div class="field">
 
       <label>
         ${label}
       </label>
 
-
       <input
-
         class="input"
-
         name="${name}"
-
         type="${type}"
-
-        value="${
-          escapeHtml(
-            value ?? ''
-          )
-        }"
-
+        value="${escapeHtml(
+          value ?? ''
+        )}"
         ${extra}
-
       >
 
     </div>
-
   `;
+}
 
+
+function moneyField(
+  name,
+  label,
+  value = ''
+) {
+  return `
+    <div class="field">
+
+      <label>
+        ${label}
+      </label>
+
+      <input
+        class="input money-input"
+        name="${name}"
+        type="text"
+        inputmode="decimal"
+        autocomplete="off"
+        value="${escapeHtml(
+          value
+        )}"
+        placeholder="0.00"
+      >
+
+    </div>
+  `;
+}
+
+
+function currencyField(
+  name,
+  label,
+  selected = 'USD'
+) {
+  return `
+    <div class="field">
+
+      <label>
+        ${label}
+      </label>
+
+      <select
+        class="input"
+        name="${name}"
+        required
+      >
+
+        <option
+          value="MXN"
+          ${selected === 'MXN' ? 'selected' : ''}
+        >
+          MXN
+        </option>
+
+        <option
+          value="USD"
+          ${selected === 'USD' ? 'selected' : ''}
+        >
+          USD
+        </option>
+
+      </select>
+
+    </div>
+  `;
+}
+
+
+/* =========================================================
+   9. ACTUALIZAR VALORES AL CAMBIAR PRODUCTO
+   ========================================================= */
+
+function bindProductDefaults(
+  root
+) {
+  const productSelect = root.querySelector(
+    '#plantingProduct'
+  );
+
+  productSelect
+    ?.addEventListener(
+      'change',
+      () => {
+        const product = catalogs.products
+          .find(item => {
+            return Number(item.id) ===
+              Number(productSelect.value);
+          });
+
+        if (!product) {
+          return;
+        }
+
+        setFieldValue(
+          root,
+          'density_per_ha',
+          product.default_density_per_ha || ''
+        );
+
+        setFieldValue(
+          root,
+          'seed_cost_per_thousand',
+          formatMoneyText(
+            product.seed_cost_per_thousand || 0
+          )
+        );
+
+        setFieldValue(
+          root,
+          'seed_currency',
+          product.seed_currency || 'USD'
+        );
+
+        setFieldValue(
+          root,
+          'price_per_box',
+          formatMoneyText(
+            product.default_price_per_box || 0
+          )
+        );
+
+        setFieldValue(
+          root,
+          'price_currency',
+          product.price_currency || 'USD'
+        );
+
+        setFieldValue(
+          root,
+          'standard_box_lbs',
+          product.standard_box_lbs || 12
+        );
+      }
+    );
+}
+
+
+function setFieldValue(
+  root,
+  name,
+  value
+) {
+  const field = root.querySelector(
+    `[name="${name}"]`
+  );
+
+  if (field) {
+    field.value = value;
+  }
+}
+
+
+/* =========================================================
+   10. FORMATO DE CAMPOS MONETARIOS
+   ========================================================= */
+
+function bindMoneyInputs(
+  root
+) {
+  root
+    .querySelectorAll(
+      '.money-input'
+    )
+    .forEach(input => {
+      input.addEventListener(
+        'focus',
+        () => {
+          input.value = normalizeMoneyText(
+            input.value
+          );
+        }
+      );
+
+      input.addEventListener(
+        'blur',
+        () => {
+          input.value = formatMoneyText(
+            input.value
+          );
+        }
+      );
+    });
+}
+
+
+function normalizeMoneyText(
+  value
+) {
+  return String(value || '')
+    .replaceAll(',', '')
+    .replace(/[^\d.-]/g, '');
+}
+
+
+function formatMoneyText(
+  value
+) {
+  const normalized = normalizeMoneyText(
+    value
+  );
+
+  if (!normalized) {
+    return '';
+  }
+
+  const amount = Number(
+    normalized
+  );
+
+  if (!Number.isFinite(amount)) {
+    return '';
+  }
+
+  return new Intl.NumberFormat(
+    'en-US',
+    {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }
+  ).format(amount);
 }
