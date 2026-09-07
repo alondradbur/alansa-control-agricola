@@ -1,71 +1,386 @@
-.app-shell { min-height: 100vh; }
+./* =========================================================
+   1. ESTRUCTURA GENERAL
+   ========================================================= */
+
+.app-shell {
+  min-height: 100vh;
+}
+
+
+/* =========================================================
+   2. SIDEBAR
+   ========================================================= */
+
 .sidebar {
   position: fixed;
   inset: 0 auto 0 0;
-  width: var(--sidebar);
-  background: var(--alansa-900);
-  color: white;
-  padding: 20px 14px;
   z-index: 40;
+
+  width: var(--sidebar);
+  height: 100vh;
+
+  display: flex;
+  flex-direction: column;
+
+  padding: 18px 12px 16px;
+
+  background:
+    linear-gradient(
+      180deg,
+      var(--alansa-950) 0%,
+      var(--alansa-900) 100%
+    );
+
+  color: #fff;
+
+  border-right: 1px solid rgba(255, 255, 255, .06);
+}
+
+
+/* =========================================================
+   3. IDENTIDAD DEL SISTEMA
+   ========================================================= */
+
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+
+  min-height: 64px;
+
+  padding: 4px 7px 16px;
+  margin-bottom: 4px;
+
+  border-bottom: 1px solid rgba(255, 255, 255, .09);
+}
+
+.sidebar-brand-icon {
+  flex: 0 0 auto;
+
+  width: 52px;
+  height: 52px;
+
+  object-fit: contain;
+
+  border-radius: 14px;
+
+  box-shadow:
+    0 4px 14px rgba(0, 0, 0, .16);
+}
+
+.sidebar-brand-text {
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+
+  line-height: 1.15;
+}
+
+.sidebar-brand-text strong {
+  color: #fff;
+
+  font-size: .85rem;
+  font-weight: 800;
+}
+
+.sidebar-brand-text span {
+  margin-top: 3px;
+
+  color: rgba(255, 255, 255, .70);
+
+  font-size: .77rem;
+  font-weight: 600;
+}
+
+
+/* =========================================================
+   4. NAVEGACIÓN
+   ========================================================= */
+
+.nav {
+  display: grid;
+  gap: 3px;
+
+  margin-top: 8px;
+}
+
+.nav-item {
+  position: relative;
+
+  width: 100%;
+  min-height: 44px;
+
+  display: flex;
+  align-items: center;
+  gap: 11px;
+
+  padding: 9px 11px;
+
+  border: 0;
+  border-radius: 11px;
+
+  background: transparent;
+
+  color: rgba(255, 255, 255, .76);
+
+  text-align: left;
+
+  cursor: pointer;
+
+  transition:
+    background .18s ease,
+    color .18s ease,
+    transform .18s ease;
+}
+
+.nav-item:hover {
+  background: rgba(255, 255, 255, .07);
+  color: #fff;
+}
+
+.nav-item.active {
+  background: rgba(255, 255, 255, .12);
+  color: #fff;
+
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, .03);
+}
+
+.nav-item.active::before {
+  content: "";
+
+  position: absolute;
+
+  left: 0;
+  top: 10px;
+  bottom: 10px;
+
+  width: 3px;
+
+  border-radius: 0 4px 4px 0;
+
+  background: #fff;
+}
+
+.nav-icon {
+  flex: 0 0 auto;
+
+  width: 20px;
+  height: 20px;
+
+  display: grid;
+  place-items: center;
+}
+
+.nav-icon svg {
+  width: 19px;
+  height: 19px;
+
+  fill: none;
+  stroke: currentColor;
+
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.nav-label {
+  min-width: 0;
+
+  font-size: .84rem;
+  font-weight: 650;
+
+  white-space: nowrap;
+}
+
+
+/* =========================================================
+   5. USUARIO Y CERRAR SESIÓN
+   ========================================================= */
+
+.sidebar-foot {
+  margin-top: auto;
+
+  padding: 14px 6px 0;
+
+  border-top: 1px solid rgba(255, 255, 255, .10);
+}
+
+.sidebar-user {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+
+  padding: 0 4px 11px;
+}
+
+.sidebar-user-avatar {
+  flex: 0 0 auto;
+
+  width: 34px;
+  height: 34px;
+
+  display: grid;
+  place-items: center;
+
+  border-radius: 50%;
+
+  background: rgba(255, 255, 255, .12);
+
+  color: #fff;
+
+  font-size: .76rem;
+  font-weight: 800;
+
+  text-transform: uppercase;
+}
+
+.sidebar-user-info {
+  min-width: 0;
+
   display: flex;
   flex-direction: column;
 }
-.brand {
+
+.sidebar-user-info strong {
+  overflow: hidden;
+
+  color: rgba(255, 255, 255, .92);
+
+  font-size: .72rem;
+  font-weight: 700;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-user-info span {
+  margin-top: 2px;
+
+  color: rgba(255, 255, 255, .54);
+
+  font-size: .66rem;
+}
+
+.sidebar-logout {
+  width: 100%;
+  min-height: 38px;
+
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 4px 8px 22px;
-}
-.brand img {
-  width: 46px;
-  height: 46px;
-  object-fit: contain;
-  border-radius: 50%;
-}
-.brand strong { display:block; font-size: 1.05rem; }
-.brand small { opacity:.72; font-size:.72rem; }
-.nav { display:grid; gap:5px; }
-.nav button {
-  border: 0;
-  background: transparent;
-  color: rgba(255,255,255,.76);
-  text-align: left;
-  padding: 11px 12px;
+  gap: 9px;
+
+  padding: 8px 10px;
+
+  border: 1px solid rgba(255, 255, 255, .08);
   border-radius: 10px;
+
+  background: rgba(255, 255, 255, .04);
+
+  color: rgba(255, 255, 255, .70);
+
+  cursor: pointer;
+
+  transition:
+    background .18s ease,
+    color .18s ease,
+    border-color .18s ease;
 }
-.nav button:hover,
-.nav button.active {
-  background: rgba(255,255,255,.10);
+
+.sidebar-logout:hover {
+  background: rgba(255, 255, 255, .08);
+
+  border-color: rgba(255, 255, 255, .12);
+
   color: #fff;
 }
-.sidebar-foot {
-  margin-top:auto;
-  border-top:1px solid rgba(255,255,255,.12);
-  padding:14px 8px 0;
-  font-size:.76rem;
-  opacity:.72;
+
+.sidebar-logout svg {
+  width: 17px;
+  height: 17px;
+
+  fill: none;
+  stroke: currentColor;
+
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
+
+.sidebar-logout span {
+  font-size: .73rem;
+  font-weight: 700;
+}
+
+
+/* =========================================================
+   6. ÁREA PRINCIPAL
+   ========================================================= */
+
 .main {
+  min-height: 100vh;
+
   margin-left: var(--sidebar);
-  min-height:100vh;
+
   padding: 0 24px 88px;
 }
+
+
+/* =========================================================
+   7. ENCABEZADO FIJO DE MÓDULOS
+   ========================================================= */
+
 .module-sticky {
   position: sticky;
   top: 0;
   z-index: 30;
-  background: rgba(244,246,243,.96);
-  backdrop-filter: blur(10px);
+
   padding: 20px 0 12px;
+
+  background: rgba(244, 246, 243, .96);
+
+  backdrop-filter: blur(10px);
 }
+
 .module-head {
-  display:flex;
-  align-items:flex-end;
-  justify-content:space-between;
-  gap:18px;
-  margin-bottom:14px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 18px;
+
+  margin-bottom: 14px;
 }
-.module-head h1 { font-size:1.5rem; margin-bottom:4px; }
-.module-head p { margin:0; color:var(--muted); font-size:.86rem; }
-.content { display:grid; gap:18px; }
-.mobile-bar { display:none; }
+
+.module-head h1 {
+  margin-bottom: 4px;
+
+  font-size: 1.5rem;
+}
+
+.module-head p {
+  margin: 0;
+
+  color: var(--muted);
+
+  font-size: .86rem;
+}
+
+
+/* =========================================================
+   8. CONTENIDO
+   ========================================================= */
+
+.content {
+  display: grid;
+  gap: 18px;
+}
+
+
+/* =========================================================
+   9. NAVEGACIÓN MÓVIL
+   ========================================================= */
+
+.mobile-bar {
+  display: none;
+}
