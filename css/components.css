@@ -616,3 +616,351 @@ textarea.input {
     font-size: .96rem;
   }
 }
+
+/* =========================================================
+   PROYECCIÓN - DASHBOARD
+   ========================================================= */
+
+.dashboard-projection {
+  display: grid;
+  gap: 14px;
+}
+
+.dashboard-section-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.dashboard-section-head h2 {
+  margin: 3px 0 0;
+  font-size: 1.18rem;
+  line-height: 1.2;
+  color: var(--text);
+}
+
+.dashboard-section-head p {
+  margin: 5px 0 0;
+  max-width: 620px;
+  color: var(--muted);
+  font-size: .78rem;
+  line-height: 1.5;
+}
+
+.projection-summary {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  white-space: nowrap;
+  color: var(--muted);
+  font-size: .72rem;
+}
+
+.projection-summary strong {
+  color: var(--text);
+  font-size: 1rem;
+}
+
+.projection-main {
+  display: grid;
+  grid-template-columns: minmax(260px, .85fr) minmax(0, 1.6fr);
+  gap: 12px;
+}
+
+.projection-hero {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 190px;
+  padding: 20px;
+  overflow: hidden;
+  background:
+    linear-gradient(
+      145deg,
+      var(--alansa-950),
+      var(--alansa-800)
+    );
+  color: #fff;
+  border: 0;
+}
+
+.projection-hero::after {
+  content: '';
+  position: absolute;
+  width: 150px;
+  height: 150px;
+  right: -45px;
+  bottom: -55px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.06);
+}
+
+.projection-hero-label {
+  position: relative;
+  z-index: 1;
+  font-size: .72rem;
+  font-weight: 700;
+  color: rgba(255,255,255,.72);
+}
+
+.projection-hero-value {
+  position: relative;
+  z-index: 1;
+  margin-top: 16px;
+  font-size: 2rem;
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: -.04em;
+}
+
+.projection-hero-value span {
+  margin-left: 4px;
+  font-size: .78rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  color: rgba(255,255,255,.72);
+}
+
+.projection-hero-meta {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  gap: 16px;
+  margin-top: 22px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255,255,255,.13);
+  font-size: .72rem;
+  color: rgba(255,255,255,.74);
+}
+
+.projection-cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.projection-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 89px;
+  padding: 15px 16px 14px 18px;
+  overflow: hidden;
+}
+
+.projection-card::before {
+  content: '';
+  position: absolute;
+  inset: 13px auto 13px 0;
+  width: 3px;
+  border-radius: 0 4px 4px 0;
+  background: var(--alansa-600);
+}
+
+.projection-card-label {
+  color: var(--muted);
+  font-size: .68rem;
+  font-weight: 700;
+}
+
+.projection-card-value {
+  margin-top: 5px;
+  color: var(--text);
+  font-size: 1.08rem;
+  line-height: 1.15;
+}
+
+.projection-card-meta {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: .66rem;
+}
+
+.projection-card-sales::before {
+  background: var(--alansa-600);
+}
+
+.projection-card-seed::before {
+  background: var(--warning);
+}
+
+.projection-card-production::before {
+  background: var(--success);
+}
+
+.projection-card-remaining::before {
+  background: #7a847c;
+}
+
+.projection-progress {
+  padding: 16px 18px;
+}
+
+.projection-progress-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.projection-progress-head > div:first-child {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+}
+
+.projection-progress-head span {
+  color: var(--muted);
+  font-size: .7rem;
+}
+
+.projection-progress-head strong {
+  color: var(--text);
+  font-size: 1rem;
+}
+
+.projection-progress-values {
+  display: flex;
+  gap: 5px;
+  color: var(--muted);
+  font-size: .68rem;
+}
+
+.projection-progress-track {
+  height: 7px;
+  margin-top: 13px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--alansa-100);
+}
+
+.projection-progress-bar {
+  height: 100%;
+  min-width: 0;
+  border-radius: inherit;
+  background: var(--alansa-700);
+  transition: width .3s ease;
+}
+
+.projection-empty {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 18px;
+}
+
+.projection-empty strong {
+  font-size: .86rem;
+}
+
+.projection-empty span {
+  color: var(--muted);
+  font-size: .73rem;
+  line-height: 1.5;
+}
+
+
+/* =========================================================
+   PROYECCIÓN - MÓVIL
+   ========================================================= */
+
+@media (max-width: 760px) {
+
+  .dashboard-projection {
+    gap: 10px;
+  }
+
+  .dashboard-section-head {
+    align-items: flex-start;
+  }
+
+  .dashboard-section-head h2 {
+    font-size: 1.05rem;
+  }
+
+  .dashboard-section-head p {
+    font-size: .72rem;
+  }
+
+  .projection-summary {
+    display: none;
+  }
+
+  .projection-main {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .projection-hero {
+    min-height: 154px;
+    padding: 17px;
+    border-radius: 14px;
+  }
+
+  .projection-hero-value {
+    font-size: 1.8rem;
+  }
+
+  .projection-hero-meta {
+    margin-top: 18px;
+    padding-top: 11px;
+  }
+
+  .projection-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 9px;
+  }
+
+  .projection-card {
+    min-width: 0;
+    min-height: 94px;
+    padding: 13px 11px 12px 15px;
+  }
+
+  .projection-card-label {
+    font-size: .64rem;
+  }
+
+  .projection-card-value {
+    overflow-wrap: anywhere;
+    font-size: .94rem;
+  }
+
+  .projection-card-meta {
+    font-size: .61rem;
+  }
+
+  .projection-progress {
+    padding: 14px;
+  }
+
+  .projection-progress-head {
+    align-items: flex-start;
+  }
+
+  .projection-progress-values {
+    display: none;
+  }
+
+  .projection-progress-track {
+    height: 6px;
+    margin-top: 11px;
+  }
+
+}
+
+
+@media (max-width: 390px) {
+
+  .projection-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .projection-card {
+    min-height: 78px;
+  }
+
+}
