@@ -1,10 +1,13 @@
 /* =========================================================
-   ALANSA - SISTEMA DE CONTROL AGRÍCOLA
+   SISTEMA DE CONTROL AGRÍCOLA
    API: CATÁLOGOS
 
-   Ajuste:
-   - Normaliza importes con separadores de miles.
-   - Conserva la moneda en un campo independiente.
+   Funciones:
+   - Consultar catálogos.
+   - Crear registros.
+   - Editar registros existentes.
+   - Eliminar registros no relacionados.
+   - Normalizar importes con separadores de miles.
    ========================================================= */
 
 
@@ -120,6 +123,11 @@ export async function onRequestPost({
        ------------------------------------------------------- */
 
     if (entity === 'clients') {
+      requireName(
+        data.name,
+        'El nombre del cliente es obligatorio.'
+      );
+
       const result = await env.DB
         .prepare(`
           INSERT INTO clients (
@@ -132,7 +140,7 @@ export async function onRequestPost({
         .bind(
           data.name.trim(),
           Number(data.credit_days || 0),
-          data.notes || null
+          optionalText(data.notes)
         )
         .run();
 
@@ -148,6 +156,11 @@ export async function onRequestPost({
        ------------------------------------------------------- */
 
     if (entity === 'suppliers') {
+      requireName(
+        data.name,
+        'El nombre del proveedor es obligatorio.'
+      );
+
       const result = await env.DB
         .prepare(`
           INSERT INTO suppliers (
@@ -159,8 +172,8 @@ export async function onRequestPost({
         `)
         .bind(
           data.name.trim(),
-          data.contact || null,
-          data.notes || null
+          optionalText(data.contact),
+          optionalText(data.notes)
         )
         .run();
 
@@ -176,6 +189,11 @@ export async function onRequestPost({
        ------------------------------------------------------- */
 
     if (entity === 'expense_categories') {
+      requireName(
+        data.name,
+        'El nombre de la categoría es obligatorio.'
+      );
+
       const defaultAmount =
         parseMoney(
           data.default_amount
@@ -212,6 +230,11 @@ export async function onRequestPost({
        ------------------------------------------------------- */
 
     if (entity === 'payment_methods') {
+      requireName(
+        data.name,
+        'El nombre de la forma de pago es obligatorio.'
+      );
+
       const result = await env.DB
         .prepare(`
           INSERT INTO payment_methods (
@@ -236,13 +259,25 @@ export async function onRequestPost({
        ------------------------------------------------------- */
 
     if (entity === 'products') {
+      requireName(
+        data.name,
+        'El nombre del producto es obligatorio.'
+      );
+
+      requireName(
+        data.short_code,
+        'El código del producto es obligatorio.'
+      );
+
       if (
         Number(data.is_default) === 1
       ) {
         await env.DB
           .prepare(`
             UPDATE products
-            SET is_default = 0
+            SET
+              is_default = 0,
+              updated_at = CURRENT_TIMESTAMP
           `)
           .run();
       }
@@ -304,21 +339,283 @@ export async function onRequestPost({
     );
 
   } catch (exception) {
-    const message = String(
-      exception.message || ''
-    );
-
-    return error(
-      message.includes('UNIQUE')
-        ? 'Ya existe un registro con esos datos.'
-        : 'No fue posible guardar el registro.'
+    return catalogError(
+      exception
     );
   }
 }
 
 
 /* =========================================================
-   4. ELIMINAR REGISTRO
+   4. ACTUALIZAR REGISTRO
+   ========================================================= */
+
+export async function onRequestPut({
+  env,
+  request
+}) {
+  const {
+    entity,
+    id,
+    data = {}
+  } = await request.json();
+
+  const recordId = Number(id);
+
+  if (!recordId) {
+    return error(
+      'Falta el identificador del registro.'
+    );
+  }
+
+  if (!TABLES[entity]) {
+    return error(
+      'Catálogo no reconocido.'
+    );
+  }
+
+  try {
+
+    /* -------------------------------------------------------
+       4.1. CLIENTES
+       ------------------------------------------------------- */
+
+    if (entity === 'clients') {
+      requireName(
+        data.name,
+        'El nombre del cliente es obligatorio.'
+      );
+
+      await env.DB
+        .prepare(`
+          UPDATE clients
+          SET
+            name = ?,
+            credit_days = ?,
+            notes = ?,
+            updated_at = CURRENT_TIMESTAMP
+          WHERE id = ?
+        `)
+        .bind(
+          data.name.trim(),
+          Number(data.credit_days || 0),
+          optionalText(data.notes),
+          recordId
+        )
+        .run();
+
+      return json({
+        ok: true,
+        id: recordId
+      });
+    }
+
+
+    /* -------------------------------------------------------
+       4.2. PROVEEDORES
+       ------------------------------------------------------- */
+
+    if (entity === 'suppliers') {
+      requireName(
+        data.name,
+        'El nombre del proveedor es obligatorio.'
+      );
+
+      await env.DB
+        .prepare(`
+          UPDATE suppliers
+          SET
+            name = ?,
+            contact = ?,
+            notes = ?,
+            updated_at = CURRENT_TIMESTAMP
+          WHERE id = ?
+        `)
+        .bind(
+          data.name.trim(),
+          optionalText(data.contact),
+          optionalText(data.notes),
+          recordId
+        )
+        .run();
+
+      return json({
+        ok: true,
+        id: recordId
+      });
+    }
+
+
+    /* -------------------------------------------------------
+       4.3. CATEGORÍAS DE GASTO
+       ------------------------------------------------------- */
+
+    if (entity === 'expense_categories') {
+      requireName(
+        data.name,
+        'El nombre de la categoría es obligatorio.'
+      );
+
+      await env.DB
+        .prepare(`
+          UPDATE expense_categories
+          SET
+            name = ?,
+            default_amount = ?,
+            default_currency = ?,
+            updated_at = CURRENT_TIMESTAMP
+          WHERE id = ?
+        `)
+        .bind(
+          data.name.trim(),
+          parseMoney(
+            data.default_amount
+          ),
+          validCurrency(
+            data.default_currency,
+            'MXN'
+          ),
+          recordId
+        )
+        .run();
+
+      return json({
+        ok: true,
+        id: recordId
+      });
+    }
+
+
+    /* -------------------------------------------------------
+       4.4. FORMAS DE PAGO
+       ------------------------------------------------------- */
+
+    if (entity === 'payment_methods') {
+      requireName(
+        data.name,
+        'El nombre de la forma de pago es obligatorio.'
+      );
+
+      await env.DB
+        .prepare(`
+          UPDATE payment_methods
+          SET
+            name = ?
+          WHERE id = ?
+        `)
+        .bind(
+          data.name.trim(),
+          recordId
+        )
+        .run();
+
+      return json({
+        ok: true,
+        id: recordId
+      });
+    }
+
+
+    /* -------------------------------------------------------
+       4.5. PRODUCTOS
+       ------------------------------------------------------- */
+
+    if (entity === 'products') {
+      requireName(
+        data.name,
+        'El nombre del producto es obligatorio.'
+      );
+
+      requireName(
+        data.short_code,
+        'El código del producto es obligatorio.'
+      );
+
+      if (
+        Number(data.is_default) === 1
+      ) {
+        await env.DB
+          .prepare(`
+            UPDATE products
+            SET
+              is_default = 0,
+              updated_at = CURRENT_TIMESTAMP
+            WHERE id <> ?
+          `)
+          .bind(
+            recordId
+          )
+          .run();
+      }
+
+      await env.DB
+        .prepare(`
+          UPDATE products
+          SET
+            name = ?,
+            short_code = ?,
+            default_density_per_ha = ?,
+            seed_cost_per_thousand = ?,
+            seed_currency = ?,
+            standard_box_lbs = ?,
+            default_price_per_box = ?,
+            price_currency = ?,
+            is_default = ?,
+            updated_at = CURRENT_TIMESTAMP
+          WHERE id = ?
+        `)
+        .bind(
+          data.name.trim(),
+          data.short_code
+            .trim()
+            .toUpperCase(),
+          Number(
+            data.default_density_per_ha || 0
+          ),
+          parseMoney(
+            data.seed_cost_per_thousand
+          ) || 0,
+          validCurrency(
+            data.seed_currency,
+            'USD'
+          ),
+          Number(
+            data.standard_box_lbs || 12
+          ),
+          parseMoney(
+            data.default_price_per_box
+          ) || 0,
+          validCurrency(
+            data.price_currency,
+            'USD'
+          ),
+          Number(
+            data.is_default || 0
+          ),
+          recordId
+        )
+        .run();
+
+      return json({
+        ok: true,
+        id: recordId
+      });
+    }
+
+    return error(
+      'Catálogo no reconocido.'
+    );
+
+  } catch (exception) {
+    return catalogError(
+      exception
+    );
+  }
+}
+
+
+/* =========================================================
+   5. ELIMINAR REGISTRO
    ========================================================= */
 
 export async function onRequestDelete({
@@ -339,13 +636,25 @@ export async function onRequestDelete({
   }
 
   try {
-    await env.DB
+    const result = await env.DB
       .prepare(`
         DELETE FROM ${table}
         WHERE id = ?
       `)
-      .bind(id)
+      .bind(
+        Number(id)
+      )
       .run();
+
+    if (
+      Number(
+        result.meta?.changes || 0
+      ) === 0
+    ) {
+      return error(
+        'No se encontró el registro.'
+      );
+    }
 
     return json({
       ok: true
@@ -360,7 +669,7 @@ export async function onRequestDelete({
 
 
 /* =========================================================
-   5. UTILIDADES MONETARIAS
+   6. UTILIDADES
    ========================================================= */
 
 function parseMoney(
@@ -374,7 +683,9 @@ function parseMoney(
     return null;
   }
 
-  const normalized = String(value)
+  const normalized = String(
+    value
+  )
     .replaceAll(',', '')
     .replace(/[^\d.-]/g, '');
 
@@ -398,3 +709,58 @@ function validCurrency(
       : fallback;
 }
 
+
+function optionalText(
+  value
+) {
+  const result = String(
+    value || ''
+  ).trim();
+
+  return result || null;
+}
+
+
+function requireName(
+  value,
+  message
+) {
+  if (
+    !String(
+      value || ''
+    ).trim()
+  ) {
+    throw new Error(
+      message
+    );
+  }
+}
+
+
+function catalogError(
+  exception
+) {
+  const message = String(
+    exception?.message || ''
+  );
+
+  if (
+    message.includes('UNIQUE')
+  ) {
+    return error(
+      'Ya existe un registro con esos datos.'
+    );
+  }
+
+  if (
+    message.includes('obligatorio')
+  ) {
+    return error(
+      message
+    );
+  }
+
+  return error(
+    'No fue posible guardar los cambios.'
+  );
+}
