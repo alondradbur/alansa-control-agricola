@@ -964,3 +964,67 @@ textarea.input {
   }
 
 }
+
+/* =========================================================
+   GASTOS
+   ========================================================= */
+
+.row-actions {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  white-space: nowrap;
+}
+
+.expense-mobile-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 12px;
+  margin-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.expense-calculation {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 14px;
+  padding: 13px 14px;
+  border-radius: 12px;
+  background: var(--alansa-50);
+}
+
+.expense-calculation span {
+  color: var(--muted);
+  font-size: .72rem;
+}
+
+.expense-calculation strong {
+  color: var(--text);
+  font-size: .9rem;
+}
+
+.form-grid-full {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 760px) {
+
+  .expense-mobile-actions .row-actions {
+    width: 100%;
+  }
+
+  .expense-mobile-actions .btn {
+    flex: 1;
+    min-height: 42px;
+  }
+
+  .expense-calculation {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+}
+
