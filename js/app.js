@@ -2,6 +2,7 @@ import { state, setUser, restoreUser } from './core/state.js';
 import { shell, bindLayout } from './components/layout.js';
 import { dashboard } from './modules/dashboard.js';
 import { catalogs, bindCatalogs } from './modules/catalogs.js';
+import { plantings, bindPlantings } from './modules/plantings.js';
 import { shipments, bindShipments } from './modules/shipments.js';
 import { placeholder } from './modules/placeholder.js';
 
@@ -61,13 +62,15 @@ async function navigate(route) {
 
   if (route === 'dashboard') content = await dashboard();
   else if (route === 'catalogs') content = await catalogs();
+  else if (route === 'plantings') content = await plantings();
   else if (route === 'shipments') content = await shipments();
   else content = await placeholder(route);
 
   app.innerHTML = shell(content);
   bindLayout(navigate);
 
-  if (route === 'catalogs') bindCatalogs();
+  if (route === 'catalogs') bindCatalogs(() => navigate('catalogs'));
+  if (route === 'plantings') bindPlantings(() => navigate('plantings'));
   if (route === 'shipments') bindShipments();
 
   window.scrollTo({ top: 0, behavior: 'instant' });
