@@ -256,17 +256,30 @@ export async function onRequestPut({
   }
 
   const hectares = Number(
-    data.hectares || 0
+  data.hectares || 0
+);
+
+const expectedYield = Number(
+  data.expected_yield_boxes_ha || 0
+);
+
+const density = Number(
+  data.density_per_ha || 0
+);
+
+if (
+  hectares <= 0 ||
+  expectedYield <= 0 ||
+  density <= 0
+) {
+  return error(
+    'Hectáreas, rendimiento esperado y densidad deben ser mayores a cero.'
   );
+}
 
-  const density = Number(
-    data.density_per_ha || 0
-  );
-
-  const seedCost = parseMoney(
-    data.seed_cost_per_thousand
-  ) || 0;
-
+const seedCost = parseMoney(
+  data.seed_cost_per_thousand
+) || 0;
   const estimatedSeedCost =
     (hectares * density / 1000) *
     seedCost;
@@ -282,7 +295,10 @@ export async function onRequestPut({
           client_id = ?,
           hectares = ?,
           density_per_ha = ?,
-          seed_cost_per_thousand = ?,
+          hectares = ?,
+expected_yield_boxes_ha = ?,
+density_per_ha = ?,
+seed_cost_per_thousand = ?,
           estimated_seed_cost = ?,
           actual_seed_cost = ?,
           seed_currency = ?,
