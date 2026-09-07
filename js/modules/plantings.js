@@ -1,12 +1,13 @@
 /* =========================================================
-   ALANSA - SISTEMA DE CONTROL AGRÍCOLA
+   SISTEMA DE CONTROL AGRÍCOLA
    MÓDULO: SIEMBRAS / CONTRATOS
 
-   Ajuste:
-   - Los importes aceptan separadores de miles.
-   - Todo importe solicita moneda MXN o USD.
-   - Los importes se muestran formateados.
-   - Incluye rendimiento esperado en cajas por hectárea.
+   Funciones:
+   - Crear siembras.
+   - Editar registros existentes.
+   - Guardar cambios en D1.
+   - Eliminar siembras sin movimientos relacionados.
+   - Mantener importes y monedas.
    ========================================================= */
 
 
@@ -59,6 +60,7 @@ export async function plantings() {
       products: [],
       clients: []
     };
+
   } catch {
     rows = [];
 
@@ -74,7 +76,7 @@ export async function plantings() {
         .join('')
     : `
         <tr>
-          <td colspan="9">
+          <td colspan="10">
             ${empty(
               'Todavía no hay siembras registradas.'
             )}
@@ -90,6 +92,7 @@ export async function plantings() {
         <button
           class="btn primary"
           id="newPlantingBtn"
+          type="button"
         >
           ＋ Nueva siembra
         </button>
@@ -121,6 +124,7 @@ export async function plantings() {
                 <th>Semilla estimada</th>
                 <th>Precio / caja</th>
                 <th>Estado</th>
+                <th>Acciones</th>
               </tr>
             </thead>
 
@@ -220,6 +224,33 @@ function createRow(
         </span>
       </td>
 
+      <td>
+        <div
+          style="
+            display:flex;
+            gap:7px;
+            align-items:center;
+            white-space:nowrap;
+          "
+        >
+          <button
+            class="btn soft edit-planting"
+            type="button"
+            data-id="${row.id}"
+          >
+            Editar
+          </button>
+
+          <button
+            class="btn danger delete-planting"
+            type="button"
+            data-id="${row.id}"
+          >
+            Eliminar
+          </button>
+        </div>
+      </td>
+
     </tr>
   `;
 }
@@ -232,6 +263,11 @@ function createRow(
 export function bindPlantings(
   rerender
 ) {
+
+  /* ---------------------------------------------------------
+     5.1. NUEVA SIEMBRA
+     --------------------------------------------------------- */
+
   document
     .querySelector(
       '#newPlantingBtn'
@@ -244,31 +280,146 @@ export function bindPlantings(
         );
       }
     );
+
+
+  /* ---------------------------------------------------------
+     5.2. EDITAR SIEMBRA
+     --------------------------------------------------------- */
+
+  document
+    .querySelectorAll(
+      '.edit-planting'
+    )
+    .forEach(button => {
+      button.addEventListener(
+        'click',
+        () => {
+          const id = Number(
+            button.dataset.id
+          );
+
+          const row = rows.find(
+            item => {
+              return Number(item.id) === id;
+            }
+          );
+
+          if (!row) {
+            toast(
+              'No se encontró la siembra.'
+            );
+
+            return;
+          }
+
+          openPlantingForm(
+            rerender,
+            row
+          );
+        }
+      );
+    });
+
+
+  /* ---------------------------------------------------------
+     5.3. ELIMINAR SIEMBRA
+     --------------------------------------------------------- */
+
+  document
+    .querySelectorAll(
+      '.delete-planting'
+    )
+    .forEach(button => {
+      button.addEventListener(
+        'click',
+        async () => {
+          const id = Number(
+            button.dataset.id
+          );
+
+          const row = rows.find(
+            item => {
+              return Number(item.id) === id;
+            }
+          );
+
+          const folio =
+            row?.contract_number ||
+            'esta siembra';
+
+          const confirmed = confirm(
+            `¿Eliminar la siembra "${folio}"?`
+          );
+
+          if (!confirmed) {
+            return;
+          }
+
+          try {
+            await api(
+              'plantings',
+              {
+                method: 'DELETE',
+                body: JSON.stringify({
+                  id
+                })
+              }
+            );
+
+            toast(
+              'Siembra eliminada correctamente.'
+            );
+
+            await rerender();
+
+          } catch (exception) {
+            toast(
+              exception.message
+            );
+          }
+        }
+      );
+    });
 }
 
 
 /* =========================================================
-   6. FORMULARIO DE NUEVA SIEMBRA
+   6. FORMULARIO NUEVO / EDITAR
    ========================================================= */
 
 function openPlantingForm(
-  rerender
+  rerender,
+  row = null
 ) {
-  const defaultProduct =
-    catalogs.products
-      ?.find(product => {
-        return Number(
-          product.is_default
-        ) === 1;
-      })
-    ||
-    catalogs.products?.[0]
-    ||
-    {};
-
-  const modalRoot = document.querySelector(
-    '#plantingModalRoot'
+  const editing = Boolean(
+    row?.id
   );
+
+  const defaultProduct =
+    editing
+      ? catalogs.products
+          ?.find(product => {
+            return Number(product.id) ===
+              Number(row.product_id);
+          })
+      : catalogs.products
+          ?.find(product => {
+            return Number(
+              product.is_default
+            ) === 1;
+          })
+        ||
+        catalogs.products?.[0]
+        ||
+        {};
+
+  const selectedProduct =
+    defaultProduct || {};
+
+  const modalRoot =
+    document.querySelector(
+      '#plantingModalRoot'
+    );
 
   if (!modalRoot) {
     return;
@@ -281,9 +432,25 @@ function openPlantingForm(
 
         <div class="modal-head">
 
-          <h2>
-            Nueva siembra
-          </h2>
+          <div>
+            <h2>
+              ${
+                editing
+                  ? 'Editar siembra'
+                  : 'Nueva siembra'
+              }
+            </h2>
+
+            ${
+              editing
+                ? `
+                  <p class="muted">
+                    Modifica los datos y guarda los cambios.
+                  </p>
+                `
+                : ''
+            }
+          </div>
 
           <button
             class="btn"
@@ -300,12 +467,18 @@ function openPlantingForm(
           id="plantingForm"
         >
 
+          <input
+            type="hidden"
+            name="id"
+            value="${row?.id || ''}"
+          >
+
           <div class="form-grid">
 
             ${inputField(
               'contract_number',
               'Contrato / folio',
-              '',
+              row?.contract_number || '',
               'text',
               'required'
             )}
@@ -325,7 +498,9 @@ function openPlantingForm(
                   Seleccionar cliente
                 </option>
 
-                ${clientOptions()}
+                ${clientOptions(
+                  row?.client_id
+                )}
               </select>
 
             </div>
@@ -343,7 +518,8 @@ function openPlantingForm(
                 required
               >
                 ${productOptions(
-                  defaultProduct.id
+                  row?.product_id ||
+                  selectedProduct.id
                 )}
               </select>
 
@@ -352,7 +528,7 @@ function openPlantingForm(
             ${inputField(
               'hectares',
               'Hectáreas',
-              '',
+              row?.hectares ?? '',
               'number',
               'required min="0.01" step="0.01"'
             )}
@@ -360,7 +536,7 @@ function openPlantingForm(
             ${inputField(
               'expected_yield_boxes_ha',
               'Rendimiento esperado (cajas/ha)',
-              '',
+              row?.expected_yield_boxes_ha ?? '',
               'number',
               'required min="1" step="1"'
             )}
@@ -368,7 +544,9 @@ function openPlantingForm(
             ${inputField(
               'density_per_ha',
               'Semillas por hectárea',
-              defaultProduct.default_density_per_ha || 100000,
+              row?.density_per_ha ??
+                selectedProduct.default_density_per_ha ??
+                100000,
               'number',
               'required min="1" step="1"'
             )}
@@ -377,25 +555,35 @@ function openPlantingForm(
               'seed_cost_per_thousand',
               'Costo de semilla por millar',
               formatMoneyText(
-                defaultProduct.seed_cost_per_thousand || 400
+                row?.seed_cost_per_thousand ??
+                selectedProduct.seed_cost_per_thousand ??
+                400
               )
             )}
 
             ${currencyField(
               'seed_currency',
               'Moneda del costo de semilla',
-              defaultProduct.seed_currency || 'USD'
+              row?.seed_currency ||
+                selectedProduct.seed_currency ||
+                'USD'
             )}
 
             ${moneyField(
               'actual_seed_cost',
-              'Costo real de semilla'
+              'Costo real de semilla',
+              row?.actual_seed_cost === null ||
+              row?.actual_seed_cost === undefined
+                ? ''
+                : formatMoneyText(
+                    row.actual_seed_cost
+                  )
             )}
 
             ${inputField(
               'harvest_start',
               'Inicio de cosecha',
-              '',
+              row?.harvest_start || '',
               'date',
               'required'
             )}
@@ -403,7 +591,7 @@ function openPlantingForm(
             ${inputField(
               'harvest_end',
               'Fin de cosecha',
-              '',
+              row?.harvest_end || '',
               'date',
               'required'
             )}
@@ -412,20 +600,26 @@ function openPlantingForm(
               'price_per_box',
               'Precio por caja',
               formatMoneyText(
-                defaultProduct.default_price_per_box || 14
+                row?.price_per_box ??
+                selectedProduct.default_price_per_box ??
+                14
               )
             )}
 
             ${currencyField(
               'price_currency',
               'Moneda del precio por caja',
-              defaultProduct.price_currency || 'USD'
+              row?.price_currency ||
+                selectedProduct.price_currency ||
+                'USD'
             )}
 
             ${inputField(
               'standard_box_lbs',
               'Peso estándar por caja (lb)',
-              defaultProduct.standard_box_lbs || 12,
+              row?.standard_box_lbs ??
+                selectedProduct.standard_box_lbs ??
+                12,
               'number',
               'min="0" step="0.01"'
             )}
@@ -433,16 +627,55 @@ function openPlantingForm(
             ${inputField(
               'trailers_per_week',
               'Meta de tráileres por semana',
-              1,
+              row?.trailers_per_week ?? 1,
               'number',
               'min="0" step="0.01"'
             )}
 
-            <input
-              type="hidden"
-              name="status"
-              value="Activa"
-            >
+            <div class="field">
+
+              <label>
+                Estado
+              </label>
+
+              <select
+                class="input"
+                name="status"
+                required
+              >
+                ${statusOption(
+                  'Activa',
+                  row?.status || 'Activa'
+                )}
+
+                ${statusOption(
+                  'Finalizada',
+                  row?.status || 'Activa'
+                )}
+
+                ${statusOption(
+                  'Cancelada',
+                  row?.status || 'Activa'
+                )}
+              </select>
+
+            </div>
+
+            <div class="field span-2">
+
+              <label>
+                Notas
+              </label>
+
+              <textarea
+                class="input"
+                name="notes"
+                rows="3"
+              >${escapeHtml(
+                row?.notes || ''
+              )}</textarea>
+
+            </div>
 
           </div>
 
@@ -452,7 +685,11 @@ function openPlantingForm(
               class="btn primary"
               type="submit"
             >
-              Guardar siembra
+              ${
+                editing
+                  ? 'Guardar cambios'
+                  : 'Guardar siembra'
+              }
             </button>
 
           </div>
@@ -469,10 +706,11 @@ function openPlantingForm(
   );
 
   bindProductDefaults(
-    modalRoot
+    modalRoot,
+    editing
   );
 
-  document
+  modalRoot
     .querySelector(
       '#closePlantingModal'
     )
@@ -483,7 +721,7 @@ function openPlantingForm(
       }
     );
 
-  document
+  modalRoot
     .querySelector(
       '#plantingForm'
     )
@@ -502,19 +740,32 @@ function openPlantingForm(
           return;
         }
 
-        const formData = new FormData(
-          event.currentTarget
-        );
+        const formData =
+          new FormData(
+            event.currentTarget
+          );
 
-        const payload = Object.fromEntries(
-          formData.entries()
-        );
+        const payload =
+          Object.fromEntries(
+            formData.entries()
+          );
+
+        if (editing) {
+          payload.id =
+            Number(row.id);
+        } else {
+          delete payload.id;
+        }
 
         try {
           await api(
             'plantings',
             {
-              method: 'POST',
+              method:
+                editing
+                  ? 'PUT'
+                  : 'POST',
+
               body: JSON.stringify(
                 payload
               )
@@ -524,10 +775,13 @@ function openPlantingForm(
           modalRoot.innerHTML = '';
 
           toast(
-            'Siembra guardada correctamente.'
+            editing
+              ? 'Siembra actualizada correctamente.'
+              : 'Siembra guardada correctamente.'
           );
 
           await rerender();
+
         } catch (exception) {
           toast(
             exception.message
@@ -539,14 +793,23 @@ function openPlantingForm(
 
 
 /* =========================================================
-   7. OPCIONES DE CLIENTES Y PRODUCTOS
+   7. OPCIONES DE CLIENTES, PRODUCTOS Y ESTADO
    ========================================================= */
 
-function clientOptions() {
+function clientOptions(
+  selectedId
+) {
   return catalogs.clients
     .map(client => {
+      const selected =
+        Number(client.id) ===
+        Number(selectedId);
+
       return `
-        <option value="${client.id}">
+        <option
+          value="${client.id}"
+          ${selected ? 'selected' : ''}
+        >
           ${escapeHtml(
             client.name
           )}
@@ -578,6 +841,21 @@ function productOptions(
       `;
     })
     .join('');
+}
+
+
+function statusOption(
+  value,
+  selectedValue
+) {
+  return `
+    <option
+      value="${value}"
+      ${value === selectedValue ? 'selected' : ''}
+    >
+      ${value}
+    </option>
+  `;
 }
 
 
@@ -687,21 +965,26 @@ function currencyField(
    ========================================================= */
 
 function bindProductDefaults(
-  root
+  root,
+  editing = false
 ) {
-  const productSelect = root.querySelector(
-    '#plantingProduct'
-  );
+  const productSelect =
+    root.querySelector(
+      '#plantingProduct'
+    );
 
   productSelect
     ?.addEventListener(
       'change',
       () => {
-        const product = catalogs.products
-          .find(item => {
-            return Number(item.id) ===
-              Number(productSelect.value);
-          });
+        const product =
+          catalogs.products
+            .find(item => {
+              return Number(item.id) ===
+                Number(
+                  productSelect.value
+                );
+            });
 
         if (!product) {
           return;
@@ -748,6 +1031,12 @@ function bindProductDefaults(
         );
       }
     );
+
+  // Al abrir edición NO dispara cambios automáticos,
+  // para conservar los valores históricos de la siembra.
+  if (editing) {
+    return;
+  }
 }
 
 
@@ -781,18 +1070,20 @@ function bindMoneyInputs(
       input.addEventListener(
         'focus',
         () => {
-          input.value = normalizeMoneyText(
-            input.value
-          );
+          input.value =
+            normalizeMoneyText(
+              input.value
+            );
         }
       );
 
       input.addEventListener(
         'blur',
         () => {
-          input.value = formatMoneyText(
-            input.value
-          );
+          input.value =
+            formatMoneyText(
+              input.value
+            );
         }
       );
     });
@@ -811,9 +1102,10 @@ function normalizeMoneyText(
 function formatMoneyText(
   value
 ) {
-  const normalized = normalizeMoneyText(
-    value
-  );
+  const normalized =
+    normalizeMoneyText(
+      value
+    );
 
   if (!normalized) {
     return '';
