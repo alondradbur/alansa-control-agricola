@@ -1,24 +1,59 @@
 import { state, logout } from '../core/state.js';
 
+
 /* =========================================================
    1. ICONOS DEL MENÚ
    ========================================================= */
 
 const icons = {
+
   dashboard: `
     <svg viewBox="0 0 24 24" aria-hidden="true">
-      <rect x="3" y="3" width="7" height="7" rx="2"></rect>
-      <rect x="14" y="3" width="7" height="7" rx="2"></rect>
-      <rect x="3" y="14" width="7" height="7" rx="2"></rect>
-      <rect x="14" y="14" width="7" height="7" rx="2"></rect>
+      <rect
+        x="3"
+        y="3"
+        width="7"
+        height="7"
+        rx="2"
+      ></rect>
+
+      <rect
+        x="14"
+        y="3"
+        width="7"
+        height="7"
+        rx="2"
+      ></rect>
+
+      <rect
+        x="3"
+        y="14"
+        width="7"
+        height="7"
+        rx="2"
+      ></rect>
+
+      <rect
+        x="14"
+        y="14"
+        width="7"
+        height="7"
+        rx="2"
+      ></rect>
     </svg>
   `,
 
   plantings: `
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <path d="M12 21V10"></path>
-      <path d="M12 13C8 13 5 10 5 6c4 0 7 3 7 7Z"></path>
-      <path d="M12 10c0-4 3-7 7-7 0 4-3 7-7 7Z"></path>
+
+      <path
+        d="M12 13C8 13 5 10 5 6c4 0 7 3 7 7Z"
+      ></path>
+
+      <path
+        d="M12 10c0-4 3-7 7-7 0 4-3 7-7 7Z"
+      ></path>
     </svg>
   `,
 
@@ -33,8 +68,14 @@ const icons = {
 
   inventory: `
     <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M4 7.5 12 3l8 4.5v9L12 21l-8-4.5Z"></path>
-      <path d="M4 7.5 12 12l8-4.5"></path>
+      <path
+        d="M4 7.5 12 3l8 4.5v9L12 21l-8-4.5Z"
+      ></path>
+
+      <path
+        d="M4 7.5 12 12l8-4.5"
+      ></path>
+
       <path d="M12 12v9"></path>
     </svg>
   `,
@@ -42,16 +83,45 @@ const icons = {
   shipments: `
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <path d="M3 7h11v10H3Z"></path>
-      <path d="M14 10h4l3 3v4h-7Z"></path>
-      <circle cx="7" cy="18" r="2"></circle>
-      <circle cx="18" cy="18" r="2"></circle>
+
+      <path
+        d="M14 10h4l3 3v4h-7Z"
+      ></path>
+
+      <circle
+        cx="7"
+        cy="18"
+        r="2"
+      ></circle>
+
+      <circle
+        cx="18"
+        cy="18"
+        r="2"
+      ></circle>
     </svg>
   `,
 
   collections: `
     <svg viewBox="0 0 24 24" aria-hidden="true">
-      <circle cx="12" cy="12" r="9"></circle>
-      <path d="M15 8.5c-.7-.6-1.7-1-3-1-1.8 0-3 .9-3 2.2 0 1.5 1.3 2 3.2 2.4 1.8.3 2.8.8 2.8 2.2 0 1.3-1.2 2.2-3 2.2-1.4 0-2.6-.4-3.5-1.2"></path>
+      <circle
+        cx="12"
+        cy="12"
+        r="9"
+      ></circle>
+
+      <path
+        d="
+          M15 8.5
+          c-.7-.6-1.7-1-3-1
+          -1.8 0-3 .9-3 2.2
+          0 1.5 1.3 2 3.2 2.4
+          1.8.3 2.8.8 2.8 2.2
+          0 1.3-1.2 2.2-3 2.2
+          -1.4 0-2.6-.4-3.5-1.2
+        "
+      ></path>
+
       <path d="M12 5.5v13"></path>
     </svg>
   `,
@@ -59,7 +129,11 @@ const icons = {
   expenses: `
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <path d="M12 3v14"></path>
-      <path d="m7 12 5 5 5-5"></path>
+
+      <path
+        d="m7 12 5 5 5-5"
+      ></path>
+
       <path d="M5 21h14"></path>
     </svg>
   `,
@@ -85,17 +159,71 @@ const icons = {
 
   catalogs: `
     <svg viewBox="0 0 24 24" aria-hidden="true">
-      <rect x="4" y="4" width="6" height="6" rx="1.5"></rect>
-      <rect x="14" y="4" width="6" height="6" rx="1.5"></rect>
-      <rect x="4" y="14" width="6" height="6" rx="1.5"></rect>
-      <rect x="14" y="14" width="6" height="6" rx="1.5"></rect>
+      <rect
+        x="4"
+        y="4"
+        width="6"
+        height="6"
+        rx="1.5"
+      ></rect>
+
+      <rect
+        x="14"
+        y="4"
+        width="6"
+        height="6"
+        rx="1.5"
+      ></rect>
+
+      <rect
+        x="4"
+        y="14"
+        width="6"
+        height="6"
+        rx="1.5"
+      ></rect>
+
+      <rect
+        x="14"
+        y="14"
+        width="6"
+        height="6"
+        rx="1.5"
+      ></rect>
     </svg>
   `,
 
   settings: `
     <svg viewBox="0 0 24 24" aria-hidden="true">
-      <circle cx="12" cy="12" r="3"></circle>
-      <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4v-.2a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.6v-.2h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1Z"></path>
+      <circle
+        cx="12"
+        cy="12"
+        r="3"
+      ></circle>
+
+      <path
+        d="
+          M19.4 15
+          a1.7 1.7 0 0 0 .3 1.9
+          l.1.1-2.8 2.8-.1-.1
+          a1.7 1.7 0 0 0-1.9-.3
+          1.7 1.7 0 0 0-1 1.6v.2h-4V21
+          a1.7 1.7 0 0 0-1-1.6
+          1.7 1.7 0 0 0-1.9.3l-.1.1
+          L4.2 17l.1-.1
+          a1.7 1.7 0 0 0 .3-1.9
+          A1.7 1.7 0 0 0 3 14h-.2v-4H3
+          a1.7 1.7 0 0 0 1.6-1
+          1.7 1.7 0 0 0-.3-1.9L4.2 7
+          7 4.2l.1.1A1.7 1.7 0 0 0 9 4.6
+          1.7 1.7 0 0 0 10 3v-.2h4V3
+          a1.7 1.7 0 0 0 1 1.6
+          1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7
+          l-.1.1a1.7 1.7 0 0 0-.3 1.9
+          1.7 1.7 0 0 0 1.6 1h.2v4H21
+          a1.7 1.7 0 0 0-1.6 1Z
+        "
+      ></path>
     </svg>
   `
 };
@@ -125,6 +253,7 @@ const items = [
    ========================================================= */
 
 export function shell(content) {
+
   const nav = items.map(([id, label]) => `
     <button
       data-route="${id}"
@@ -155,8 +284,13 @@ export function shell(content) {
           >
 
           <div class="sidebar-brand-text">
-            <strong>Sistema de Control</strong>
-            <span>Agrícola</span>
+            <strong>
+              Sistema de Control
+            </strong>
+
+            <span>
+              Agrícola
+            </span>
           </div>
 
         </div>
@@ -168,6 +302,7 @@ export function shell(content) {
         <div class="sidebar-foot">
 
           <div class="sidebar-user">
+
             <div class="sidebar-user-avatar">
               ${state.user?.display_name || '—'}
             </div>
@@ -181,6 +316,7 @@ export function shell(content) {
                 ${state.user?.role || '—'}
               </span>
             </div>
+
           </div>
 
           <button
@@ -188,13 +324,18 @@ export function shell(content) {
             id="logoutBtn"
             type="button"
           >
-            <svg viewBox="0 0 24 24" aria-hidden="true">
+            <svg
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
               <path d="M10 4H5v16h5"></path>
               <path d="M14 8l4 4-4 4"></path>
               <path d="M18 12H9"></path>
             </svg>
 
-            <span>Salir</span>
+            <span>
+              Salir
+            </span>
           </button>
 
         </div>
@@ -253,18 +394,31 @@ export function shell(content) {
    ========================================================= */
 
 export function bindLayout(navigate) {
-  document.querySelectorAll('[data-route]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      navigate(btn.dataset.route);
+
+  document
+    .querySelectorAll('[data-route]')
+    .forEach(btn => {
+
+      btn.addEventListener('click', () => {
+        navigate(btn.dataset.route);
+      });
+
     });
-  });
 
-  document.querySelector('#logoutBtn')?.addEventListener('click', () => {
-    logout();
-    location.reload();
-  });
+  document
+    .querySelector('#logoutBtn')
+    ?.addEventListener('click', () => {
 
-  document.querySelector('#quickAdd')?.addEventListener('click', () => {
-    navigate('shipments');
-  });
+      logout();
+      location.reload();
+
+    });
+
+  document
+    .querySelector('#quickAdd')
+    ?.addEventListener('click', () => {
+
+      navigate('shipments');
+
+    });
 }
