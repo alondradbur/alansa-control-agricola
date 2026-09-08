@@ -1606,3 +1606,368 @@ textarea.input {
   color: #6b7280;
   font-style: italic;
 }
+
+/* =========================================================
+   ALANSA - DASHBOARD V2
+   Agregar al final de css/components.css
+   ========================================================= */
+
+.dashboard-v2-content {
+  display: grid;
+  gap: 18px;
+}
+
+.dashboard-v2-filters {
+  padding: 18px;
+}
+
+.dashboard-v2-filter-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  align-items: end;
+}
+
+.dashboard-v2-filter-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  margin-top: 14px;
+}
+
+.dashboard-v2-filter-note {
+  color: var(--muted);
+  font-size: .82rem;
+  line-height: 1.4;
+}
+
+.dashboard-v2-section {
+  padding: 0;
+  overflow: hidden;
+}
+
+.dashboard-v2-section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 18px;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.dashboard-v2-section-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.dashboard-v2-section-title h2 {
+  margin: 0 0 3px;
+  font-size: 1.05rem;
+}
+
+.dashboard-v2-section-title p {
+  margin: 0;
+  color: var(--muted);
+  font-size: .82rem;
+}
+
+.dashboard-v2-number {
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: #fff;
+  font-weight: 800;
+}
+
+.dashboard-v2-number-green {
+  background: #1d9b58;
+}
+
+.dashboard-v2-number-blue {
+  background: #287fd1;
+}
+
+.dashboard-v2-number-dark {
+  background: #2f3c4c;
+}
+
+.dashboard-v2-number-red {
+  background: #d93a46;
+}
+
+.dashboard-v2-meta {
+  color: var(--muted);
+  font-size: .82rem;
+  text-align: right;
+}
+
+.dashboard-v2-projection {
+  background:
+    linear-gradient(
+      180deg,
+      rgba(233, 248, 238, .8),
+      #fff 55%
+    );
+}
+
+.dashboard-v2-real {
+  background:
+    linear-gradient(
+      180deg,
+      rgba(235, 246, 255, .85),
+      #fff 70%
+    );
+}
+
+.dashboard-v2-due {
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 244, 244, .7),
+      #fff 60%
+    );
+}
+
+.dashboard-v2-table-wrap,
+.dashboard-v2-table-scroll {
+  overflow: auto;
+}
+
+.dashboard-v2-table-scroll {
+  max-height: 390px;
+}
+
+.dashboard-v2-due-scroll {
+  max-height: 330px;
+}
+
+.dashboard-v2-table {
+  width: 100%;
+  min-width: 760px;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.dashboard-v2-table th,
+.dashboard-v2-table td {
+  padding: 11px 13px;
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  text-align: right;
+  vertical-align: middle;
+  background: rgba(255,255,255,.94);
+}
+
+.dashboard-v2-table th:first-child,
+.dashboard-v2-table td:first-child,
+.dashboard-v2-table th:nth-child(2),
+.dashboard-v2-table td:nth-child(2),
+.dashboard-v2-table th:nth-child(3),
+.dashboard-v2-table td:nth-child(3) {
+  text-align: left;
+}
+
+.dashboard-v2-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  background: #eef3f6;
+  color: #213347;
+  font-size: .78rem;
+  font-weight: 800;
+}
+
+.projection-dashboard-table thead tr:first-child th {
+  background: #dff2e5;
+}
+
+.projection-dashboard-table thead tr:nth-child(2) th {
+  top: 41px;
+  background: #edf8f0;
+}
+
+.projection-dashboard-table td:first-child {
+  width: 30%;
+}
+
+.dashboard-v2-profit-row td {
+  background: #f0faf3;
+  color: #157640;
+}
+
+.dashboard-v2-table tfoot td {
+  position: sticky;
+  bottom: 0;
+  z-index: 3;
+  background: #edf5fb;
+}
+
+.dashboard-v2-kpis {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+  padding: 18px 20px 20px;
+}
+
+.dashboard-v2-kpi {
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #fff;
+}
+
+.dashboard-v2-kpi > span {
+  display: block;
+  margin-bottom: 8px;
+  font-size: .78rem;
+  font-weight: 800;
+}
+
+.dashboard-v2-kpi strong {
+  display: block;
+  font-size: 1.02rem;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.dashboard-v2-kpi small {
+  display: block;
+  margin-top: 6px;
+  font-size: .78rem;
+}
+
+.dashboard-v2-kpi-success {
+  background: #f0fbf4;
+  border-color: #cbead6;
+}
+
+.dashboard-v2-kpi-primary {
+  background: #f0f7ff;
+  border-color: #c9dff5;
+}
+
+.dashboard-v2-kpi-warning {
+  background: #fff9eb;
+  border-color: #f0dda7;
+}
+
+.dashboard-v2-kpi-danger {
+  background: #fff2f3;
+  border-color: #efc8cd;
+}
+
+.dashboard-v2-kpi-profit {
+  background: #f5f2ff;
+  border-color: #d9cff7;
+}
+
+.dashboard-v2-local-filters {
+  display: grid;
+  grid-template-columns: 180px 220px minmax(220px, 1fr);
+  gap: 12px;
+  align-items: end;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.dashboard-v2-due-filters {
+  grid-template-columns: 200px 240px;
+  justify-content: end;
+}
+
+.dashboard-v2-empty {
+  margin: 18px 20px 20px;
+  padding: 22px;
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  color: var(--muted);
+  text-align: center;
+  background: rgba(255,255,255,.7);
+}
+
+.dashboard-v2-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 82px;
+  padding: 5px 9px;
+  border-radius: 999px;
+  font-size: .72rem;
+  font-weight: 800;
+}
+
+.dashboard-v2-status.paid {
+  color: #14723d;
+  background: #dff5e7;
+}
+
+.dashboard-v2-status.partial {
+  color: #1f5f9c;
+  background: #e1effd;
+}
+
+.dashboard-v2-status.pending {
+  color: #9a6700;
+  background: #fff0c7;
+}
+
+.dashboard-v2-days {
+  display: inline-grid;
+  min-width: 38px;
+  place-items: center;
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: #e8f1f8;
+  font-size: .74rem;
+  font-weight: 800;
+}
+
+.dashboard-v2-days.soon {
+  color: #8b6100;
+  background: #ffedb4;
+}
+
+.dashboard-v2-days.urgent {
+  color: #b4232d;
+  background: #ffd9dd;
+}
+
+@media (max-width: 1180px) {
+  .dashboard-v2-filter-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dashboard-v2-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .dashboard-v2-filter-grid,
+  .dashboard-v2-kpis,
+  .dashboard-v2-local-filters,
+  .dashboard-v2-due-filters {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-v2-filter-actions,
+  .dashboard-v2-section-head {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .dashboard-v2-meta {
+    text-align: left;
+  }
+
+  .dashboard-v2-table-scroll {
+    max-height: 360px;
+  }
+}
