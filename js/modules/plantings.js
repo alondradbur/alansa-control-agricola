@@ -483,12 +483,15 @@ function openPlantingForm(
           </div>
 
           <button
-            class="btn"
+            class="btn planting-modal-close"
             id="closePlantingModal"
             type="button"
+            aria-label="Cerrar"
+            title="Cerrar"
           >
-            Cerrar
+            ×
           </button>
+
 
         </div>
 
