@@ -270,6 +270,18 @@ export async function onRequestPost({
     );
   }
 
+  const exchangeValidation =
+    validateProjectionExchangeRate(
+      values,
+      estimatedCosts.values
+    );
+
+  if (exchangeValidation) {
+    return error(
+      exchangeValidation
+    );
+  }
+
   try {
     const result = await env.DB
       .prepare(`
@@ -290,12 +302,13 @@ export async function onRequestPost({
           standard_box_lbs,
           trailers_per_week,
           status,
+          projection_exchange_rate,
           notes
         )
 
         VALUES (
           ?, ?, ?, ?, ?, ?, ?, ?, ?,
-          ?, ?, ?, ?, ?, ?, ?, ?
+          ?, ?, ?, ?, ?, ?, ?, ?, ?
         )
       `)
       .bind(
@@ -315,6 +328,7 @@ export async function onRequestPost({
         values.standardBoxLbs,
         values.trailersPerWeek,
         values.status,
+        values.projectionExchangeRate,
         values.notes
       )
       .run();
@@ -396,6 +410,18 @@ export async function onRequestPut({
     );
   }
 
+  const exchangeValidation =
+    validateProjectionExchangeRate(
+      values,
+      estimatedCosts.values
+    );
+
+  if (exchangeValidation) {
+    return error(
+      exchangeValidation
+    );
+  }
+
   try {
     const result = await env.DB
       .prepare(`
@@ -418,6 +444,7 @@ export async function onRequestPut({
           standard_box_lbs = ?,
           trailers_per_week = ?,
           status = ?,
+          projection_exchange_rate = ?,
           notes = ?,
           updated_at = CURRENT_TIMESTAMP
 
@@ -440,6 +467,7 @@ export async function onRequestPut({
         values.standardBoxLbs,
         values.trailersPerWeek,
         values.status,
+        values.projectionExchangeRate,
         values.notes,
         id
       )
@@ -626,6 +654,11 @@ function validatePlanting(
       data.status
     );
 
+  const projectionExchangeRate =
+    parseMoney(
+      data.projection_exchange_rate
+    );
+
   const notes =
     optionalText(
       data.notes
@@ -689,6 +722,16 @@ function validatePlanting(
     return {
       error:
         'Los importes no pueden ser negativos.'
+    };
+  }
+
+  if (
+    projectionExchangeRate !== null &&
+    projectionExchangeRate <= 0
+  ) {
+    return {
+      error:
+        'El tipo de cambio debe ser mayor a cero.'
     };
   }
 
@@ -761,6 +804,7 @@ function validatePlanting(
       standardBoxLbs,
       trailersPerWeek,
       status,
+      projectionExchangeRate,
       notes
     }
   };
@@ -1136,7 +1180,48 @@ async function replaceProjectedCosts(
 
 
 /* =========================================================
-   10. RESUMEN DE PROYECCIÓN
+   10. VALIDAR TIPO DE CAMBIO DE LA PROYECCIÓN
+   ========================================================= */
+
+function validateProjectionExchangeRate(
+  planting,
+  costs
+) {
+  const hasMxnCosts =
+    costs.some(cost => {
+      return (
+        cost.currency === 'MXN' &&
+        Number(cost.amount || 0) > 0
+      );
+    });
+
+  const revenueInMxn =
+    planting.priceCurrency === 'MXN' &&
+    (
+      planting.expectedYield *
+      planting.hectares *
+      planting.pricePerBox
+    ) > 0;
+
+  if (
+    (hasMxnCosts || revenueInMxn) &&
+    (
+      !planting.projectionExchangeRate ||
+      planting.projectionExchangeRate <= 0
+    )
+  ) {
+    return (
+      'Captura el tipo de cambio MXN por USD ' +
+      'para consolidar la proyección.'
+    );
+  }
+
+  return null;
+}
+
+
+/* =========================================================
+   11. RESUMEN DE PROYECCIÓN
    ========================================================= */
 
 function buildProjectionSummary(
@@ -1159,6 +1244,11 @@ function buildProjectionSummary(
     projectedBoxes *
     planting.pricePerBox;
 
+  const exchangeRate =
+    Number(
+      planting.projectionExchangeRate || 0
+    );
+
   const costTotals =
     costs.reduce(
       (accumulator, cost) => {
@@ -1180,6 +1270,64 @@ function buildProjectionSummary(
         USD: 0
       }
     );
+
+  const mxnCostsInUsd =
+    exchangeRate > 0
+      ? costTotals.MXN /
+        exchangeRate
+      : 0;
+
+  const consolidatedCostsUsd =
+    costTotals.USD +
+    mxnCostsInUsd;
+
+  const revenueUsd =
+    planting.priceCurrency === 'MXN'
+      ? (
+          exchangeRate > 0
+            ? projectedRevenue /
+              exchangeRate
+            : 0
+        )
+      : projectedRevenue;
+
+  const projectedProfitUsd =
+    revenueUsd -
+    consolidatedCostsUsd;
+
+  const revenueMxn =
+    exchangeRate > 0
+      ? revenueUsd *
+        exchangeRate
+      : (
+          planting.priceCurrency === 'MXN'
+            ? projectedRevenue
+            : 0
+        );
+
+  const consolidatedCostsMxn =
+    exchangeRate > 0
+      ? consolidatedCostsUsd *
+        exchangeRate
+      : costTotals.MXN;
+
+  const projectedProfitMxn =
+    revenueMxn -
+    consolidatedCostsMxn;
+
+  const costPerBoxUsd =
+    projectedBoxes > 0
+      ? consolidatedCostsUsd /
+        projectedBoxes
+      : 0;
+
+  const marginPercent =
+    revenueUsd > 0
+      ? (
+          projectedProfitUsd /
+          revenueUsd
+        ) * 100
+      : 0;
 
   return {
     hectares:
@@ -1216,7 +1364,10 @@ function buildProjectionSummary(
     revenue_currency:
       planting.priceCurrency,
 
-    projected_costs:
+    projection_exchange_rate:
+      exchangeRate || null,
+
+    projected_costs_original:
       {
         MXN:
           roundMoney(
@@ -1229,30 +1380,104 @@ function buildProjectionSummary(
           )
       },
 
-    projected_costs_per_ha:
-      {
-        MXN:
-          planting.hectares > 0
-            ? roundMoney(
-                costTotals.MXN /
-                planting.hectares
-              )
-            : 0,
+    mxn_costs_in_usd:
+      roundMoney(
+        mxnCostsInUsd
+      ),
 
-        USD:
-          planting.hectares > 0
-            ? roundMoney(
-                costTotals.USD /
-                planting.hectares
-              )
-            : 0
-      }
+    consolidated_costs_usd:
+      roundMoney(
+        consolidatedCostsUsd
+      ),
+
+    consolidated_costs_usd_per_ha:
+      planting.hectares > 0
+        ? roundMoney(
+            consolidatedCostsUsd /
+            planting.hectares
+          )
+        : 0,
+
+    revenue_usd:
+      roundMoney(
+        revenueUsd
+      ),
+
+    revenue_usd_per_ha:
+      planting.hectares > 0
+        ? roundMoney(
+            revenueUsd /
+            planting.hectares
+          )
+        : 0,
+
+    revenue_mxn:
+      roundMoney(
+        revenueMxn
+      ),
+
+    revenue_mxn_per_ha:
+      planting.hectares > 0
+        ? roundMoney(
+            revenueMxn /
+            planting.hectares
+          )
+        : 0,
+
+    consolidated_costs_mxn:
+      roundMoney(
+        consolidatedCostsMxn
+      ),
+
+    consolidated_costs_mxn_per_ha:
+      planting.hectares > 0
+        ? roundMoney(
+            consolidatedCostsMxn /
+            planting.hectares
+          )
+        : 0,
+
+    projected_profit_usd:
+      roundMoney(
+        projectedProfitUsd
+      ),
+
+    projected_profit_mxn:
+      roundMoney(
+        projectedProfitMxn
+      ),
+
+    projected_profit_mxn_per_ha:
+      planting.hectares > 0
+        ? roundMoney(
+            projectedProfitMxn /
+            planting.hectares
+          )
+        : 0,
+
+    projected_profit_usd_per_ha:
+      planting.hectares > 0
+        ? roundMoney(
+            projectedProfitUsd /
+            planting.hectares
+          )
+        : 0,
+
+    projected_cost_per_box_usd:
+      roundMoney(
+        costPerBoxUsd
+      ),
+
+    projected_margin_percent:
+      roundMoney(
+        marginPercent
+      )
   };
 }
 
 
 /* =========================================================
-   11. PROTEGER REGISTROS CON MOVIMIENTOS
+   12. PROTEGER REGISTROS CON MOVIMIENTOS
    ========================================================= */
 
 async function hasRelatedMovements(
@@ -1288,7 +1513,7 @@ async function hasRelatedMovements(
 
 
 /* =========================================================
-   12. UTILIDADES
+   13. UTILIDADES
    ========================================================= */
 
 function parseMoney(
