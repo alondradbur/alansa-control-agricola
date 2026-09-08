@@ -1116,3 +1116,434 @@ textarea.input {
     grid-template-columns: 1fr;
   }
 }
+
+/* =========================================================
+   SIEMBRAS - REDISEÑO VISUAL DEL CUESTIONARIO
+   Pegar AL FINAL de: css/components.css
+   ========================================================= */
+
+/* Modal más amplio y limpio */
+.planting-modal {
+  width: min(1180px, 96vw);
+  max-height: 94vh;
+  border-radius: 18px;
+  overflow: auto;
+  background: #f8fbf9;
+}
+
+.planting-modal .modal-head {
+  padding: 18px 22px;
+  background: #ffffff;
+  border-bottom: 1px solid #dfe9e2;
+}
+
+.planting-modal .modal-head h2 {
+  color: var(--alansa-950);
+  font-size: 1.22rem;
+  font-weight: 800;
+}
+
+.planting-modal .modal-head .muted {
+  margin-top: 4px;
+  font-size: .78rem;
+}
+
+.planting-form {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+}
+
+
+/* =========================================================
+   SECCIONES
+   ========================================================= */
+
+.planting-form-section {
+  overflow: hidden;
+  border: 1px solid #dbe7df;
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(20, 62, 32, .035);
+}
+
+.planting-section-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 58px;
+  padding: 10px 14px;
+  background: linear-gradient(
+    90deg,
+    #eef8f1 0%,
+    #f7fbf8 100%
+  );
+  border-bottom: 1px solid #dfe9e2;
+}
+
+.planting-section-number {
+  flex: 0 0 auto;
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--alansa-900);
+  color: #fff;
+  font-size: .78rem;
+  font-weight: 800;
+  box-shadow: 0 3px 8px rgba(20, 72, 33, .16);
+}
+
+.planting-section-head h3 {
+  margin: 0 0 2px;
+  color: var(--alansa-950);
+  font-size: .92rem;
+  line-height: 1.2;
+}
+
+.planting-section-head p {
+  margin: 0;
+  font-size: .72rem;
+  line-height: 1.35;
+}
+
+.planting-section-body {
+  padding: 14px;
+}
+
+
+/* =========================================================
+   CAMPOS
+   ========================================================= */
+
+.planting-form .form-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.planting-form .field {
+  min-width: 0;
+}
+
+.planting-form .field label {
+  margin-bottom: 1px;
+  color: #34443a;
+  font-size: .7rem;
+  font-weight: 750;
+}
+
+.planting-form .input,
+.planting-form select.input,
+.planting-form textarea.input {
+  min-height: 38px;
+  border-radius: 8px;
+  border-color: #d7e1da;
+  background: #fff;
+  font-size: .78rem;
+}
+
+.planting-form textarea.input {
+  min-height: 82px;
+}
+
+.planting-readonly {
+  display: flex;
+  align-items: center;
+  background: #f3f6f4 !important;
+  color: #35443a;
+  font-weight: 700;
+}
+
+.planting-form .input:focus {
+  border-color: var(--alansa-700);
+  box-shadow: 0 0 0 3px rgba(47, 107, 58, .08);
+}
+
+
+/* =========================================================
+   COSTOS PROYECTADOS - TABLA VISUAL
+   ========================================================= */
+
+.planting-costs-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  margin: 0 0 12px;
+}
+
+.planting-costs-list {
+  display: grid;
+  gap: 8px;
+}
+
+.planting-cost-row {
+  display: grid;
+  grid-template-columns:
+    minmax(170px, 1.45fr)
+    minmax(145px, 1.15fr)
+    minmax(125px, .95fr)
+    minmax(105px, .8fr)
+    92px
+    minmax(125px, .95fr)
+    auto;
+  align-items: end;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid #dce5df;
+  border-radius: 10px;
+  background: #fbfdfb;
+}
+
+.planting-cost-row .field label {
+  white-space: nowrap;
+}
+
+.planting-cost-row .input {
+  min-height: 36px;
+}
+
+.planting-cost-row .estimated-cost-total {
+  justify-content: flex-end;
+  text-align: right;
+}
+
+.planting-cost-rule {
+  display: block;
+  min-height: 17px;
+  margin-top: 3px;
+  line-height: 1.2;
+  font-size: .62rem;
+}
+
+.planting-cost-remove {
+  display: flex;
+  align-items: flex-end;
+  padding-bottom: 0;
+}
+
+.planting-cost-remove .btn {
+  min-width: 82px;
+  min-height: 36px;
+  padding: 7px 10px;
+}
+
+.planting-costs-empty {
+  display: grid;
+  place-items: center;
+  min-height: 76px;
+  padding: 16px;
+  border: 1px dashed #cfdcd3;
+  border-radius: 10px;
+  background: #fafcfb;
+  color: var(--muted);
+  font-size: .76rem;
+  text-align: center;
+}
+
+.planting-form-notice {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border: 1px solid #d8e7dc;
+  border-radius: 9px;
+  background: #f2f8f4;
+  color: #496051;
+  font-size: .72rem;
+}
+
+
+/* =========================================================
+   RESULTADO DE LA PROYECCIÓN - TABLA
+   ========================================================= */
+
+.planting-projection-table {
+  overflow: hidden;
+  border: 1px solid #d7e2da;
+  border-radius: 11px;
+  background: #fff;
+}
+
+.projection-table-head,
+.projection-table-row {
+  display: grid;
+  grid-template-columns:
+    minmax(230px, 1.4fr)
+    minmax(180px, 1fr)
+    minmax(180px, 1fr);
+  align-items: center;
+}
+
+.projection-table-head {
+  min-height: 42px;
+  background: #edf4ef;
+  color: #183b24;
+  font-size: .75rem;
+  font-weight: 800;
+}
+
+.projection-table-head span,
+.projection-table-row > * {
+  padding: 10px 14px;
+}
+
+.projection-table-head span:not(:last-child),
+.projection-table-row > *:not(:last-child) {
+  border-right: 1px solid #dfe7e1;
+}
+
+.projection-table-row {
+  min-height: 42px;
+  border-top: 1px solid #e3eae5;
+  font-size: .76rem;
+}
+
+.projection-table-row > span:first-child {
+  color: #26362b;
+  font-weight: 700;
+}
+
+.projection-table-row strong {
+  color: #16281c;
+  font-weight: 800;
+}
+
+.projection-table-row:nth-child(even) {
+  background: #fbfdfb;
+}
+
+.planting-projection-note {
+  position: relative;
+  margin: 10px 0 0 !important;
+  padding: 10px 12px 10px 40px;
+  border: 1px solid #bcd6f4;
+  border-radius: 9px;
+  background: #eef6ff;
+  color: #245b91 !important;
+  font-size: .7rem !important;
+  line-height: 1.4;
+}
+
+.planting-projection-note::before {
+  content: "i";
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  width: 18px;
+  height: 18px;
+  display: grid;
+  place-items: center;
+  transform: translateY(-50%);
+  border-radius: 50%;
+  background: #1d6fb8;
+  color: #fff;
+  font-size: .7rem;
+  font-weight: 800;
+}
+
+
+/* =========================================================
+   BOTONES DEL FORMULARIO
+   ========================================================= */
+
+.planting-form .modal-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 3;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin: 0 -16px -16px;
+  padding: 12px 16px;
+  border-top: 1px solid #dfe8e2;
+  background: rgba(255, 255, 255, .96);
+  backdrop-filter: blur(8px);
+}
+
+.planting-form .modal-actions .btn {
+  min-width: 128px;
+}
+
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 1040px) {
+
+  .planting-form .form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .planting-cost-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .planting-cost-remove {
+    grid-column: 1 / -1;
+  }
+
+  .planting-cost-remove .btn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 700px) {
+
+  .planting-modal {
+    width: 100%;
+    max-height: 96vh;
+    border-radius: 16px 16px 0 0;
+  }
+
+  .planting-form {
+    padding: 10px;
+  }
+
+  .planting-form .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .planting-section-head {
+    align-items: flex-start;
+  }
+
+  .planting-section-body {
+    padding: 11px;
+  }
+
+  .planting-costs-head {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .planting-cost-row {
+    grid-template-columns: 1fr;
+  }
+
+  .projection-table-head,
+  .projection-table-row {
+    grid-template-columns:
+      minmax(145px, 1.3fr)
+      minmax(120px, 1fr)
+      minmax(130px, 1fr);
+  }
+
+  .planting-projection-table {
+    overflow-x: auto;
+  }
+
+  .projection-table-head,
+  .projection-table-row {
+    min-width: 520px;
+  }
+
+  .planting-form .modal-actions {
+    margin: 0 -10px -10px;
+  }
+
+  .planting-form .modal-actions .btn {
+    flex: 1;
+    min-width: 0;
+  }
+}
