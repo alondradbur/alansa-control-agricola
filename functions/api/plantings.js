@@ -726,12 +726,12 @@ function validatePlanting(
   }
 
   if (
-    projectionExchangeRate !== null &&
+    projectionExchangeRate === null ||
     projectionExchangeRate <= 0
   ) {
     return {
       error:
-        'El tipo de cambio debe ser mayor a cero.'
+        'Captura un tipo de cambio mayor a cero.'
     };
   }
 
