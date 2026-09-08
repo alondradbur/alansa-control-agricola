@@ -187,36 +187,27 @@ export async function onRequestPost({
     }
 
     if (entity === 'expense_categories') {
-      requireText(
-        data.name,
-        'El nombre de la categoría es obligatorio.'
-      );
+  requireText(
+    data.name,
+    'El concepto de gasto es obligatorio.'
+  );
 
-      const result = await env.DB
-        .prepare(`
-          INSERT INTO expense_categories (
-            name,
-            default_amount,
-            default_currency
-          )
-          VALUES (?, ?, ?)
-        `)
-        .bind(
-          data.name.trim(),
-          parseMoney(
-            data.default_amount
-          ),
-          validCurrency(
-            data.default_currency,
-            'MXN'
-          )
-        )
-        .run();
+  const result = await env.DB
+    .prepare(`
+      INSERT INTO expense_categories (
+        name
+      )
+      VALUES (?)
+    `)
+    .bind(
+      data.name.trim()
+    )
+    .run();
 
-      return created(
-        result
-      );
-    }
+  return created(
+    result
+  );
+}
 
     if (entity === 'expense_units') {
       requireText(
@@ -453,38 +444,29 @@ export async function onRequestPut({
     }
 
     if (entity === 'expense_categories') {
-      requireText(
-        data.name,
-        'El nombre de la categoría es obligatorio.'
-      );
+  requireText(
+    data.name,
+    'El concepto de gasto es obligatorio.'
+  );
 
-      await env.DB
-        .prepare(`
-          UPDATE expense_categories
-          SET
-            name = ?,
-            default_amount = ?,
-            default_currency = ?,
-            updated_at = CURRENT_TIMESTAMP
-          WHERE id = ?
-        `)
-        .bind(
-          data.name.trim(),
-          parseMoney(
-            data.default_amount
-          ),
-          validCurrency(
-            data.default_currency,
-            'MXN'
-          ),
-          recordId
-        )
-        .run();
+  await env.DB
+    .prepare(`
+      UPDATE expense_categories
+      SET
+        name = ?,
+        updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `)
+    .bind(
+      data.name.trim(),
+      recordId
+    )
+    .run();
 
-      return updated(
-        recordId
-      );
-    }
+  return updated(
+    recordId
+  );
+}
 
     if (entity === 'expense_units') {
       requireText(
