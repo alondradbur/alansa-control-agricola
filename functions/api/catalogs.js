@@ -744,6 +744,9 @@ function validQuantitySource(
   return [
     'ONE',
     'HECTARES',
+    'PROJECTED_BOXES',
+    'PROJECTED_POUNDS',
+    'THOUSAND_PLANTS',
     'MANUAL'
   ].includes(value)
     ? value
