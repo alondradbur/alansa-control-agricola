@@ -1027,4 +1027,92 @@ textarea.input {
   }
 
 }
+/* =========================================================
+   SIEMBRAS - COSTOS APROXIMADOS PARA PROYECCIÓN
+   ========================================================= */
 
+.planting-costs-section {
+  margin-top: 22px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border, #e5e7eb);
+}
+
+.planting-costs-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.planting-costs-head h3 {
+  margin: 0 0 4px;
+}
+
+.planting-costs-head p {
+  margin: 0;
+}
+
+.planting-costs-list {
+  display: grid;
+  gap: 10px;
+}
+
+.planting-cost-row {
+  display: grid;
+  grid-template-columns: minmax(180px, 1.5fr) minmax(140px, 1fr) 110px auto;
+  align-items: end;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 12px;
+  background: var(--surface, #fff);
+}
+
+.planting-cost-remove {
+  padding-bottom: 1px;
+}
+
+.planting-projection-preview {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.planting-projection-preview > div {
+  padding: 12px;
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 12px;
+  background: var(--surface-soft, #f8fafc);
+}
+
+.planting-projection-preview span {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 12px;
+  opacity: .72;
+}
+
+.planting-projection-preview strong {
+  font-size: 14px;
+}
+
+@media (max-width: 760px) {
+  .planting-costs-head {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .planting-cost-row {
+    grid-template-columns: 1fr;
+  }
+
+  .planting-cost-remove .btn {
+    width: 100%;
+  }
+
+  .planting-projection-preview {
+    grid-template-columns: 1fr;
+  }
+}
