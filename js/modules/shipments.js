@@ -200,23 +200,91 @@ async function loadShipments() {
 
 async function loadFormData() {
   try {
-    shipmentFormData =
-      await api(
-        'shipments?mode=form'
-      ) || {
-        plantings: [],
-        clients: [],
-        products: []
-      };
-  } catch {
+
+    const [
+      plantings,
+      catalogs
+    ] = await Promise.all([
+      api('plantings'),
+      api('catalogs')
+    ]);
+
+    const clients =
+      catalogs?.clients || [];
+
+    const products =
+      catalogs?.products || [];
+
+    /*
+     * Enriquecemos cada siembra con los datos
+     * necesarios para Remisiones.
+     */
+    const normalizedPlantings =
+      (plantings || []).map(
+        planting => {
+
+          const client =
+            clients.find(
+              item =>
+                Number(item.id) ===
+                Number(planting.client_id)
+            );
+
+          const product =
+            products.find(
+              item =>
+                Number(item.id) ===
+                Number(planting.product_id)
+            );
+
+          return {
+            ...planting,
+
+            client_name:
+              planting.client_name ||
+              client?.name ||
+              '',
+
+            credit_days:
+              Number(
+                planting.credit_days ??
+                client?.credit_days ??
+                0
+              ),
+
+            product_name:
+              planting.product_name ||
+              product?.name ||
+              ''
+          };
+
+        }
+      );
+
+    shipmentFormData = {
+      plantings:
+        normalizedPlantings,
+
+      clients,
+
+      products
+    };
+
+  } catch (error) {
+
+    console.error(
+      'Error cargando datos de remisión:',
+      error
+    );
+
     shipmentFormData = {
       plantings: [],
       clients: [],
       products: []
     };
+
   }
 }
-
 
 /* =========================================================
    4. FILTROS
@@ -1945,11 +2013,15 @@ async function deleteShipment(
 
   try {
     await api(
-      `shipments?id=${id}`,
-      {
-        method: 'DELETE'
-      }
-    );
+  'shipments',
+  {
+    method: 'DELETE',
+
+    body: JSON.stringify({
+      id
+    })
+  }
+);
 
     toast(
       'Remisión eliminada correctamente.'
