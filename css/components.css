@@ -1590,3 +1590,19 @@ textarea.input {
 .projection-table-group strong {
   color: inherit;
 }
+/* =========================================================
+   SIEMBRAS - DETALLE SIMPLE DE GASTOS EN PROYECCIÓN
+   ========================================================= */
+
+.projection-cost-detail {
+  display: contents;
+}
+
+.projection-cost-line span:first-child {
+  font-weight: 600;
+}
+
+.projection-cost-empty {
+  color: #6b7280;
+  font-style: italic;
+}
