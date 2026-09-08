@@ -483,15 +483,12 @@ function openPlantingForm(
           </div>
 
           <button
-            class="btn planting-modal-close"
+            class="btn"
             id="closePlantingModal"
             type="button"
-            aria-label="Cerrar"
-            title="Cerrar"
           >
-            ×
+            Cerrar
           </button>
-
 
         </div>
 
@@ -798,6 +795,57 @@ function openPlantingForm(
                     `
                   : ''
               }
+
+              <div
+                class="planting-exchange-rate"
+                id="projectionExchangeRateWrap"
+                hidden
+              >
+                <div>
+                  <strong>
+                    Conversión de costos
+                  </strong>
+
+                  <p class="muted">
+                    Se usa un solo tipo de cambio editable
+                    para consolidar los costos MXN en USD.
+                  </p>
+                </div>
+
+                <div class="field">
+                  <label>
+                    Tipo de cambio (MXN por USD)
+                  </label>
+
+                  <input
+                    class="input money-input"
+                    name="projection_exchange_rate"
+                    id="projectionExchangeRate"
+                    type="text"
+                    inputmode="decimal"
+                    autocomplete="off"
+                    value="${escapeHtml(
+                      formatMoneyText(
+                        row?.projection_exchange_rate ?? ''
+                      )
+                    )}"
+                    placeholder="Ej. 20.00"
+                  >
+                </div>
+
+                <div class="field">
+                  <label>
+                    MXN convertidos a USD
+                  </label>
+
+                  <div
+                    class="input planting-readonly"
+                    id="convertedMxnUsdPreview"
+                  >
+                    USD 0.00
+                  </div>
+                </div>
+              </div>
             `
           )}
 
@@ -808,48 +856,113 @@ function openPlantingForm(
             'Resumen por hectárea y de la siembra completa.',
             `
               <div class="planting-projection-table">
-
                 <div class="projection-table-head">
-                  <span>Indicador</span>
-                  <span>Por hectárea</span>
-                  <span>Siembra completa</span>
+                  <span>
+                    Indicador
+                  </span>
+
+                  <span>
+                    Por hectárea
+                  </span>
+
+                  <span>
+                    Siembra completa
+                  </span>
                 </div>
 
+                ${projectionGroup(
+                  'Indicadores generales'
+                )}
+
                 ${projectionLine(
-                  'Producción',
+                  'Producción proyectada',
                   'summaryBoxesHa',
                   'summaryBoxesTotal'
                 )}
 
                 ${projectionLine(
-                  'Libras',
+                  'Libras proyectadas',
                   'summaryPoundsHa',
                   'summaryPoundsTotal'
                 )}
 
-                ${projectionLine(
-                  'Ingresos proyectados',
-                  'summaryRevenueHa',
-                  'summaryRevenueTotal'
+                ${projectionGroup(
+                  'Ingresos proyectados'
                 )}
 
                 ${projectionLine(
-                  'Costos proyectados MXN',
+                  'Ingresos en USD',
+                  'summaryRevenueUsdHa',
+                  'summaryRevenueUsdTotal'
+                )}
+
+                ${projectionLine(
+                  'Ingresos equivalentes en MXN',
+                  'summaryRevenueMxnHa',
+                  'summaryRevenueMxnTotal'
+                )}
+
+                ${projectionGroup(
+                  'Gastos proyectados'
+                )}
+
+                ${projectionLine(
+                  'Gastos originalmente en USD',
+                  'summaryCostUsdHa',
+                  'summaryCostUsdTotal'
+                )}
+
+                ${projectionLine(
+                  'Gastos originalmente en MXN',
                   'summaryCostMxnHa',
                   'summaryCostMxnTotal'
                 )}
 
                 ${projectionLine(
-                  'Costos proyectados USD',
-                  'summaryCostUsdHa',
-                  'summaryCostUsdTotal'
+                  'Gastos totales equivalentes en USD',
+                  'summaryConsolidatedCostHa',
+                  'summaryConsolidatedCostTotal'
                 )}
 
+                ${projectionLine(
+                  'Gastos totales equivalentes en MXN',
+                  'summaryConsolidatedCostMxnHa',
+                  'summaryConsolidatedCostMxnTotal'
+                )}
+
+                ${projectionGroup(
+                  'Utilidad proyectada'
+                )}
+
+                ${projectionLine(
+                  'Utilidad en USD',
+                  'summaryProfitHa',
+                  'summaryProfitTotal'
+                )}
+
+                ${projectionLine(
+                  'Utilidad en MXN',
+                  'summaryProfitMxnHa',
+                  'summaryProfitMxnTotal'
+                )}
+
+                ${projectionLine(
+                  'Costo proyectado por caja',
+                  'summaryCostPerBox',
+                  'summaryCostPerBoxTotal'
+                )}
+
+                ${projectionLine(
+                  'Margen proyectado',
+                  'summaryMargin',
+                  'summaryMarginTotal'
+                )}
               </div>
 
               <p class="muted planting-projection-note">
-                Los costos e ingresos permanecen separados por moneda.
-                No se convierten MXN y USD sin un tipo de cambio definido.
+                Los importes originales se conservan en su moneda.
+                Cuando existen costos en MXN, el tipo de cambio permite
+                consolidarlos en USD para calcular costo total y utilidad.
               </p>
             `
           )}
@@ -1101,6 +1214,19 @@ function readonlyField(
         ${value}
       </div>
 
+    </div>
+  `;
+}
+
+
+function projectionGroup(
+  label
+) {
+  return `
+    <div class="projection-table-group">
+      <strong>
+        ${escapeHtml(label)}
+      </strong>
     </div>
   `;
 }
@@ -1591,6 +1717,10 @@ function updateCostRow(
       )
       ?.value || 'MXN';
 
+  updateExchangeRateVisibility(
+    root
+  );
+
   const total =
     unitAmount * quantity;
 
@@ -1606,6 +1736,61 @@ function updateCostRow(
         currency
       );
   }
+}
+
+
+function updateExchangeRateVisibility(
+  root
+) {
+  const wrapper =
+    root.querySelector(
+      '#projectionExchangeRateWrap'
+    );
+
+  if (!wrapper) {
+    return;
+  }
+
+  const hasMxnCost =
+    Array
+      .from(
+        root.querySelectorAll(
+          '.estimated-cost-currency'
+        )
+      )
+      .some(select => {
+        const row =
+          select.closest(
+            '.planting-cost-row'
+          );
+
+        const unitAmount =
+          numeric(
+            normalizeMoneyText(
+              row
+                ?.querySelector(
+                  '.estimated-cost-unit-amount'
+                )
+                ?.value || ''
+            )
+          );
+
+        return (
+          select.value === 'MXN' &&
+          unitAmount > 0
+        );
+      });
+
+  const revenueCurrency =
+    root
+      .querySelector(
+        '[name="price_currency"]'
+      )
+      ?.value || 'USD';
+
+  wrapper.hidden =
+    !hasMxnCost &&
+    revenueCurrency !== 'MXN';
 }
 
 
@@ -1715,7 +1900,8 @@ function bindProjectionFields(
     'expected_yield_boxes_ha',
     'standard_box_lbs',
     'price_per_box',
-    'price_currency'
+    'price_currency',
+    'projection_exchange_rate'
   ].forEach(name => {
     const field =
       root.querySelector(
@@ -1808,6 +1994,17 @@ function projectionValues(
       )
       ?.value || 'USD';
 
+  const exchangeRate =
+    numeric(
+      normalizeMoneyText(
+        root
+          .querySelector(
+            '[name="projection_exchange_rate"]'
+          )
+          ?.value || ''
+      )
+    );
+
   const totalPlants =
     hectares * density;
 
@@ -1830,6 +2027,7 @@ function projectionValues(
     boxLbs,
     pricePerBox,
     currency,
+    exchangeRate,
     totalPlants,
     projectedBoxes,
     projectedPounds,
@@ -1972,6 +2170,92 @@ function updateProjectionPreview(
   const hectares =
     values.hectares;
 
+  const exchangeRate =
+    values.exchangeRate;
+
+  const convertedMxnUsd =
+    exchangeRate > 0
+      ? totals.mxn /
+        exchangeRate
+      : 0;
+
+  const consolidatedCostUsd =
+    totals.usd +
+    convertedMxnUsd;
+
+  const revenueUsd =
+    values.currency === 'MXN'
+      ? (
+          exchangeRate > 0
+            ? values.totalRevenue /
+              exchangeRate
+            : 0
+        )
+      : values.totalRevenue;
+
+  const revenueUsdPerHa =
+    hectares > 0
+      ? revenueUsd /
+        hectares
+      : 0;
+
+  const projectedProfitUsd =
+    revenueUsd -
+    consolidatedCostUsd;
+
+  const revenueMxn =
+    exchangeRate > 0
+      ? revenueUsd *
+        exchangeRate
+      : (
+          values.currency === 'MXN'
+            ? values.totalRevenue
+            : 0
+        );
+
+  const consolidatedCostMxn =
+    exchangeRate > 0
+      ? consolidatedCostUsd *
+        exchangeRate
+      : totals.mxn;
+
+  const projectedProfitMxn =
+    revenueMxn -
+    consolidatedCostMxn;
+
+  const projectedProfitUsdPerHa =
+    hectares > 0
+      ? projectedProfitUsd /
+        hectares
+      : 0;
+
+  const costPerBoxUsd =
+    values.projectedBoxes > 0
+      ? consolidatedCostUsd /
+        values.projectedBoxes
+      : 0;
+
+  const marginPercent =
+    revenueUsd > 0
+      ? (
+          projectedProfitUsd /
+          revenueUsd
+        ) * 100
+      : 0;
+
+  updateExchangeRateVisibility(
+    root
+  );
+
+  setText(
+    root,
+    '#convertedMxnUsdPreview',
+    money(
+      convertedMxnUsd,
+      'USD'
+    )
+  );
+
   setText(
     root,
     '#summaryBoxesHa',
@@ -2011,19 +2295,41 @@ function updateProjectionPreview(
 
   setText(
     root,
-    '#summaryRevenueHa',
+    '#summaryRevenueUsdHa',
     money(
-      values.revenuePerHa,
-      values.currency
+      hectares > 0
+        ? revenueUsd / hectares
+        : 0,
+      'USD'
     )
   );
 
   setText(
     root,
-    '#summaryRevenueTotal',
+    '#summaryRevenueUsdTotal',
     money(
-      values.totalRevenue,
-      values.currency
+      revenueUsd,
+      'USD'
+    )
+  );
+
+  setText(
+    root,
+    '#summaryRevenueMxnHa',
+    money(
+      hectares > 0
+        ? revenueMxn / hectares
+        : 0,
+      'MXN'
+    )
+  );
+
+  setText(
+    root,
+    '#summaryRevenueMxnTotal',
+    money(
+      revenueMxn,
+      'MXN'
     )
   );
 
@@ -2065,6 +2371,140 @@ function updateProjectionPreview(
       totals.usd,
       'USD'
     )
+  );
+
+  setText(
+    root,
+    '#summaryConvertedMxnHa',
+    money(
+      hectares > 0
+        ? convertedMxnUsd / hectares
+        : 0,
+      'USD'
+    )
+  );
+
+  setText(
+    root,
+    '#summaryConvertedMxnTotal',
+    money(
+      convertedMxnUsd,
+      'USD'
+    )
+  );
+
+  setText(
+    root,
+    '#summaryConsolidatedCostHa',
+    money(
+      hectares > 0
+        ? consolidatedCostUsd / hectares
+        : 0,
+      'USD'
+    )
+  );
+
+  setText(
+    root,
+    '#summaryConsolidatedCostTotal',
+    money(
+      consolidatedCostUsd,
+      'USD'
+    )
+  );
+
+  setText(
+    root,
+    '#summaryConsolidatedCostMxnHa',
+    money(
+      hectares > 0
+        ? consolidatedCostMxn / hectares
+        : 0,
+      'MXN'
+    )
+  );
+
+  setText(
+    root,
+    '#summaryConsolidatedCostMxnTotal',
+    money(
+      consolidatedCostMxn,
+      'MXN'
+    )
+  );
+
+  setText(
+    root,
+    '#summaryProfitHa',
+    money(
+      projectedProfitUsdPerHa,
+      'USD'
+    )
+  );
+
+  setText(
+    root,
+    '#summaryProfitTotal',
+    money(
+      projectedProfitUsd,
+      'USD'
+    )
+  );
+
+  setText(
+    root,
+    '#summaryProfitMxnHa',
+    money(
+      hectares > 0
+        ? projectedProfitMxn / hectares
+        : 0,
+      'MXN'
+    )
+  );
+
+  setText(
+    root,
+    '#summaryProfitMxnTotal',
+    money(
+      projectedProfitMxn,
+      'MXN'
+    )
+  );
+
+  setText(
+    root,
+    '#summaryCostPerBox',
+    money(
+      costPerBoxUsd,
+      'USD'
+    )
+  );
+
+  setText(
+    root,
+    '#summaryCostPerBoxTotal',
+    `${money(
+      costPerBoxUsd,
+      'USD'
+    )} / caja`
+  );
+
+  setText(
+    root,
+    '#summaryMargin',
+    `${number(
+      marginPercent,
+      2
+    )}%`
+  );
+
+  setText(
+    root,
+    '#summaryMarginTotal',
+    `${number(
+      marginPercent,
+      2
+    )}%`
   );
 }
 
