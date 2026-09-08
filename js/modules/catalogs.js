@@ -3,11 +3,10 @@
    MÓDULO: CATÁLOGOS
 
    Funciones:
-   - Crear registros.
-   - Editar registros existentes.
-   - Guardar cambios en D1.
-   - Eliminar registros no relacionados.
-   - Normalizar importes con separadores de miles.
+   - Crear, editar y eliminar catálogos.
+   - Incluye Unidades de costo para Gastos.
+   - Permite definir cómo se obtiene la cantidad:
+     1 por registro, hectáreas de la siembra o captura manual.
    ========================================================= */
 
 
@@ -66,6 +65,14 @@ const cfg = {
       'name',
       'default_amount',
       'default_currency'
+    ]
+  ],
+
+  expense_units: [
+    'Unidades de costo',
+    [
+      'name',
+      'quantity_source'
     ]
   ],
 
@@ -148,14 +155,8 @@ function card(
               ${cells}
 
               <td>
-                <div
-                  style="
-                    display:flex;
-                    gap:7px;
-                    align-items:center;
-                    white-space:nowrap;
-                  "
-                >
+                <div class="row-actions">
+
                   <button
                     class="btn soft"
                     type="button"
@@ -173,6 +174,7 @@ function card(
                   >
                     Eliminar
                   </button>
+
                 </div>
               </td>
             </tr>
@@ -203,6 +205,7 @@ function card(
     <section class="card table-card">
 
       <div class="table-toolbar">
+
         <strong>
           ${title}
         </strong>
@@ -214,6 +217,7 @@ function card(
         >
           ＋ Agregar
         </button>
+
       </div>
 
       <div class="table-scroll">
@@ -271,6 +275,17 @@ function formatCell(
     );
   }
 
+  if (
+    entity === 'expense_units' &&
+    field === 'quantity_source'
+  ) {
+    return escapeHtml(
+      quantitySourceLabel(
+        row.quantity_source
+      )
+    );
+  }
+
   return escapeHtml(
     row[field] ?? '—'
   );
@@ -286,11 +301,25 @@ function fieldLabel(
     credit_days: 'Días de crédito',
     contact: 'Contacto',
     default_amount: 'Monto predeterminado',
-    default_currency: 'Moneda'
+    default_currency: 'Moneda',
+    quantity_source: 'Cantidad'
   };
 
   return labels[field] ||
     field.replaceAll('_', ' ');
+}
+
+
+function quantitySourceLabel(
+  value
+) {
+  const labels = {
+    ONE: '1 por registro',
+    HECTARES: 'Hectáreas de la siembra',
+    MANUAL: 'Captura manual'
+  };
+
+  return labels[value] || value || '—';
 }
 
 
@@ -301,10 +330,6 @@ function fieldLabel(
 export function bindCatalogs(
   rerender
 ) {
-
-  /* ---------------------------------------------------------
-     6.1. AGREGAR
-     --------------------------------------------------------- */
 
   document
     .querySelectorAll(
@@ -318,11 +343,6 @@ export function bindCatalogs(
         );
       };
     });
-
-
-  /* ---------------------------------------------------------
-     6.2. EDITAR
-     --------------------------------------------------------- */
 
   document
     .querySelectorAll(
@@ -359,11 +379,6 @@ export function bindCatalogs(
       };
     });
 
-
-  /* ---------------------------------------------------------
-     6.3. ELIMINAR
-     --------------------------------------------------------- */
-
   document
     .querySelectorAll(
       '[data-del-cat]'
@@ -386,11 +401,11 @@ export function bindCatalogs(
         const label =
           row?.name || 'este registro';
 
-        const confirmed = confirm(
-          `¿Eliminar "${label}"?`
-        );
-
-        if (!confirmed) {
+        if (
+          !confirm(
+            `¿Eliminar "${label}"?`
+          )
+        ) {
           return;
         }
 
@@ -485,16 +500,10 @@ function openForm(
           id="catForm"
         >
 
-          <input
-            type="hidden"
-            name="id"
-            value="${row?.id || ''}"
-          >
-
           <div class="form-grid">
             ${fields(
               entity,
-              row
+              row || {}
             )}
           </div>
 
@@ -549,19 +558,16 @@ function openForm(
             event.currentTarget
           );
 
-          const formObject =
-            Object.fromEntries(
-              formData.entries()
-            );
-
-          delete formObject.id;
-
           const payload = {
             entity,
-            id: editing
-              ? Number(row.id)
-              : undefined,
-            data: formObject
+            id:
+              editing
+                ? Number(row.id)
+                : undefined,
+            data:
+              Object.fromEntries(
+                formData.entries()
+              )
           };
 
           await api(
@@ -606,10 +612,6 @@ function fields(
   entity,
   row = {}
 ) {
-
-  /* ---------------------------------------------------------
-     8.1. PRODUCTOS
-     --------------------------------------------------------- */
 
   if (entity === 'products') {
     return `
@@ -714,11 +716,6 @@ function fields(
     `;
   }
 
-
-  /* ---------------------------------------------------------
-     8.2. CLIENTES
-     --------------------------------------------------------- */
-
   if (entity === 'clients') {
     return `
       ${inputField(
@@ -754,11 +751,6 @@ function fields(
     `;
   }
 
-
-  /* ---------------------------------------------------------
-     8.3. PROVEEDORES
-     --------------------------------------------------------- */
-
   if (entity === 'suppliers') {
     return `
       ${inputField(
@@ -792,11 +784,6 @@ function fields(
     `;
   }
 
-
-  /* ---------------------------------------------------------
-     8.4. CATEGORÍAS DE GASTO
-     --------------------------------------------------------- */
-
   if (entity === 'expense_categories') {
     return `
       ${inputField(
@@ -826,10 +813,59 @@ function fields(
     `;
   }
 
+  if (entity === 'expense_units') {
+    return `
+      ${inputField(
+        'name',
+        'Unidad de costo',
+        row.name || '',
+        'text',
+        'required'
+      )}
 
-  /* ---------------------------------------------------------
-     8.5. FORMAS DE PAGO
-     --------------------------------------------------------- */
+      <div class="field">
+
+        <label>
+          ¿Cómo se obtiene la cantidad?
+        </label>
+
+        <select
+          class="input"
+          name="quantity_source"
+          required
+        >
+
+          <option
+            value="ONE"
+            ${row.quantity_source === 'ONE' ? 'selected' : ''}
+          >
+            1 por registro
+          </option>
+
+          <option
+            value="HECTARES"
+            ${row.quantity_source === 'HECTARES' ? 'selected' : ''}
+          >
+            Hectáreas de la siembra
+          </option>
+
+          <option
+            value="MANUAL"
+            ${
+              !row.quantity_source ||
+              row.quantity_source === 'MANUAL'
+                ? 'selected'
+                : ''
+            }
+          >
+            Captura manual
+          </option>
+
+        </select>
+
+      </div>
+    `;
+  }
 
   return inputField(
     'name',
@@ -920,7 +956,6 @@ function currencyField(
         name="${name}"
         required
       >
-
         <option
           value="MXN"
           ${selected === 'MXN' ? 'selected' : ''}
@@ -934,7 +969,6 @@ function currencyField(
         >
           USD
         </option>
-
       </select>
 
     </div>
@@ -943,7 +977,7 @@ function currencyField(
 
 
 /* =========================================================
-   10. FORMATO DE CAMPOS MONETARIOS
+   10. FORMATO MONETARIO
    ========================================================= */
 
 function bindMoneyInputs(
@@ -1014,3 +1048,4 @@ function formatMoneyText(
     }
   ).format(amount);
 }
+
