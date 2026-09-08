@@ -1565,3 +1565,28 @@ textarea.input {
 .planting-modal-close:hover {
   background: #f0f5f1;
 }
+
+/* =========================================================
+   SIEMBRAS - GRUPOS DE LA TABLA DE PROYECCIÓN
+   ========================================================= */
+
+.projection-table-group {
+  grid-column: 1 / -1;
+  padding: 9px 14px;
+  border-top: 1px solid #d8e4dc;
+  border-bottom: 1px solid #d8e4dc;
+  background: #eef8f1;
+  color: #1f542d;
+  font-size: .72rem;
+  font-weight: 800;
+  letter-spacing: .025em;
+  text-transform: uppercase;
+}
+
+.projection-table-head + .projection-table-group {
+  border-top: 0;
+}
+
+.projection-table-group strong {
+  color: inherit;
+}
