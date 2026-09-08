@@ -6,8 +6,8 @@
    - Consultar siembras.
    - Crear nuevas siembras.
    - Editar registros existentes.
-   - Eliminar solo si no tienen movimientos relacionados.
-   - Calcular costo estimado de semilla.
+   - Eliminar siembras sin movimientos relacionados.
+   - Guardar costos aproximados para proyección.
    ========================================================= */
 
 
@@ -29,29 +29,84 @@ export async function onRequestGet({
   env
 }) {
   try {
-    const result = await env.DB
-      .prepare(`
-        SELECT
-          pl.*,
-          p.name AS product_name,
-          c.name AS client_name
+    const [
+      plantingsResult,
+      costsResult
+    ] = await Promise.all([
+      env.DB
+        .prepare(`
+          SELECT
+            pl.*,
+            p.name AS product_name,
+            c.name AS client_name
 
-        FROM plantings pl
+          FROM plantings pl
 
-        JOIN products p
-          ON p.id = pl.product_id
+          JOIN products p
+            ON p.id = pl.product_id
 
-        JOIN clients c
-          ON c.id = pl.client_id
+          JOIN clients c
+            ON c.id = pl.client_id
 
-        ORDER BY
-          pl.harvest_start DESC,
-          pl.id DESC
-      `)
-      .all();
+          ORDER BY
+            pl.harvest_start DESC,
+            pl.id DESC
+        `)
+        .all(),
+
+      env.DB
+        .prepare(`
+          SELECT
+            id,
+            planting_id,
+            concept,
+            amount,
+            currency
+
+          FROM planting_estimated_costs
+
+          ORDER BY
+            planting_id,
+            id
+        `)
+        .all()
+    ]);
+
+    const plantings =
+      plantingsResult.results || [];
+
+    const costs =
+      costsResult.results || [];
+
+    const costsByPlanting = {};
+
+    costs.forEach(cost => {
+      const key =
+        Number(cost.planting_id);
+
+      if (!costsByPlanting[key]) {
+        costsByPlanting[key] = [];
+      }
+
+      costsByPlanting[key].push({
+        id: cost.id,
+        concept: cost.concept,
+        amount: Number(
+          cost.amount || 0
+        ),
+        currency:
+          cost.currency || 'MXN'
+      });
+    });
 
     return json(
-      result.results || []
+      plantings.map(planting => ({
+        ...planting,
+        estimated_costs:
+          costsByPlanting[
+            Number(planting.id)
+          ] || []
+      }))
     );
 
   } catch {
@@ -70,7 +125,8 @@ export async function onRequestPost({
   env,
   request
 }) {
-  const data = await request.json();
+  const data =
+    await request.json();
 
   const validation =
     validatePlanting(
@@ -86,6 +142,17 @@ export async function onRequestPost({
   const values =
     validation.values;
 
+  const estimatedCosts =
+    validateEstimatedCosts(
+      data.estimated_costs
+    );
+
+  if (estimatedCosts.error) {
+    return error(
+      estimatedCosts.error
+    );
+  }
+
   try {
     const result = await env.DB
       .prepare(`
@@ -98,7 +165,6 @@ export async function onRequestPost({
           density_per_ha,
           seed_cost_per_thousand,
           estimated_seed_cost,
-          actual_seed_cost,
           seed_currency,
           harvest_start,
           harvest_end,
@@ -112,7 +178,7 @@ export async function onRequestPost({
 
         VALUES (
           ?, ?, ?, ?, ?, ?, ?, ?, ?,
-          ?, ?, ?, ?, ?, ?, ?, ?, ?
+          ?, ?, ?, ?, ?, ?, ?, ?
         )
       `)
       .bind(
@@ -124,7 +190,6 @@ export async function onRequestPost({
         values.density,
         values.seedCost,
         values.estimatedSeedCost,
-        values.actualSeedCost,
         values.seedCurrency,
         values.harvestStart,
         values.harvestEnd,
@@ -137,10 +202,20 @@ export async function onRequestPost({
       )
       .run();
 
+    const plantingId =
+      Number(
+        result.meta?.last_row_id
+      );
+
+    await replaceEstimatedCosts(
+      env.DB,
+      plantingId,
+      estimatedCosts.values
+    );
+
     return json({
       ok: true,
-      id:
-        result.meta?.last_row_id,
+      id: plantingId,
       estimated_seed_cost:
         values.estimatedSeedCost
     });
@@ -162,7 +237,8 @@ export async function onRequestPut({
   env,
   request
 }) {
-  const data = await request.json();
+  const data =
+    await request.json();
 
   const id = Number(
     data.id
@@ -185,6 +261,17 @@ export async function onRequestPut({
     );
   }
 
+  const estimatedCosts =
+    validateEstimatedCosts(
+      data.estimated_costs
+    );
+
+  if (estimatedCosts.error) {
+    return error(
+      estimatedCosts.error
+    );
+  }
+
   const values =
     validation.values;
 
@@ -202,7 +289,6 @@ export async function onRequestPut({
           density_per_ha = ?,
           seed_cost_per_thousand = ?,
           estimated_seed_cost = ?,
-          actual_seed_cost = ?,
           seed_currency = ?,
           harvest_start = ?,
           harvest_end = ?,
@@ -225,7 +311,6 @@ export async function onRequestPut({
         values.density,
         values.seedCost,
         values.estimatedSeedCost,
-        values.actualSeedCost,
         values.seedCurrency,
         values.harvestStart,
         values.harvestEnd,
@@ -248,6 +333,12 @@ export async function onRequestPut({
         'No se encontró la siembra que intentas actualizar.'
       );
     }
+
+    await replaceEstimatedCosts(
+      env.DB,
+      id,
+      estimatedCosts.values
+    );
 
     return json({
       ok: true,
@@ -273,7 +364,8 @@ export async function onRequestDelete({
   env,
   request
 }) {
-  const body = await request.json();
+  const body =
+    await request.json();
 
   const id = Number(
     body.id
@@ -298,25 +390,21 @@ export async function onRequestDelete({
       );
     }
 
-    const result = await env.DB
-      .prepare(`
-        DELETE FROM plantings
-        WHERE id = ?
-      `)
-      .bind(
-        id
-      )
-      .run();
+    await env.DB.batch([
+      env.DB
+        .prepare(`
+          DELETE FROM planting_estimated_costs
+          WHERE planting_id = ?
+        `)
+        .bind(id),
 
-    if (
-      Number(
-        result.meta?.changes || 0
-      ) === 0
-    ) {
-      return error(
-        'No se encontró la siembra que intentas eliminar.'
-      );
-    }
+      env.DB
+        .prepare(`
+          DELETE FROM plantings
+          WHERE id = ?
+        `)
+        .bind(id)
+    ]);
 
     return json({
       ok: true
@@ -342,35 +430,31 @@ function validatePlanting(
       data.contract_number || ''
     ).trim();
 
-  const productId = Number(
-    data.product_id
-  );
+  const productId =
+    Number(data.product_id);
 
-  const clientId = Number(
-    data.client_id
-  );
+  const clientId =
+    Number(data.client_id);
 
-  const hectares = positiveNumber(
-    data.hectares
-  );
+  const hectares =
+    positiveNumber(
+      data.hectares
+    );
 
-  const expectedYield = positiveNumber(
-    data.expected_yield_boxes_ha
-  );
+  const expectedYield =
+    positiveNumber(
+      data.expected_yield_boxes_ha
+    );
 
-  const density = positiveNumber(
-    data.density_per_ha
-  );
+  const density =
+    positiveNumber(
+      data.density_per_ha
+    );
 
   const seedCost =
     parseMoney(
       data.seed_cost_per_thousand
     ) ?? 0;
-
-  const actualSeedCost =
-    parseMoney(
-      data.actual_seed_cost
-    );
 
   const seedCurrency =
     validCurrency(
@@ -481,16 +565,6 @@ function validatePlanting(
   }
 
   if (
-    actualSeedCost !== null &&
-    actualSeedCost < 0
-  ) {
-    return {
-      error:
-        'El costo real de semilla no puede ser negativo.'
-    };
-  }
-
-  if (
     !harvestStart ||
     !harvestEnd
   ) {
@@ -534,7 +608,6 @@ function validatePlanting(
       density,
       seedCost,
       estimatedSeedCost,
-      actualSeedCost,
       seedCurrency,
       harvestStart,
       harvestEnd,
@@ -550,7 +623,136 @@ function validatePlanting(
 
 
 /* =========================================================
-   7. PROTEGER REGISTROS CON MOVIMIENTOS
+   7. VALIDAR COSTOS APROXIMADOS
+   ========================================================= */
+
+function validateEstimatedCosts(
+  costs
+) {
+  if (
+    costs === undefined ||
+    costs === null
+  ) {
+    return {
+      values: []
+    };
+  }
+
+  if (!Array.isArray(costs)) {
+    return {
+      error:
+        'Los costos aproximados no tienen un formato válido.'
+    };
+  }
+
+  const values = [];
+
+  for (const cost of costs) {
+    const concept =
+      String(
+        cost?.concept || ''
+      ).trim();
+
+    const amount =
+      parseMoney(
+        cost?.amount
+      );
+
+    const currency =
+      validCurrency(
+        cost?.currency,
+        'MXN'
+      );
+
+    if (
+      !concept &&
+      (
+        amount === null ||
+        amount === 0
+      )
+    ) {
+      continue;
+    }
+
+    if (!concept) {
+      return {
+        error:
+          'Cada costo aproximado debe tener un concepto.'
+      };
+    }
+
+    if (
+      amount === null ||
+      amount < 0
+    ) {
+      return {
+        error:
+          `El monto aproximado de "${concept}" no es válido.`
+      };
+    }
+
+    values.push({
+      concept,
+      amount,
+      currency
+    });
+  }
+
+  return {
+    values
+  };
+}
+
+
+/* =========================================================
+   8. GUARDAR COSTOS APROXIMADOS
+   ========================================================= */
+
+async function replaceEstimatedCosts(
+  db,
+  plantingId,
+  costs
+) {
+  const statements = [
+    db
+      .prepare(`
+        DELETE FROM planting_estimated_costs
+        WHERE planting_id = ?
+      `)
+      .bind(
+        plantingId
+      )
+  ];
+
+  costs.forEach(cost => {
+    statements.push(
+      db
+        .prepare(`
+          INSERT INTO planting_estimated_costs (
+            planting_id,
+            concept,
+            amount,
+            currency
+          )
+          VALUES (?, ?, ?, ?)
+        `)
+        .bind(
+          plantingId,
+          cost.concept,
+          cost.amount,
+          cost.currency
+        )
+    );
+  });
+
+  await db.batch(
+    statements
+  );
+}
+
+
+/* =========================================================
+   9. PROTEGER REGISTROS CON MOVIMIENTOS
    ========================================================= */
 
 async function hasRelatedMovements(
@@ -586,7 +788,7 @@ async function hasRelatedMovements(
 
 
 /* =========================================================
-   8. UTILIDADES
+   10. UTILIDADES
    ========================================================= */
 
 function parseMoney(
@@ -605,9 +807,8 @@ function parseMoney(
       .replaceAll(',', '')
       .replace(/[^\d.-]/g, '');
 
-  const amount = Number(
-    normalized
-  );
+  const amount =
+    Number(normalized);
 
   return Number.isFinite(amount)
     ? amount
@@ -626,10 +827,11 @@ function positiveNumber(
     return null;
   }
 
-  const result = Number(
-    String(value)
-      .replaceAll(',', '')
-  );
+  const result =
+    Number(
+      String(value)
+        .replaceAll(',', '')
+    );
 
   return Number.isFinite(result)
     ? result
