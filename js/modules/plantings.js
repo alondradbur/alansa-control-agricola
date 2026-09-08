@@ -125,7 +125,6 @@ export async function plantings() {
                 <th>Rendimiento esperado</th>
                 <th>Cajas proyectadas</th>
                 <th>Periodo de cosecha</th>
-                <th>Semilla estimada</th>
                 <th>Otros costos aproximados</th>
                 <th>Estado</th>
                 <th>Acciones</th>
@@ -222,12 +221,6 @@ function createRow(
         )}
       </td>
 
-      <td>
-        ${money(
-          row.estimated_seed_cost,
-          row.seed_currency
-        )}
-      </td>
 
       <td>
         ${estimatedCostSummaryHtml(
@@ -543,7 +536,7 @@ function openPlantingForm(
 
             ${inputField(
               'density_per_ha',
-              'Semillas por hectárea',
+              'Densidad de siembra (semillas/ha)',
               row?.density_per_ha ??
                 selectedProduct.default_density_per_ha ??
                 100000,
@@ -551,27 +544,10 @@ function openPlantingForm(
               'required min="1" step="1"'
             )}
 
-            ${moneyField(
-              'seed_cost_per_thousand',
-              'Costo aproximado de semilla por millar',
-              formatMoneyText(
-                row?.seed_cost_per_thousand ??
-                selectedProduct.seed_cost_per_thousand ??
-                400
-              )
-            )}
-
-            ${currencyField(
-              'seed_currency',
-              'Moneda del costo de semilla',
-              row?.seed_currency ||
-                selectedProduct.seed_currency ||
-                'USD'
-            )}
 
             ${inputField(
               'harvest_start',
-              'Inicio de cosecha',
+              'Inicio estimado de cosecha',
               row?.harvest_start || '',
               'date',
               'required'
@@ -579,7 +555,7 @@ function openPlantingForm(
 
             ${inputField(
               'harvest_end',
-              'Fin de cosecha',
+              'Fin estimado de cosecha',
               row?.harvest_end || '',
               'date',
               'required'
@@ -605,7 +581,7 @@ function openPlantingForm(
 
             ${inputField(
               'standard_box_lbs',
-              'Peso estándar por caja (lb)',
+              'Peso estimado por caja (lb)',
               row?.standard_box_lbs ??
                 selectedProduct.standard_box_lbs ??
                 12,
@@ -613,13 +589,6 @@ function openPlantingForm(
               'min="0.01" step="0.01"'
             )}
 
-            ${inputField(
-              'trailers_per_week',
-              'Meta de tráileres por semana',
-              row?.trailers_per_week ?? 1,
-              'number',
-              'min="0" step="0.01"'
-            )}
 
             <div class="field">
               <label>
@@ -675,8 +644,8 @@ function openPlantingForm(
                 </h3>
 
                 <p class="muted">
-                  Agrega únicamente costos para la proyección.
-                  Los gastos reales se capturan en Gastos.
+                  Captura los costos que estimas para esta siembra.
+                  Los gastos reales y sus unidades se registran en Gastos.
                 </p>
               </div>
 
@@ -702,30 +671,28 @@ function openPlantingForm(
             <div class="planting-projection-preview">
 
               <div>
-                <span>
-                  Semilla estimada
-                </span>
+                <span>Producción estimada</span>
+                <strong id="projectedProductionPreview">
+                  0 cajas
+                </strong>
+              </div>
 
-                <strong id="seedEstimatePreview">
+              <div>
+                <span>Venta proyectada</span>
+                <strong id="projectedSalesPreview">
                   —
                 </strong>
               </div>
 
               <div>
-                <span>
-                  Otros costos MXN
-                </span>
-
+                <span>Costos aproximados MXN</span>
                 <strong id="otherCostsMxnPreview">
                   $0.00 MXN
                 </strong>
               </div>
 
               <div>
-                <span>
-                  Otros costos USD
-                </span>
-
+                <span>Costos aproximados USD</span>
                 <strong id="otherCostsUsdPreview">
                   $0.00 USD
                 </strong>
@@ -819,6 +786,16 @@ function openPlantingForm(
           collectEstimatedCosts(
             modalRoot
           );
+
+        /*
+         * Compatibilidad con columnas existentes en D1.
+         * Estos valores ya no se capturan ni se usan
+         * para la proyección financiera.
+         */
+        payload.seed_cost_per_thousand = 0;
+        payload.seed_currency = 'USD';
+        payload.trailers_per_week =
+          row?.trailers_per_week ?? 1;
 
         if (editing) {
           payload.id =
@@ -1021,9 +998,9 @@ function bindEstimatedCosts(
 
   [
     'hectares',
-    'density_per_ha',
-    'seed_cost_per_thousand',
-    'seed_currency'
+    'expected_yield_boxes_ha',
+    'price_per_box',
+    'price_currency'
   ].forEach(name => {
     root
       .querySelector(
@@ -1164,40 +1141,38 @@ function updateProjectionPreview(
         ?.value
     );
 
-  const density =
+  const expectedYield =
     numeric(
       root
         .querySelector(
-          '[name="density_per_ha"]'
+          '[name="expected_yield_boxes_ha"]'
         )
         ?.value
     );
 
-  const seedCost =
+  const pricePerBox =
     numeric(
       normalizeMoneyText(
         root
           .querySelector(
-            '[name="seed_cost_per_thousand"]'
+            '[name="price_per_box"]'
           )
           ?.value || ''
       )
     );
 
-  const seedCurrency =
+  const priceCurrency =
     root
       .querySelector(
-        '[name="seed_currency"]'
+        '[name="price_currency"]'
       )
       ?.value || 'USD';
 
-  const estimatedSeed =
-    (
-      hectares *
-      density /
-      1000
-    ) *
-    seedCost;
+  const projectedBoxes =
+    hectares * expectedYield;
+
+  const projectedSales =
+    projectedBoxes * pricePerBox;
 
   const costs =
     collectEstimatedCosts(
@@ -1209,39 +1184,49 @@ function updateProjectionPreview(
       costs
     );
 
-  const seedPreview =
+  const production =
     root.querySelector(
-      '#seedEstimatePreview'
+      '#projectedProductionPreview'
     );
 
-  const mxnPreview =
+  const sales =
+    root.querySelector(
+      '#projectedSalesPreview'
+    );
+
+  const mxn =
     root.querySelector(
       '#otherCostsMxnPreview'
     );
 
-  const usdPreview =
+  const usd =
     root.querySelector(
       '#otherCostsUsdPreview'
     );
 
-  if (seedPreview) {
-    seedPreview.textContent =
+  if (production) {
+    production.textContent =
+      `${number(projectedBoxes, 0)} cajas`;
+  }
+
+  if (sales) {
+    sales.textContent =
       money(
-        estimatedSeed,
-        seedCurrency
+        projectedSales,
+        priceCurrency
       );
   }
 
-  if (mxnPreview) {
-    mxnPreview.textContent =
+  if (mxn) {
+    mxn.textContent =
       money(
         totals.mxn,
         'MXN'
       );
   }
 
-  if (usdPreview) {
-    usdPreview.textContent =
+  if (usd) {
+    usd.textContent =
       money(
         totals.usd,
         'USD'
@@ -1454,19 +1439,6 @@ function bindProductDefaults(
           product.default_density_per_ha || ''
         );
 
-        setFieldValue(
-          root,
-          'seed_cost_per_thousand',
-          formatMoneyText(
-            product.seed_cost_per_thousand || 0
-          )
-        );
-
-        setFieldValue(
-          root,
-          'seed_currency',
-          product.seed_currency || 'USD'
-        );
 
         setFieldValue(
           root,
