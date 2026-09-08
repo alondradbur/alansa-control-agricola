@@ -590,13 +590,7 @@ function validatePlanting(
     };
   }
 
-  const estimatedSeedCost =
-    (
-      hectares *
-      density /
-      1000
-    ) *
-    seedCost;
+  const estimatedSeedCost = 0;
 
   return {
     values: {
