@@ -2038,11 +2038,21 @@ async function printShipmentPdf(id) {
             border-bottom: 3px solid #1b6b45;
           }
 
-          .brand {
-            font-size: 28px;
-            font-weight: 800;
-            color: #174f38;
-          }
+          .pdf-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 7px;
+}
+
+.pdf-logo {
+  display: block;
+  width: 150px;
+  height: auto;
+  max-height: 70px;
+  object-fit: contain;
+  object-position: left center;
+}
 
           .title {
             text-align: right;
@@ -2137,14 +2147,17 @@ async function printShipmentPdf(id) {
       <body>
 
         <header class="head">
-          <div>
-            <div class="brand">
-              ALANSA
-            </div>
-            <div>
-              Remisión agrícola
-            </div>
-          </div>
+          <div class="pdf-brand">
+  <img
+    src="/assets/logo-alansa.png"
+    alt="ALANSA"
+    class="pdf-logo"
+  >
+
+  <div>
+    Remisión agrícola
+  </div>
+</div>
 
           <div class="title">
             <h1>
