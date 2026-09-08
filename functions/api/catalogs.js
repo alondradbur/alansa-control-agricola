@@ -2,12 +2,13 @@
    SISTEMA DE CONTROL AGRÍCOLA
    API: CATÁLOGOS
 
-   Funciones:
-   - Consultar catálogos.
-   - Crear registros.
-   - Editar registros existentes.
-   - Eliminar registros no relacionados.
-   - Normalizar importes con separadores de miles.
+   Incluye:
+   - Productos
+   - Clientes
+   - Proveedores
+   - Categorías de gastos
+   - Unidades de costo
+   - Formas de pago
    ========================================================= */
 
 
@@ -25,6 +26,7 @@ const TABLES = {
   clients: 'clients',
   suppliers: 'suppliers',
   expense_categories: 'expense_categories',
+  expense_units: 'expense_units',
   payment_methods: 'payment_methods'
 };
 
@@ -39,6 +41,7 @@ export async function onRequestGet({
   const [
     products,
     expenseCategories,
+    expenseUnits,
     clients,
     suppliers,
     paymentMethods
@@ -55,6 +58,14 @@ export async function onRequestGet({
       .prepare(`
         SELECT *
         FROM expense_categories
+        ORDER BY name
+      `)
+      .all(),
+
+    env.DB
+      .prepare(`
+        SELECT *
+        FROM expense_units
         ORDER BY name
       `)
       .all(),
@@ -91,6 +102,9 @@ export async function onRequestGet({
     expense_categories:
       expenseCategories.results || [],
 
+    expense_units:
+      expenseUnits.results || [],
+
     clients:
       clients.results || [],
 
@@ -118,12 +132,8 @@ export async function onRequestPost({
 
   try {
 
-    /* -------------------------------------------------------
-       3.1. CLIENTES
-       ------------------------------------------------------- */
-
     if (entity === 'clients') {
-      requireName(
+      requireText(
         data.name,
         'El nombre del cliente es obligatorio.'
       );
@@ -144,19 +154,13 @@ export async function onRequestPost({
         )
         .run();
 
-      return json({
-        ok: true,
-        id: result.meta?.last_row_id
-      });
+      return created(
+        result
+      );
     }
 
-
-    /* -------------------------------------------------------
-       3.2. PROVEEDORES
-       ------------------------------------------------------- */
-
     if (entity === 'suppliers') {
-      requireName(
+      requireText(
         data.name,
         'El nombre del proveedor es obligatorio.'
       );
@@ -177,27 +181,16 @@ export async function onRequestPost({
         )
         .run();
 
-      return json({
-        ok: true,
-        id: result.meta?.last_row_id
-      });
+      return created(
+        result
+      );
     }
 
-
-    /* -------------------------------------------------------
-       3.3. CATEGORÍAS DE GASTO
-       ------------------------------------------------------- */
-
     if (entity === 'expense_categories') {
-      requireName(
+      requireText(
         data.name,
         'El nombre de la categoría es obligatorio.'
       );
-
-      const defaultAmount =
-        parseMoney(
-          data.default_amount
-        );
 
       const result = await env.DB
         .prepare(`
@@ -210,7 +203,9 @@ export async function onRequestPost({
         `)
         .bind(
           data.name.trim(),
-          defaultAmount,
+          parseMoney(
+            data.default_amount
+          ),
           validCurrency(
             data.default_currency,
             'MXN'
@@ -218,19 +213,49 @@ export async function onRequestPost({
         )
         .run();
 
-      return json({
-        ok: true,
-        id: result.meta?.last_row_id
-      });
+      return created(
+        result
+      );
     }
 
+    if (entity === 'expense_units') {
+      requireText(
+        data.name,
+        'El nombre de la unidad es obligatorio.'
+      );
 
-    /* -------------------------------------------------------
-       3.4. FORMAS DE PAGO
-       ------------------------------------------------------- */
+      const source =
+        validQuantitySource(
+          data.quantity_source
+        );
+
+      if (!source) {
+        return error(
+          'Selecciona cómo se obtiene la cantidad.'
+        );
+      }
+
+      const result = await env.DB
+        .prepare(`
+          INSERT INTO expense_units (
+            name,
+            quantity_source
+          )
+          VALUES (?, ?)
+        `)
+        .bind(
+          data.name.trim(),
+          source
+        )
+        .run();
+
+      return created(
+        result
+      );
+    }
 
     if (entity === 'payment_methods') {
-      requireName(
+      requireText(
         data.name,
         'El nombre de la forma de pago es obligatorio.'
       );
@@ -247,24 +272,18 @@ export async function onRequestPost({
         )
         .run();
 
-      return json({
-        ok: true,
-        id: result.meta?.last_row_id
-      });
+      return created(
+        result
+      );
     }
 
-
-    /* -------------------------------------------------------
-       3.5. PRODUCTOS
-       ------------------------------------------------------- */
-
     if (entity === 'products') {
-      requireName(
+      requireText(
         data.name,
         'El nombre del producto es obligatorio.'
       );
 
-      requireName(
+      requireText(
         data.short_code,
         'El código del producto es obligatorio.'
       );
@@ -275,9 +294,7 @@ export async function onRequestPost({
         await env.DB
           .prepare(`
             UPDATE products
-            SET
-              is_default = 0,
-              updated_at = CURRENT_TIMESTAMP
+            SET is_default = 0
           `)
           .run();
       }
@@ -328,10 +345,9 @@ export async function onRequestPost({
         )
         .run();
 
-      return json({
-        ok: true,
-        id: result.meta?.last_row_id
-      });
+      return created(
+        result
+      );
     }
 
     return error(
@@ -360,7 +376,9 @@ export async function onRequestPut({
     data = {}
   } = await request.json();
 
-  const recordId = Number(id);
+  const recordId = Number(
+    id
+  );
 
   if (!recordId) {
     return error(
@@ -376,12 +394,8 @@ export async function onRequestPut({
 
   try {
 
-    /* -------------------------------------------------------
-       4.1. CLIENTES
-       ------------------------------------------------------- */
-
     if (entity === 'clients') {
-      requireName(
+      requireText(
         data.name,
         'El nombre del cliente es obligatorio.'
       );
@@ -404,19 +418,13 @@ export async function onRequestPut({
         )
         .run();
 
-      return json({
-        ok: true,
-        id: recordId
-      });
+      return updated(
+        recordId
+      );
     }
 
-
-    /* -------------------------------------------------------
-       4.2. PROVEEDORES
-       ------------------------------------------------------- */
-
     if (entity === 'suppliers') {
-      requireName(
+      requireText(
         data.name,
         'El nombre del proveedor es obligatorio.'
       );
@@ -439,19 +447,13 @@ export async function onRequestPut({
         )
         .run();
 
-      return json({
-        ok: true,
-        id: recordId
-      });
+      return updated(
+        recordId
+      );
     }
 
-
-    /* -------------------------------------------------------
-       4.3. CATEGORÍAS DE GASTO
-       ------------------------------------------------------- */
-
     if (entity === 'expense_categories') {
-      requireName(
+      requireText(
         data.name,
         'El nombre de la categoría es obligatorio.'
       );
@@ -479,19 +481,51 @@ export async function onRequestPut({
         )
         .run();
 
-      return json({
-        ok: true,
-        id: recordId
-      });
+      return updated(
+        recordId
+      );
     }
 
+    if (entity === 'expense_units') {
+      requireText(
+        data.name,
+        'El nombre de la unidad es obligatorio.'
+      );
 
-    /* -------------------------------------------------------
-       4.4. FORMAS DE PAGO
-       ------------------------------------------------------- */
+      const source =
+        validQuantitySource(
+          data.quantity_source
+        );
+
+      if (!source) {
+        return error(
+          'Selecciona cómo se obtiene la cantidad.'
+        );
+      }
+
+      await env.DB
+        .prepare(`
+          UPDATE expense_units
+          SET
+            name = ?,
+            quantity_source = ?,
+            updated_at = CURRENT_TIMESTAMP
+          WHERE id = ?
+        `)
+        .bind(
+          data.name.trim(),
+          source,
+          recordId
+        )
+        .run();
+
+      return updated(
+        recordId
+      );
+    }
 
     if (entity === 'payment_methods') {
-      requireName(
+      requireText(
         data.name,
         'El nombre de la forma de pago es obligatorio.'
       );
@@ -499,8 +533,7 @@ export async function onRequestPut({
       await env.DB
         .prepare(`
           UPDATE payment_methods
-          SET
-            name = ?
+          SET name = ?
           WHERE id = ?
         `)
         .bind(
@@ -509,24 +542,18 @@ export async function onRequestPut({
         )
         .run();
 
-      return json({
-        ok: true,
-        id: recordId
-      });
+      return updated(
+        recordId
+      );
     }
 
-
-    /* -------------------------------------------------------
-       4.5. PRODUCTOS
-       ------------------------------------------------------- */
-
     if (entity === 'products') {
-      requireName(
+      requireText(
         data.name,
         'El nombre del producto es obligatorio.'
       );
 
-      requireName(
+      requireText(
         data.short_code,
         'El código del producto es obligatorio.'
       );
@@ -596,10 +623,9 @@ export async function onRequestPut({
         )
         .run();
 
-      return json({
-        ok: true,
-        id: recordId
-      });
+      return updated(
+        recordId
+      );
     }
 
     return error(
@@ -672,6 +698,26 @@ export async function onRequestDelete({
    6. UTILIDADES
    ========================================================= */
 
+function created(
+  result
+) {
+  return json({
+    ok: true,
+    id: result.meta?.last_row_id
+  });
+}
+
+
+function updated(
+  id
+) {
+  return json({
+    ok: true,
+    id
+  });
+}
+
+
 function parseMoney(
   value
 ) {
@@ -710,6 +756,19 @@ function validCurrency(
 }
 
 
+function validQuantitySource(
+  value
+) {
+  return [
+    'ONE',
+    'HECTARES',
+    'MANUAL'
+  ].includes(value)
+    ? value
+    : null;
+}
+
+
 function optionalText(
   value
 ) {
@@ -721,7 +780,7 @@ function optionalText(
 }
 
 
-function requireName(
+function requireText(
   value,
   message
 ) {
