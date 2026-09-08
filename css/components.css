@@ -1971,3 +1971,296 @@ textarea.input {
     max-height: 360px;
   }
 }
+
+/* =========================================================
+   ALANSA - REMISIONES V2
+   Agregar al final de css/components.css
+   ========================================================= */
+
+.shipment-header-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.shipments-v2-content {
+  display: grid;
+  gap: 16px;
+}
+
+.shipments-v2-filters {
+  display: grid;
+  grid-template-columns:
+    repeat(4, minmax(135px, 1fr))
+    minmax(220px, 1.4fr)
+    auto;
+  gap: 12px;
+  align-items: end;
+}
+
+.shipments-table-count {
+  display: block;
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: .76rem;
+}
+
+.shipments-v2-scroll {
+  max-height: 560px;
+  overflow: auto;
+}
+
+.shipments-v2-table {
+  min-width: 1320px;
+}
+
+.shipments-v2-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  background: #eef3f1;
+}
+
+.shipment-row-actions {
+  display: flex;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.shipment-status {
+  display: inline-flex;
+  min-width: 76px;
+  justify-content: center;
+  padding: 5px 9px;
+  border-radius: 999px;
+  font-size: .72rem;
+  font-weight: 800;
+}
+
+.shipment-status.pending {
+  color: #8c6200;
+  background: #fff0c4;
+}
+
+.shipment-status.partial {
+  color: #1d5f9c;
+  background: #dfedfb;
+}
+
+.shipment-status.paid {
+  color: #166c3d;
+  background: #def3e6;
+}
+
+.shipments-empty {
+  padding: 24px;
+}
+
+
+/* MODAL */
+
+.shipment-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: grid;
+  place-items: center;
+  padding: 22px;
+  background: rgba(12, 24, 34, .55);
+  backdrop-filter: blur(4px);
+}
+
+.shipment-modal {
+  width: min(1180px, 96vw);
+  max-height: 94vh;
+  overflow: auto;
+  padding: 0;
+}
+
+.shipment-modal-head {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--border);
+  background: #fff;
+}
+
+.shipment-modal-head span {
+  color: var(--muted);
+  font-size: .76rem;
+  font-weight: 700;
+}
+
+.shipment-modal-head h2 {
+  margin: 3px 0 0;
+  font-size: 1.1rem;
+}
+
+#shipmentForm {
+  padding: 20px;
+}
+
+.shipment-form-grid {
+  display: grid;
+  grid-template-columns:
+    repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.shipment-lines-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  margin-top: 24px;
+  padding: 13px 0;
+  border-top: 1px solid var(--border);
+}
+
+.shipment-lines-head span {
+  display: block;
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: .76rem;
+}
+
+.shipment-lines-scroll {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.shipment-lines-table {
+  width: 100%;
+  min-width: 900px;
+  border-collapse: collapse;
+}
+
+.shipment-lines-table th,
+.shipment-lines-table td {
+  padding: 9px;
+  border-bottom: 1px solid var(--border);
+  text-align: right;
+}
+
+.shipment-lines-table th:first-child,
+.shipment-lines-table td:first-child {
+  text-align: left;
+}
+
+.shipment-lines-table th {
+  background: #eef4f1;
+  font-size: .76rem;
+}
+
+.shipment-lines-table .input {
+  min-width: 110px;
+}
+
+.shipment-lines-table
+.shipment-line-product {
+  min-width: 180px;
+}
+
+.shipment-form-bottom {
+  display: grid;
+  grid-template-columns:
+    minmax(0, 1fr)
+    minmax(300px, 420px);
+  gap: 20px;
+  align-items: start;
+  margin-top: 20px;
+}
+
+.shipment-notes-field textarea {
+  min-height: 126px;
+  resize: vertical;
+}
+
+.shipment-totals {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #f7faf8;
+}
+
+.shipment-totals > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 10px 13px;
+  border-bottom: 1px solid var(--border);
+}
+
+.shipment-totals > div:last-child {
+  border-bottom: 0;
+}
+
+.shipment-totals span {
+  color: var(--muted);
+  font-size: .78rem;
+}
+
+.shipment-totals strong {
+  text-align: right;
+}
+
+.shipment-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 22px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.money-input {
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 1100px) {
+  .shipments-v2-filters {
+    grid-template-columns:
+      repeat(3, minmax(0, 1fr));
+  }
+
+  .shipment-form-grid {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .shipment-header-actions,
+  .shipment-lines-head,
+  .shipment-modal-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .shipments-v2-filters,
+  .shipment-form-grid,
+  .shipment-form-bottom {
+    grid-template-columns: 1fr;
+  }
+
+  .shipment-modal-backdrop {
+    padding: 0;
+  }
+
+  .shipment-modal {
+    width: 100vw;
+    max-height: 100vh;
+    min-height: 100vh;
+    border-radius: 0;
+  }
+
+  #shipmentForm {
+    padding: 15px;
+  }
+}
