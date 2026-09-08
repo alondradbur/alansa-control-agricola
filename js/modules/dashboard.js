@@ -1,145 +1,62 @@
 import { api } from '../core/api.js';
-import { money, number } from '../core/format.js';
+import {
+  escapeHtml,
+  money,
+  number,
+  date
+} from '../core/format.js';
 import { moduleHeader } from '../components/common.js';
 
 
 /* =========================================================
-   1. DASHBOARD
+   ALANSA - DASHBOARD
+   ========================================================= */
+
+let dashboardData = null;
+
+let filtersState = {
+  from: '',
+  to: '',
+  plantingId: '',
+  productId: ''
+};
+
+let shipmentTableState = {
+  status: '',
+  client: '',
+  search: ''
+};
+
+let dueTableState = {
+  days: '30',
+  client: ''
+};
+
+
+/* =========================================================
+   1. RENDER PRINCIPAL
    ========================================================= */
 
 export async function dashboard() {
-  let data = {
-    sales_usd: 0,
-    collected_usd: 0,
-    receivable_usd: 0,
-    expenses_mxn: 0,
-    production_boxes: 0,
-    production_pounds: 0
-  };
-
-  let plantings = [];
-
   try {
-    const responses = await Promise.all([
-      api('dashboard'),
-      api('plantings')
-    ]);
-
-    data = {
-      ...data,
-      ...(responses[0] || {})
-    };
-
-    plantings = responses[1] || [];
-  } catch {}
-
-  const projection = calculateProjection(
-    plantings,
-    data
-  );
+    dashboardData = await api('dashboard');
+  } catch {
+    dashboardData = emptyDashboardData();
+  }
 
   return `
     ${moduleHeader(
       'Dashboard',
-      'Visión general de la operación agrícola'
+      'Resumen general de la operación agrícola'
     )}
 
-    <div class="content dashboard-content">
+    <div class="content dashboard-v2-content">
 
-      ${filters()}
+      ${dashboardFilters()}
 
-      <section class="dashboard-kpis">
-
-        ${kpi(
-          'Ventas',
-          money(data.sales_usd, 'USD'),
-          'Importe bruto remitido',
-          'primary'
-        )}
-
-        ${kpi(
-          'Cobrado',
-          money(data.collected_usd, 'USD'),
-          'Pagos aplicados',
-          'success'
-        )}
-
-        ${kpi(
-          'Por cobrar',
-          money(data.receivable_usd, 'USD'),
-          'Saldo pendiente',
-          'warning'
-        )}
-
-        ${kpi(
-          'Producción',
-          `${number(data.production_boxes)} cajas`,
-          `${number(data.production_pounds)} lb`,
-          'neutral'
-        )}
-
-        ${kpi(
-          'Gastos',
-          money(data.expenses_mxn, 'MXN'),
-          'Equivalente acumulado',
-          'neutral'
-        )}
-
-      </section>
-
-
-      ${projectionSection(
-        projection
-      )}
-
-
-      <section class="dashboard-charts">
-
-        <article class="card dashboard-panel">
-
-          <div class="dashboard-panel-head">
-            <div>
-              <span class="dashboard-eyebrow">
-                Producción
-              </span>
-
-              <h2>
-                Producción por semana
-              </h2>
-            </div>
-          </div>
-
-          <div class="chart-placeholder">
-            Las gráficas se alimentarán de D1.
-            <br>
-            Cada punto mostrará su valor.
-          </div>
-
-        </article>
-
-
-        <article class="card dashboard-panel">
-
-          <div class="dashboard-panel-head">
-            <div>
-              <span class="dashboard-eyebrow">
-                Gastos
-              </span>
-
-              <h2>
-                Gastos por categoría
-              </h2>
-            </div>
-          </div>
-
-          <div class="chart-placeholder">
-            Valores y porcentajes visibles
-            en cada categoría.
-          </div>
-
-        </article>
-
-      </section>
+      <div id="dashboardBlocks">
+        ${dashboardBlocks()}
+      </div>
 
     </div>
   `;
@@ -147,69 +64,583 @@ export async function dashboard() {
 
 
 /* =========================================================
-   2. FILTROS
+   2. ENLAZAR EVENTOS
    ========================================================= */
 
-function filters() {
+export function bindDashboard() {
+  const root = document;
+
+  [
+    'dashboardFrom',
+    'dashboardTo',
+    'dashboardPlanting',
+    'dashboardProduct'
+  ].forEach(id => {
+    root
+      .getElementById(id)
+      ?.addEventListener(
+        'change',
+        () => {
+          filtersState = readDashboardFilters(
+            root
+          );
+
+          renderDashboardBlocks(
+            root
+          );
+        }
+      );
+  });
+
+  root
+    .getElementById(
+      'dashboardClearFilters'
+    )
+    ?.addEventListener(
+      'click',
+      () => {
+        filtersState = {
+          from: '',
+          to: '',
+          plantingId: '',
+          productId: ''
+        };
+
+        shipmentTableState = {
+          status: '',
+          client: '',
+          search: ''
+        };
+
+        dueTableState = {
+          days: '30',
+          client: ''
+        };
+
+        [
+          'dashboardFrom',
+          'dashboardTo',
+          'dashboardPlanting',
+          'dashboardProduct'
+        ].forEach(id => {
+          const field =
+            root.getElementById(id);
+
+          if (field) {
+            field.value = '';
+          }
+        });
+
+        renderDashboardBlocks(
+          root
+        );
+      }
+    );
+
+  bindLocalTableFilters(
+    root
+  );
+}
+
+
+function bindLocalTableFilters(
+  root
+) {
+  root
+    .querySelector(
+      '#shipmentStatusFilter'
+    )
+    ?.addEventListener(
+      'change',
+      event => {
+        shipmentTableState.status =
+          event.target.value;
+
+        renderShipmentTable(
+          root
+        );
+      }
+    );
+
+  root
+    .querySelector(
+      '#shipmentClientFilter'
+    )
+    ?.addEventListener(
+      'change',
+      event => {
+        shipmentTableState.client =
+          event.target.value;
+
+        renderShipmentTable(
+          root
+        );
+      }
+    );
+
+  root
+    .querySelector(
+      '#shipmentSearchFilter'
+    )
+    ?.addEventListener(
+      'input',
+      event => {
+        shipmentTableState.search =
+          event.target.value;
+
+        renderShipmentTable(
+          root
+        );
+      }
+    );
+
+  root
+    .querySelector(
+      '#dueDaysFilter'
+    )
+    ?.addEventListener(
+      'change',
+      event => {
+        dueTableState.days =
+          event.target.value;
+
+        renderDueTable(
+          root
+        );
+      }
+    );
+
+  root
+    .querySelector(
+      '#dueClientFilter'
+    )
+    ?.addEventListener(
+      'change',
+      event => {
+        dueTableState.client =
+          event.target.value;
+
+        renderDueTable(
+          root
+        );
+      }
+    );
+}
+
+
+/* =========================================================
+   3. FILTROS GENERALES
+   ========================================================= */
+
+function dashboardFilters() {
   return `
-    <section class="card dashboard-filters">
+    <section class="card dashboard-v2-filters">
 
-      <div class="dashboard-filter-grid">
+      <div class="dashboard-v2-filter-grid">
 
         <div class="field">
-          <label>Desde</label>
+          <label>
+            Siembra / contrato
+          </label>
 
-          <input
+          <select
             class="input"
-            type="date"
-            id="filterFrom"
+            id="dashboardPlanting"
           >
-        </div>
-
-        <div class="field">
-          <label>Hasta</label>
-
-          <input
-            class="input"
-            type="date"
-            id="filterTo"
-          >
-        </div>
-
-        <div class="field">
-          <label>Siembra / contrato</label>
-
-          <select class="input">
-            <option>
-              Todos
+            <option value="">
+              Todas
             </option>
+
+            ${plantingOptions(
+              filtersState.plantingId
+            )}
           </select>
         </div>
 
         <div class="field">
-          <label>Producto</label>
+          <label>
+            Producto
+          </label>
 
-          <select class="input">
-            <option>
+          <select
+            class="input"
+            id="dashboardProduct"
+          >
+            <option value="">
               Todos
             </option>
 
-            <option selected>
-              Minibell
-            </option>
+            ${productOptions(
+              filtersState.productId
+            )}
           </select>
+        </div>
+
+        <div class="field">
+          <label>
+            Fecha inicio
+          </label>
+
+          <input
+            class="input"
+            id="dashboardFrom"
+            type="date"
+            value="${escapeHtml(
+              filtersState.from
+            )}"
+          >
+        </div>
+
+        <div class="field">
+          <label>
+            Fecha fin
+          </label>
+
+          <input
+            class="input"
+            id="dashboardTo"
+            type="date"
+            value="${escapeHtml(
+              filtersState.to
+            )}"
+          >
         </div>
 
       </div>
 
-      <div class="dashboard-filter-actions">
+      <div class="dashboard-v2-filter-actions">
+        <span class="dashboard-v2-filter-note">
+          Las fechas afectan Remisiones, Gastos y Situación real.
+          La Proyección corresponde a la siembra seleccionada.
+        </span>
 
         <button
-          class="btn dashboard-clear"
+          class="btn"
+          id="dashboardClearFilters"
           type="button"
         >
           Limpiar filtros
         </button>
+      </div>
+
+    </section>
+  `;
+}
+
+
+function readDashboardFilters(
+  root
+) {
+  return {
+    from:
+      root
+        .getElementById(
+          'dashboardFrom'
+        )
+        ?.value || '',
+
+    to:
+      root
+        .getElementById(
+          'dashboardTo'
+        )
+        ?.value || '',
+
+    plantingId:
+      root
+        .getElementById(
+          'dashboardPlanting'
+        )
+        ?.value || '',
+
+    productId:
+      root
+        .getElementById(
+          'dashboardProduct'
+        )
+        ?.value || ''
+  };
+}
+
+
+/* =========================================================
+   4. BLOQUES
+   ========================================================= */
+
+function dashboardBlocks() {
+  const projection =
+    calculateProjection();
+
+  const real =
+    calculateRealSituation();
+
+  return `
+    ${projectionBlock(
+      projection
+    )}
+
+    ${realBlock(
+      real
+    )}
+
+    ${shipmentsBlock()}
+
+    ${dueBlock()}
+  `;
+}
+
+
+function renderDashboardBlocks(
+  root
+) {
+  const container =
+    root.getElementById(
+      'dashboardBlocks'
+    );
+
+  if (!container) {
+    return;
+  }
+
+  container.innerHTML =
+    dashboardBlocks();
+
+  bindLocalTableFilters(
+    root
+  );
+}
+
+
+/* =========================================================
+   5. BLOQUE 1 - PROYECCIÓN
+   ========================================================= */
+
+function projectionBlock(
+  projection
+) {
+  return `
+    <section class="card dashboard-v2-section dashboard-v2-projection">
+
+      ${sectionHead(
+        '1',
+        'Proyección de la siembra',
+        'Información registrada en el módulo de Siembras',
+        'green',
+        projection.meta
+      )}
+
+      ${
+        projection.count === 0
+          ? emptyState(
+              'No hay una siembra que coincida con los filtros seleccionados.'
+            )
+          : `
+              <div class="dashboard-v2-table-wrap">
+
+                <table class="dashboard-v2-table projection-dashboard-table">
+
+                  <thead>
+                    <tr>
+                      <th rowspan="2">
+                        Concepto
+                      </th>
+
+                      <th colspan="2">
+                        Por hectárea
+                      </th>
+
+                      <th colspan="2">
+                        Por siembra
+                      </th>
+                    </tr>
+
+                    <tr>
+                      <th>MXN</th>
+                      <th>USD</th>
+                      <th>MXN</th>
+                      <th>USD</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    <tr>
+                      <td>
+                        <strong>
+                          Cajas proyectadas
+                        </strong>
+                      </td>
+
+                      <td colspan="2">
+                        ${number(
+                          projection.boxesPerHa,
+                          0
+                        )}
+                      </td>
+
+                      <td colspan="2">
+                        ${number(
+                          projection.boxesTotal,
+                          0
+                        )}
+                      </td>
+                    </tr>
+
+                    ${projectionMoneyRow(
+                      'Ingresos proyectados',
+                      projection.revenueMxnPerHa,
+                      projection.revenueUsdPerHa,
+                      projection.revenueMxn,
+                      projection.revenueUsd
+                    )}
+
+                    ${projectionMoneyRow(
+                      'Gastos estimados',
+                      projection.costMxnPerHa,
+                      projection.costUsdPerHa,
+                      projection.costMxn,
+                      projection.costUsd
+                    )}
+
+                    ${projectionMoneyRow(
+                      'Utilidad proyectada',
+                      projection.profitMxnPerHa,
+                      projection.profitUsdPerHa,
+                      projection.profitMxn,
+                      projection.profitUsd,
+                      true
+                    )}
+                  </tbody>
+
+                </table>
+
+              </div>
+            `
+      }
+
+    </section>
+  `;
+}
+
+
+function projectionMoneyRow(
+  label,
+  mxnPerHa,
+  usdPerHa,
+  mxnTotal,
+  usdTotal,
+  strong = false
+) {
+  const tagOpen =
+    strong ? '<strong>' : '';
+
+  const tagClose =
+    strong ? '</strong>' : '';
+
+  return `
+    <tr class="${strong
+      ? 'dashboard-v2-profit-row'
+      : ''}">
+
+      <td>
+        ${tagOpen}
+          ${label}
+        ${tagClose}
+      </td>
+
+      <td>
+        ${tagOpen}
+          ${money(
+            mxnPerHa,
+            'MXN'
+          )}
+        ${tagClose}
+      </td>
+
+      <td>
+        ${tagOpen}
+          ${money(
+            usdPerHa,
+            'USD'
+          )}
+        ${tagClose}
+      </td>
+
+      <td>
+        ${tagOpen}
+          ${money(
+            mxnTotal,
+            'MXN'
+          )}
+        ${tagClose}
+      </td>
+
+      <td>
+        ${tagOpen}
+          ${money(
+            usdTotal,
+            'USD'
+          )}
+        ${tagClose}
+      </td>
+
+    </tr>
+  `;
+}
+
+
+/* =========================================================
+   6. BLOQUE 2 - SITUACIÓN REAL
+   ========================================================= */
+
+function realBlock(
+  real
+) {
+  return `
+    <section class="card dashboard-v2-section dashboard-v2-real">
+
+      ${sectionHead(
+        '2',
+        'Situación real',
+        'Información de Remisiones y Gastos según los filtros seleccionados',
+        'blue'
+      )}
+
+      <div class="dashboard-v2-kpis">
+
+        ${realKpi(
+          'Ingresos esperados',
+          real.expectedMxn,
+          real.expectedUsd,
+          'success'
+        )}
+
+        ${realKpi(
+          'Ingresos cobrados',
+          real.collectedMxn,
+          real.collectedUsd,
+          'primary'
+        )}
+
+        ${realKpi(
+          'Pendiente de cobro',
+          real.pendingMxn,
+          real.pendingUsd,
+          'warning'
+        )}
+
+        ${realKpi(
+          'Gastos',
+          real.expensesMxn,
+          real.expensesUsd,
+          'danger'
+        )}
+
+        ${realKpi(
+          'Utilidad total',
+          real.profitMxn,
+          real.profitUsd,
+          'profit'
+        )}
 
       </div>
 
@@ -218,32 +649,32 @@ function filters() {
 }
 
 
-/* =========================================================
-   3. KPI
-   ========================================================= */
-
-function kpi(
+function realKpi(
   label,
-  value,
-  meta,
+  mxn,
+  usd,
   tone
 ) {
   return `
-    <article
-      class="card dashboard-kpi dashboard-kpi-${tone}"
-    >
+    <article class="dashboard-v2-kpi dashboard-v2-kpi-${tone}">
 
-      <div class="dashboard-kpi-label">
+      <span>
         ${label}
-      </div>
+      </span>
 
-      <div class="dashboard-kpi-value">
-        ${value}
-      </div>
+      <strong>
+        ${money(
+          mxn,
+          'MXN'
+        )}
+      </strong>
 
-      <div class="dashboard-kpi-meta">
-        ${meta}
-      </div>
+      <small>
+        ${money(
+          usd,
+          'USD'
+        )}
+      </small>
 
     </article>
   `;
@@ -251,430 +682,1546 @@ function kpi(
 
 
 /* =========================================================
-   4. CALCULAR PROYECCIÓN
+   7. BLOQUE 3 - REMISIONES
    ========================================================= */
 
-function calculateProjection(
-  plantings,
-  dashboardData
+function shipmentsBlock() {
+  return `
+    <section class="card dashboard-v2-section">
+
+      ${sectionHead(
+        '3',
+        'Remisiones',
+        'Detalle de remisiones según los filtros seleccionados',
+        'dark'
+      )}
+
+      <div class="dashboard-v2-local-filters">
+
+        <div class="field">
+          <label>
+            Estatus
+          </label>
+
+          <select
+            class="input"
+            id="shipmentStatusFilter"
+          >
+            ${statusFilterOptions(
+              shipmentTableState.status
+            )}
+          </select>
+        </div>
+
+        <div class="field">
+          <label>
+            Cliente
+          </label>
+
+          <select
+            class="input"
+            id="shipmentClientFilter"
+          >
+            ${clientFilterOptions(
+              shipmentTableState.client
+            )}
+          </select>
+        </div>
+
+        <div class="field dashboard-v2-search">
+          <label>
+            Buscar remisión
+          </label>
+
+          <input
+            class="input"
+            id="shipmentSearchFilter"
+            type="search"
+            value="${escapeHtml(
+              shipmentTableState.search
+            )}"
+            placeholder="Folio..."
+          >
+        </div>
+
+      </div>
+
+      <div id="dashboardShipmentTable">
+        ${shipmentTableHtml()}
+      </div>
+
+    </section>
+  `;
+}
+
+
+function renderShipmentTable(
+  root
 ) {
-  const projection = {
-    plantings: 0,
-    hectares: 0,
-
-    boxes: 0,
-    pounds: 0,
-
-    salesUsd: 0,
-    salesMxn: 0,
-
-    seedUsd: 0,
-    seedMxn: 0,
-
-    productionBoxes:
-      numeric(
-        dashboardData.production_boxes
-      ),
-
-    progress: 0,
-    remainingBoxes: 0
-  };
-
-  plantings.forEach(planting => {
-    const hectares = numeric(
-      planting.hectares
+  const container =
+    root.getElementById(
+      'dashboardShipmentTable'
     );
 
-    const expectedYield = numeric(
-      planting.expected_yield_boxes_ha
+  if (container) {
+    container.innerHTML =
+      shipmentTableHtml();
+  }
+}
+
+
+function shipmentTableHtml() {
+  const rows =
+    filteredShipments(
+      true
     );
 
-    if (
-      hectares <= 0 ||
-      expectedYield <= 0
-    ) {
-      return;
-    }
-
-    const projectedBoxes =
-      hectares *
-      expectedYield;
-
-    const standardWeight = numeric(
-      planting.standard_box_lbs
-    ) || 12;
-
-    const projectedPounds =
-      projectedBoxes *
-      standardWeight;
-
-    const pricePerBox = numeric(
-      planting.price_per_box
+  if (rows.length === 0) {
+    return emptyState(
+      'No se encontraron remisiones para los filtros seleccionados.'
     );
-
-    const projectedSales =
-      projectedBoxes *
-      pricePerBox;
-
-    const seedCost = numeric(
-      planting.estimated_seed_cost
-    );
-
-    projection.plantings += 1;
-    projection.hectares += hectares;
-    projection.boxes += projectedBoxes;
-    projection.pounds += projectedPounds;
-
-    if (
-      planting.price_currency === 'MXN'
-    ) {
-      projection.salesMxn +=
-        projectedSales;
-    } else {
-      projection.salesUsd +=
-        projectedSales;
-    }
-
-    if (
-      planting.seed_currency === 'MXN'
-    ) {
-      projection.seedMxn +=
-        seedCost;
-    } else {
-      projection.seedUsd +=
-        seedCost;
-    }
-  });
-
-  if (projection.boxes > 0) {
-    projection.progress =
-      (
-        projection.productionBoxes /
-        projection.boxes
-      ) * 100;
-
-    projection.remainingBoxes =
-      Math.max(
-        projection.boxes -
-        projection.productionBoxes,
-        0
-      );
   }
 
-  return projection;
+  const totals =
+    sumShipments(
+      rows
+    );
+
+  return `
+    <div class="dashboard-v2-table-scroll">
+
+      <table class="dashboard-v2-table">
+
+        <thead>
+          <tr>
+            <th>No. remisión</th>
+            <th>Fecha</th>
+            <th>Cliente</th>
+            <th>Monto MXN</th>
+            <th>Monto USD</th>
+            <th>Estatus</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          ${rows
+            .map(shipmentRow)
+            .join('')}
+        </tbody>
+
+        <tfoot>
+          <tr>
+            <td colspan="3">
+              <strong>
+                Total general
+              </strong>
+            </td>
+
+            <td>
+              <strong>
+                ${money(
+                  totals.mxn,
+                  'MXN'
+                )}
+              </strong>
+            </td>
+
+            <td>
+              <strong>
+                ${money(
+                  totals.usd,
+                  'USD'
+                )}
+              </strong>
+            </td>
+
+            <td>
+              ${number(
+                rows.length,
+                0
+              )} remisiones
+            </td>
+          </tr>
+        </tfoot>
+
+      </table>
+
+    </div>
+  `;
+}
+
+
+function shipmentRow(
+  row
+) {
+  const amounts =
+    shipmentAmounts(
+      row
+    );
+
+  return `
+    <tr>
+
+      <td>
+        <strong>
+          ${escapeHtml(
+            row.folio || ''
+          )}
+        </strong>
+      </td>
+
+      <td>
+        ${safeDate(
+          row.shipment_date
+        )}
+      </td>
+
+      <td>
+        ${escapeHtml(
+          row.client_name || '—'
+        )}
+      </td>
+
+      <td>
+        ${money(
+          amounts.mxn,
+          'MXN'
+        )}
+      </td>
+
+      <td>
+        ${money(
+          amounts.usd,
+          'USD'
+        )}
+      </td>
+
+      <td>
+        ${statusBadge(
+          shipmentFinancialStatus(
+            row
+          )
+        )}
+      </td>
+
+    </tr>
+  `;
 }
 
 
 /* =========================================================
-   5. SECCIÓN PROYECCIÓN
+   8. BLOQUE 4 - PRÓXIMAS A VENCER
    ========================================================= */
 
-function projectionSection(
-  projection
-) {
-  if (
-    projection.plantings === 0
-  ) {
-    return `
-      <section class="dashboard-projection">
+function dueBlock() {
+  return `
+    <section class="card dashboard-v2-section dashboard-v2-due">
 
-        <div class="dashboard-section-head">
+      ${sectionHead(
+        '4',
+        'Próximas remisiones a vencer',
+        'Basado en la fecha de vencimiento y los días de crédito del cliente',
+        'red'
+      )}
 
-          <div>
-            <span class="dashboard-eyebrow">
-              Planeación
-            </span>
+      <div class="dashboard-v2-local-filters dashboard-v2-due-filters">
 
-            <h2>
-              Proyección
-            </h2>
+        <div class="field">
+          <label>
+            Días próximos
+          </label>
 
-            <p>
-              Agrega el rendimiento esperado
-              a tus siembras para generar
-              la proyección.
-            </p>
-          </div>
-
+          <select
+            class="input"
+            id="dueDaysFilter"
+          >
+            ${dueDaysOptions(
+              dueTableState.days
+            )}
+          </select>
         </div>
 
-        <article class="card projection-empty">
+        <div class="field">
+          <label>
+            Cliente
+          </label>
 
-          <strong>
-            Todavía no hay datos suficientes
-          </strong>
+          <select
+            class="input"
+            id="dueClientFilter"
+          >
+            ${clientFilterOptions(
+              dueTableState.client
+            )}
+          </select>
+        </div>
 
-          <span>
-            La proyección necesita hectáreas y
-            rendimiento esperado en cajas por hectárea.
-          </span>
+      </div>
 
-        </article>
+      <div id="dashboardDueTable">
+        ${dueTableHtml()}
+      </div>
 
-      </section>
+    </section>
+  `;
+}
+
+
+function renderDueTable(
+  root
+) {
+  const container =
+    root.getElementById(
+      'dashboardDueTable'
+    );
+
+  if (container) {
+    container.innerHTML =
+      dueTableHtml();
+  }
+}
+
+
+function dueTableHtml() {
+  const today =
+    startOfToday();
+
+  const limit =
+    Number(
+      dueTableState.days || 30
+    );
+
+  const rows =
+    filteredShipments(
+      false
+    )
+      .filter(row => {
+        if (
+          shipmentFinancialStatus(
+            row
+          ) === 'Cobrada'
+        ) {
+          return false;
+        }
+
+        if (!row.due_date) {
+          return false;
+        }
+
+        if (
+          dueTableState.client &&
+          String(row.client_id) !==
+            String(
+              dueTableState.client
+            )
+        ) {
+          return false;
+        }
+
+        const due =
+          parseDate(
+            row.due_date
+          );
+
+        if (!due) {
+          return false;
+        }
+
+        const days =
+          daysBetween(
+            today,
+            due
+          );
+
+        return (
+          days >= 0 &&
+          days <= limit
+        );
+      })
+      .sort((a, b) => {
+        return String(
+          a.due_date
+        ).localeCompare(
+          String(
+            b.due_date
+          )
+        );
+      });
+
+  if (rows.length === 0) {
+    return emptyState(
+      'No hay remisiones próximas a vencer en el periodo seleccionado.'
+    );
+  }
+
+  return `
+    <div class="dashboard-v2-table-scroll dashboard-v2-due-scroll">
+
+      <table class="dashboard-v2-table">
+
+        <thead>
+          <tr>
+            <th>No. remisión</th>
+            <th>Fecha</th>
+            <th>Vencimiento</th>
+            <th>Cliente</th>
+            <th>Monto MXN</th>
+            <th>Monto USD</th>
+            <th>Días restantes</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          ${rows
+            .map(dueRow)
+            .join('')}
+        </tbody>
+
+      </table>
+
+    </div>
+  `;
+}
+
+
+function dueRow(
+  row
+) {
+  const amounts =
+    shipmentAmounts(
+      row
+    );
+
+  const days =
+    daysBetween(
+      startOfToday(),
+      parseDate(
+        row.due_date
+      )
+    );
+
+  return `
+    <tr>
+
+      <td>
+        <strong>
+          ${escapeHtml(
+            row.folio || ''
+          )}
+        </strong>
+      </td>
+
+      <td>
+        ${safeDate(
+          row.shipment_date
+        )}
+      </td>
+
+      <td>
+        ${safeDate(
+          row.due_date
+        )}
+      </td>
+
+      <td>
+        ${escapeHtml(
+          row.client_name || '—'
+        )}
+      </td>
+
+      <td>
+        ${money(
+          amounts.mxn,
+          'MXN'
+        )}
+      </td>
+
+      <td>
+        ${money(
+          amounts.usd,
+          'USD'
+        )}
+      </td>
+
+      <td>
+        <span class="dashboard-v2-days ${days <= 7
+          ? 'urgent'
+          : days <= 15
+            ? 'soon'
+            : ''}">
+          ${days}
+        </span>
+      </td>
+
+    </tr>
+  `;
+}
+
+
+/* =========================================================
+   9. CÁLCULOS - PROYECCIÓN
+   ========================================================= */
+
+function calculateProjection() {
+  const rows =
+    filteredPlantings();
+
+  const result = {
+    count: rows.length,
+    hectares: 0,
+    boxesTotal: 0,
+    boxesPerHa: 0,
+
+    revenueMxn: 0,
+    revenueUsd: 0,
+    revenueMxnPerHa: 0,
+    revenueUsdPerHa: 0,
+
+    costMxn: 0,
+    costUsd: 0,
+    costMxnPerHa: 0,
+    costUsdPerHa: 0,
+
+    profitMxn: 0,
+    profitUsd: 0,
+    profitMxnPerHa: 0,
+    profitUsdPerHa: 0,
+
+    meta: ''
+  };
+
+  rows.forEach(row => {
+    const hectares =
+      numeric(
+        row.hectares
+      );
+
+    const boxes =
+      numeric(
+        row.projected_boxes
+      ) ||
+      (
+        hectares *
+        numeric(
+          row.expected_yield_boxes_ha
+        )
+      );
+
+    const rate =
+      numeric(
+        row.projection_exchange_rate
+      );
+
+    const revenueOriginal =
+      numeric(
+        row.projected_revenue
+      ) ||
+      (
+        boxes *
+        numeric(
+          row.price_per_box
+        )
+      );
+
+    const revenue =
+      convertBoth(
+        revenueOriginal,
+        row.price_currency || 'USD',
+        rate
+      );
+
+    const costs =
+      sumEstimatedCosts(
+        row.estimated_costs || [],
+        rate
+      );
+
+    result.hectares +=
+      hectares;
+
+    result.boxesTotal +=
+      boxes;
+
+    result.revenueMxn +=
+      revenue.mxn;
+
+    result.revenueUsd +=
+      revenue.usd;
+
+    result.costMxn +=
+      costs.mxn;
+
+    result.costUsd +=
+      costs.usd;
+  });
+
+  if (result.hectares > 0) {
+    result.boxesPerHa =
+      result.boxesTotal /
+      result.hectares;
+
+    result.revenueMxnPerHa =
+      result.revenueMxn /
+      result.hectares;
+
+    result.revenueUsdPerHa =
+      result.revenueUsd /
+      result.hectares;
+
+    result.costMxnPerHa =
+      result.costMxn /
+      result.hectares;
+
+    result.costUsdPerHa =
+      result.costUsd /
+      result.hectares;
+  }
+
+  result.profitMxn =
+    result.revenueMxn -
+    result.costMxn;
+
+  result.profitUsd =
+    result.revenueUsd -
+    result.costUsd;
+
+  if (result.hectares > 0) {
+    result.profitMxnPerHa =
+      result.profitMxn /
+      result.hectares;
+
+    result.profitUsdPerHa =
+      result.profitUsd /
+      result.hectares;
+  }
+
+  if (rows.length === 1) {
+    const row =
+      rows[0];
+
+    result.meta = `
+      Contrato ${escapeHtml(
+        row.contract_number || ''
+      )}
+      · ${number(
+        row.hectares,
+        2
+      )} ha
+      · TC ${number(
+        row.projection_exchange_rate,
+        2
+      )} MXN/USD
+    `;
+  } else if (rows.length > 1) {
+    result.meta = `
+      ${number(
+        rows.length,
+        0
+      )} siembras
+      · ${number(
+        result.hectares,
+        2
+      )} ha
     `;
   }
 
-  return `
-    <section class="dashboard-projection">
+  return result;
+}
 
-      <div class="dashboard-section-head">
+
+function sumEstimatedCosts(
+  costs,
+  exchangeRate
+) {
+  return costs.reduce(
+    (sum, cost) => {
+      const converted =
+        convertBoth(
+          numeric(
+            cost.amount
+          ),
+          cost.currency || 'MXN',
+          exchangeRate
+        );
+
+      sum.mxn +=
+        converted.mxn;
+
+      sum.usd +=
+        converted.usd;
+
+      return sum;
+    },
+    {
+      mxn: 0,
+      usd: 0
+    }
+  );
+}
+
+
+/* =========================================================
+   10. CÁLCULOS - SITUACIÓN REAL
+   ========================================================= */
+
+function calculateRealSituation() {
+  const shipments =
+    filteredShipments(
+      false
+    );
+
+  const expenses =
+    filteredExpenses();
+
+  const expected =
+    sumShipments(
+      shipments
+    );
+
+  const collected =
+    shipments.reduce(
+      (sum, row) => {
+        const amount =
+          shipmentCollectedAmounts(
+            row
+          );
+
+        sum.mxn +=
+          amount.mxn;
+
+        sum.usd +=
+          amount.usd;
+
+        return sum;
+      },
+      {
+        mxn: 0,
+        usd: 0
+      }
+    );
+
+  const expenseTotals =
+    expenses.reduce(
+      (sum, row) => {
+        const converted =
+          expenseAmounts(
+            row
+          );
+
+        sum.mxn +=
+          converted.mxn;
+
+        sum.usd +=
+          converted.usd;
+
+        return sum;
+      },
+      {
+        mxn: 0,
+        usd: 0
+      }
+    );
+
+  return {
+    expectedMxn:
+      expected.mxn,
+
+    expectedUsd:
+      expected.usd,
+
+    collectedMxn:
+      collected.mxn,
+
+    collectedUsd:
+      collected.usd,
+
+    pendingMxn:
+      Math.max(
+        expected.mxn -
+        collected.mxn,
+        0
+      ),
+
+    pendingUsd:
+      Math.max(
+        expected.usd -
+        collected.usd,
+        0
+      ),
+
+    expensesMxn:
+      expenseTotals.mxn,
+
+    expensesUsd:
+      expenseTotals.usd,
+
+    profitMxn:
+      collected.mxn -
+      expenseTotals.mxn,
+
+    profitUsd:
+      collected.usd -
+      expenseTotals.usd
+  };
+}
+
+
+/* =========================================================
+   11. FILTROS DE DATOS
+   ========================================================= */
+
+function filteredPlantings() {
+  return (
+    dashboardData?.plantings ||
+    []
+  ).filter(row => {
+    if (
+      filtersState.plantingId &&
+      String(row.id) !==
+        String(
+          filtersState.plantingId
+        )
+    ) {
+      return false;
+    }
+
+    if (
+      filtersState.productId &&
+      String(row.product_id) !==
+        String(
+          filtersState.productId
+        )
+    ) {
+      return false;
+    }
+
+    return true;
+  });
+}
+
+
+function filteredShipments(
+  includeLocalFilters
+) {
+  return (
+    dashboardData?.shipments ||
+    []
+  ).filter(row => {
+    if (
+      row.status === 'Cancelada'
+    ) {
+      return false;
+    }
+
+    if (
+      filtersState.plantingId &&
+      String(row.planting_id) !==
+        String(
+          filtersState.plantingId
+        )
+    ) {
+      return false;
+    }
+
+    if (
+      filtersState.productId &&
+      String(row.product_id) !==
+        String(
+          filtersState.productId
+        )
+    ) {
+      return false;
+    }
+
+    if (
+      !dateInside(
+        row.shipment_date,
+        filtersState.from,
+        filtersState.to
+      )
+    ) {
+      return false;
+    }
+
+    if (!includeLocalFilters) {
+      return true;
+    }
+
+    if (
+      shipmentTableState.status &&
+      shipmentFinancialStatus(
+        row
+      ) !==
+        shipmentTableState.status
+    ) {
+      return false;
+    }
+
+    if (
+      shipmentTableState.client &&
+      String(row.client_id) !==
+        String(
+          shipmentTableState.client
+        )
+    ) {
+      return false;
+    }
+
+    if (
+      shipmentTableState.search &&
+      !String(
+        row.folio || ''
+      )
+        .toLowerCase()
+        .includes(
+          shipmentTableState.search
+            .trim()
+            .toLowerCase()
+        )
+    ) {
+      return false;
+    }
+
+    return true;
+  });
+}
+
+
+function filteredExpenses() {
+  return (
+    dashboardData?.expenses ||
+    []
+  ).filter(row => {
+    if (
+      filtersState.plantingId &&
+      String(row.planting_id) !==
+        String(
+          filtersState.plantingId
+        )
+    ) {
+      return false;
+    }
+
+    if (
+      filtersState.productId &&
+      String(row.product_id) !==
+        String(
+          filtersState.productId
+        )
+    ) {
+      return false;
+    }
+
+    return dateInside(
+      row.expense_date,
+      filtersState.from,
+      filtersState.to
+    );
+  });
+}
+
+
+/* =========================================================
+   12. MONTOS Y MONEDAS
+   ========================================================= */
+
+function shipmentAmounts(
+  row
+) {
+  const amount =
+    numeric(
+      row.amount
+    ) ||
+    (
+      numeric(row.boxes) *
+      numeric(
+        row.price_per_box
+      )
+    );
+
+  return convertBoth(
+    amount,
+    row.currency || 'USD',
+    numeric(
+      row.exchange_rate
+    ) ||
+    numeric(
+      row.projection_exchange_rate
+    )
+  );
+}
+
+
+function shipmentCollectedAmounts(
+  row
+) {
+  const total =
+    shipmentAmounts(
+      row
+    );
+
+  const collectedOriginal =
+    Math.min(
+      numeric(
+        row.collected_amount
+      ),
+      numeric(
+        row.amount
+      ) ||
+      (
+        numeric(row.boxes) *
+        numeric(
+          row.price_per_box
+        )
+      )
+    );
+
+  if (collectedOriginal <= 0) {
+    return {
+      mxn: 0,
+      usd: 0
+    };
+  }
+
+  const converted =
+    convertBoth(
+      collectedOriginal,
+      row.currency || 'USD',
+      numeric(
+        row.exchange_rate
+      ) ||
+      numeric(
+        row.projection_exchange_rate
+      )
+    );
+
+  if (
+    shipmentFinancialStatus(
+      row
+    ) === 'Cobrada'
+  ) {
+    return total;
+  }
+
+  return converted;
+}
+
+
+function expenseAmounts(
+  row
+) {
+  const amount =
+    numeric(
+      row.amount
+    );
+
+  const rate =
+    numeric(
+      row.exchange_rate
+    ) ||
+    numeric(
+      row.projection_exchange_rate
+    );
+
+  if (
+    row.currency === 'USD'
+  ) {
+    return {
+      usd: amount,
+      mxn:
+        numeric(
+          row.mxn_equivalent
+        ) ||
+        (
+          rate > 0
+            ? amount * rate
+            : 0
+        )
+    };
+  }
+
+  return {
+    mxn: amount,
+    usd:
+      rate > 0
+        ? amount / rate
+        : 0
+  };
+}
+
+
+function convertBoth(
+  amount,
+  currency,
+  exchangeRate
+) {
+  const value =
+    numeric(
+      amount
+    );
+
+  const rate =
+    numeric(
+      exchangeRate
+    );
+
+  if (currency === 'MXN') {
+    return {
+      mxn: value,
+      usd:
+        rate > 0
+          ? value / rate
+          : 0
+    };
+  }
+
+  return {
+    usd: value,
+    mxn:
+      rate > 0
+        ? value * rate
+        : 0
+  };
+}
+
+
+/* =========================================================
+   13. ESTATUS Y TOTALES
+   ========================================================= */
+
+function shipmentFinancialStatus(
+  row
+) {
+  const total =
+    numeric(
+      row.amount
+    ) ||
+    (
+      numeric(row.boxes) *
+      numeric(
+        row.price_per_box
+      )
+    );
+
+  const collected =
+    numeric(
+      row.collected_amount
+    );
+
+  if (
+    row.status === 'Cobrada' ||
+    row.status === 'Aplicada' ||
+    (
+      total > 0 &&
+      collected >= total
+    )
+  ) {
+    return 'Cobrada';
+  }
+
+  if (collected > 0) {
+    return 'Parcial';
+  }
+
+  return 'Pendiente';
+}
+
+
+function sumShipments(
+  rows
+) {
+  return rows.reduce(
+    (sum, row) => {
+      const amount =
+        shipmentAmounts(
+          row
+        );
+
+      sum.mxn +=
+        amount.mxn;
+
+      sum.usd +=
+        amount.usd;
+
+      return sum;
+    },
+    {
+      mxn: 0,
+      usd: 0
+    }
+  );
+}
+
+
+/* =========================================================
+   14. OPCIONES DE FILTROS
+   ========================================================= */
+
+function plantingOptions(
+  selected
+) {
+  return (
+    dashboardData?.plantings ||
+    []
+  )
+    .slice()
+    .sort((a, b) => {
+      return String(
+        a.contract_number || ''
+      ).localeCompare(
+        String(
+          b.contract_number || ''
+        ),
+        undefined,
+        {
+          numeric: true
+        }
+      );
+    })
+    .map(row => {
+      return `
+        <option
+          value="${row.id}"
+          ${String(row.id) ===
+            String(selected)
+              ? 'selected'
+              : ''}
+        >
+          ${escapeHtml(
+            row.contract_number
+          )}
+          ${row.product_name
+            ? ` · ${escapeHtml(
+                row.product_name
+              )}`
+            : ''}
+        </option>
+      `;
+    })
+    .join('');
+}
+
+
+function productOptions(
+  selected
+) {
+  return (
+    dashboardData?.products ||
+    []
+  )
+    .map(row => {
+      return `
+        <option
+          value="${row.id}"
+          ${String(row.id) ===
+            String(selected)
+              ? 'selected'
+              : ''}
+        >
+          ${escapeHtml(
+            row.name
+          )}
+        </option>
+      `;
+    })
+    .join('');
+}
+
+
+function clientFilterOptions(
+  selected
+) {
+  return `
+    <option value="">
+      Todos
+    </option>
+
+    ${
+      (
+        dashboardData?.clients ||
+        []
+      )
+        .map(row => {
+          return `
+            <option
+              value="${row.id}"
+              ${String(row.id) ===
+                String(selected)
+                  ? 'selected'
+                  : ''}
+            >
+              ${escapeHtml(
+                row.name
+              )}
+            </option>
+          `;
+        })
+        .join('')
+    }
+  `;
+}
+
+
+function statusFilterOptions(
+  selected
+) {
+  return [
+    ['', 'Todos'],
+    ['Pendiente', 'Pendiente'],
+    ['Parcial', 'Parcial'],
+    ['Cobrada', 'Cobrada']
+  ]
+    .map(([value, label]) => {
+      return `
+        <option
+          value="${value}"
+          ${value === selected
+            ? 'selected'
+            : ''}
+        >
+          ${label}
+        </option>
+      `;
+    })
+    .join('');
+}
+
+
+function dueDaysOptions(
+  selected
+) {
+  return [
+    ['7', 'Próximos 7 días'],
+    ['15', 'Próximos 15 días'],
+    ['30', 'Próximos 30 días'],
+    ['60', 'Próximos 60 días'],
+    ['90', 'Próximos 90 días']
+  ]
+    .map(([value, label]) => {
+      return `
+        <option
+          value="${value}"
+          ${value === selected
+            ? 'selected'
+            : ''}
+        >
+          ${label}
+        </option>
+      `;
+    })
+    .join('');
+}
+
+
+/* =========================================================
+   15. COMPONENTES VISUALES
+   ========================================================= */
+
+function sectionHead(
+  numberValue,
+  title,
+  subtitle,
+  tone,
+  meta = ''
+) {
+  return `
+    <div class="dashboard-v2-section-head">
+
+      <div class="dashboard-v2-section-title">
+
+        <span class="dashboard-v2-number dashboard-v2-number-${tone}">
+          ${numberValue}
+        </span>
 
         <div>
-          <span class="dashboard-eyebrow">
-            Planeación
-          </span>
-
           <h2>
-            Proyección
+            ${title}
           </h2>
 
           <p>
-            Estimación basada en las condiciones
-            registradas de cada siembra.
+            ${subtitle}
           </p>
         </div>
 
-        <div class="projection-summary">
-
-          <strong>
-            ${number(
-              projection.plantings
-            )}
-          </strong>
-
-          <span>
-            ${
-              projection.plantings === 1
-                ? 'siembra proyectada'
-                : 'siembras proyectadas'
-            }
-          </span>
-
-        </div>
-
       </div>
 
+      ${
+        meta
+          ? `
+              <div class="dashboard-v2-meta">
+                ${meta}
+              </div>
+            `
+          : ''
+      }
 
-      <div class="projection-main">
-
-        <article class="card projection-hero">
-
-          <div class="projection-hero-label">
-            Producción estimada
-          </div>
-
-          <div class="projection-hero-value">
-            ${number(
-              projection.boxes,
-              0
-            )}
-            <span>
-              cajas
-            </span>
-          </div>
-
-          <div class="projection-hero-meta">
-
-            <span>
-              ${number(
-                projection.pounds,
-                0
-              )}
-              lb
-            </span>
-
-            <span>
-              ${number(
-                projection.hectares,
-                2
-              )}
-              ha
-            </span>
-
-          </div>
-
-        </article>
-
-
-        <div class="projection-cards">
-
-          ${projectionCard(
-            'Venta proyectada',
-            money(
-              projection.salesUsd,
-              'USD'
-            ),
-            projection.salesMxn > 0
-              ? money(
-                  projection.salesMxn,
-                  'MXN'
-                )
-              : 'Valor estimado',
-            'sales'
-          )}
-
-          ${projectionCard(
-            'Semilla estimada',
-            money(
-              projection.seedUsd,
-              'USD'
-            ),
-            projection.seedMxn > 0
-              ? money(
-                  projection.seedMxn,
-                  'MXN'
-                )
-              : 'Costo estimado',
-            'seed'
-          )}
-
-          ${projectionCard(
-            'Producción real',
-            `${number(
-              projection.productionBoxes,
-              0
-            )} cajas`,
-            'Registrado a la fecha',
-            'production'
-          )}
-
-          ${projectionCard(
-            'Pendiente estimado',
-            `${number(
-              projection.remainingBoxes,
-              0
-            )} cajas`,
-            'Por producir',
-            'remaining'
-          )}
-
-        </div>
-
-      </div>
-
-
-      <article class="card projection-progress">
-
-        <div class="projection-progress-head">
-
-          <div>
-            <span>
-              Avance de producción
-            </span>
-
-            <strong>
-              ${formatPercent(
-                projection.progress
-              )}
-            </strong>
-          </div>
-
-          <div class="projection-progress-values">
-
-            <span>
-              ${number(
-                projection.productionBoxes,
-                0
-              )}
-              producidas
-            </span>
-
-            <span>
-              de
-              ${number(
-                projection.boxes,
-                0
-              )}
-              proyectadas
-            </span>
-
-          </div>
-
-        </div>
-
-        <div class="projection-progress-track">
-
-          <div
-            class="projection-progress-bar"
-            style="width:${Math.min(
-              projection.progress,
-              100
-            )}%"
-          ></div>
-
-        </div>
-
-      </article>
-
-    </section>
+    </div>
   `;
 }
 
 
-/* =========================================================
-   6. TARJETA DE PROYECCIÓN
-   ========================================================= */
+function statusBadge(
+  status
+) {
+  const css =
+    status === 'Cobrada'
+      ? 'paid'
+      : status === 'Parcial'
+        ? 'partial'
+        : 'pending';
 
-function projectionCard(
-  label,
-  value,
-  meta,
-  tone
+  return `
+    <span class="dashboard-v2-status ${css}">
+      ${status}
+    </span>
+  `;
+}
+
+
+function emptyState(
+  text
 ) {
   return `
-    <article
-      class="card projection-card projection-card-${tone}"
-    >
-
-      <span class="projection-card-label">
-        ${label}
-      </span>
-
-      <strong class="projection-card-value">
-        ${value}
-      </strong>
-
-      <span class="projection-card-meta">
-        ${meta}
-      </span>
-
-    </article>
+    <div class="dashboard-v2-empty">
+      ${text}
+    </div>
   `;
 }
 
 
 /* =========================================================
-   7. UTILIDADES
+   16. FECHAS
+   ========================================================= */
+
+function dateInside(
+  value,
+  from,
+  to
+) {
+  if (!value) {
+    return false;
+  }
+
+  const current =
+    String(value)
+      .slice(0, 10);
+
+  if (
+    from &&
+    current < from
+  ) {
+    return false;
+  }
+
+  if (
+    to &&
+    current > to
+  ) {
+    return false;
+  }
+
+  return true;
+}
+
+
+function parseDate(
+  value
+) {
+  if (!value) {
+    return null;
+  }
+
+  const parts =
+    String(value)
+      .slice(0, 10)
+      .split('-')
+      .map(Number);
+
+  if (parts.length !== 3) {
+    return null;
+  }
+
+  return new Date(
+    parts[0],
+    parts[1] - 1,
+    parts[2]
+  );
+}
+
+
+function startOfToday() {
+  const now =
+    new Date();
+
+  return new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate()
+  );
+}
+
+
+function daysBetween(
+  from,
+  to
+) {
+  if (!from || !to) {
+    return 0;
+  }
+
+  return Math.ceil(
+    (
+      to.getTime() -
+      from.getTime()
+    ) /
+    86400000
+  );
+}
+
+
+function safeDate(
+  value
+) {
+  if (!value) {
+    return '—';
+  }
+
+  try {
+    return date(
+      value
+    );
+  } catch {
+    return String(value);
+  }
+}
+
+
+/* =========================================================
+   17. UTILIDADES
    ========================================================= */
 
 function numeric(
   value
 ) {
-  const result = Number(
-    value || 0
-  );
+  const result =
+    Number(
+      value || 0
+    );
 
-  return Number.isFinite(result)
+  return Number.isFinite(
+    result
+  )
     ? result
     : 0;
 }
 
 
-function formatPercent(
-  value
-) {
-  const safeValue = Number.isFinite(
-    value
-  )
-    ? value
-    : 0;
-
-  return `${safeValue.toLocaleString(
-    'es-MX',
-    {
-      minimumFractionDigits: 1,
-      maximumFractionDigits: 1
-    }
-  )}%`;
+function emptyDashboardData() {
+  return {
+    plantings: [],
+    products: [],
+    clients: [],
+    shipments: [],
+    expenses: []
+  };
 }
