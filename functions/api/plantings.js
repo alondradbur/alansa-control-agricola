@@ -1,10 +1,13 @@
 /* =========================================================
-   ALANSA - SISTEMA DE CONTROL AGRÍCOLA
+   SISTEMA DE CONTROL AGRÍCOLA
    API: SIEMBRAS / CONTRATOS
 
-   Ajuste:
-   - Normaliza importes con separadores de miles.
-   - Conserva MXN o USD en campos independientes.
+   Funciones:
+   - Consultar siembras.
+   - Crear nuevas siembras.
+   - Editar registros existentes.
+   - Eliminar solo si no tienen movimientos relacionados.
+   - Calcular costo estimado de semilla.
    ========================================================= */
 
 
@@ -25,30 +28,37 @@ import {
 export async function onRequestGet({
   env
 }) {
-  const result = await env.DB
-    .prepare(`
-      SELECT
-        pl.*,
-        p.name AS product_name,
-        c.name AS client_name
+  try {
+    const result = await env.DB
+      .prepare(`
+        SELECT
+          pl.*,
+          p.name AS product_name,
+          c.name AS client_name
 
-      FROM plantings pl
+        FROM plantings pl
 
-      JOIN products p
-        ON p.id = pl.product_id
+        JOIN products p
+          ON p.id = pl.product_id
 
-      JOIN clients c
-        ON c.id = pl.client_id
+        JOIN clients c
+          ON c.id = pl.client_id
 
-      ORDER BY
-        pl.harvest_start DESC,
-        pl.id DESC
-    `)
-    .all();
+        ORDER BY
+          pl.harvest_start DESC,
+          pl.id DESC
+      `)
+      .all();
 
-  return json(
-    result.results || []
-  );
+    return json(
+      result.results || []
+    );
+
+  } catch {
+    return error(
+      'No fue posible consultar las siembras.'
+    );
+  }
 }
 
 
@@ -62,96 +72,19 @@ export async function onRequestPost({
 }) {
   const data = await request.json();
 
-  const hectares = Number(
-    data.hectares || 0
-  );
+  const validation =
+    validatePlanting(
+      data
+    );
 
-   const expectedYield = Number(
-  data.expected_yield_boxes_ha || 0
-);
-
-  const density = Number(
-    data.density_per_ha || 0
-  );
-
-  const seedCost = parseMoney(
-    data.seed_cost_per_thousand
-  ) || 0;
-
-  const actualSeedCost = parseMoney(
-    data.actual_seed_cost
-  );
-
-  const pricePerBox = parseMoney(
-    data.price_per_box
-  ) || 0;
-
-  const seedCurrency = validCurrency(
-    data.seed_currency,
-    'USD'
-  );
-
-  const priceCurrency = validCurrency(
-    data.price_currency,
-    'USD'
-  );
-
-
-  /* ---------------------------------------------------------
-     3.1. VALIDACIONES
-     --------------------------------------------------------- */
-
-  if (
-    !data.contract_number ||
-    !data.product_id ||
-    !data.client_id
-  ) {
+  if (validation.error) {
     return error(
-      'Contrato, cliente y producto son obligatorios.'
+      validation.error
     );
   }
 
-  if (
-  hectares <= 0 ||
-  density <= 0 ||
-  expectedYield <= 0
-) {
-  return error(
-    'Hectáreas, rendimiento esperado y densidad deben ser mayores a cero.'
-  );
-}
-
-  if (
-    !data.harvest_start ||
-    !data.harvest_end
-  ) {
-    return error(
-      'Debes indicar el periodo de cosecha.'
-    );
-  }
-
-  if (
-    data.harvest_end <
-    data.harvest_start
-  ) {
-    return error(
-      'La fecha final de cosecha no puede ser anterior a la fecha inicial.'
-    );
-  }
-
-
-  /* ---------------------------------------------------------
-     3.2. COSTO ESTIMADO DE SEMILLA
-     --------------------------------------------------------- */
-
-  const estimatedSeedCost =
-    (hectares * density / 1000) *
-    seedCost;
-
-
-  /* ---------------------------------------------------------
-     3.3. GUARDAR EN D1
-     --------------------------------------------------------- */
+  const values =
+    validation.values;
 
   try {
     const result = await env.DB
@@ -161,8 +94,8 @@ export async function onRequestPost({
           product_id,
           client_id,
           hectares,
-expected_yield_boxes_ha,
-density_per_ha,
+          expected_yield_boxes_ha,
+          density_per_ha,
           seed_cost_per_thousand,
           estimated_seed_cost,
           actual_seed_cost,
@@ -176,34 +109,31 @@ density_per_ha,
           status,
           notes
         )
-       VALUES (
-  ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-  ?, ?, ?, ?, ?, ?, ?, ?
-)
+
+        VALUES (
+          ?, ?, ?, ?, ?, ?, ?, ?, ?,
+          ?, ?, ?, ?, ?, ?, ?, ?, ?
+        )
       `)
-     .bind(
-  data.contract_number.trim(),
-  Number(data.product_id),
-  Number(data.client_id),
-  hectares,
-  expectedYield,
-  density,
-  seedCost,
-  estimatedSeedCost,
-        actualSeedCost,
-        seedCurrency,
-        data.harvest_start,
-        data.harvest_end,
-        pricePerBox,
-        priceCurrency,
-        Number(
-          data.standard_box_lbs || 12
-        ),
-        Number(
-          data.trailers_per_week || 1
-        ),
-        data.status || 'Activa',
-        data.notes || null
+      .bind(
+        values.contractNumber,
+        values.productId,
+        values.clientId,
+        values.hectares,
+        values.expectedYield,
+        values.density,
+        values.seedCost,
+        values.estimatedSeedCost,
+        values.actualSeedCost,
+        values.seedCurrency,
+        values.harvestStart,
+        values.harvestEnd,
+        values.pricePerBox,
+        values.priceCurrency,
+        values.standardBoxLbs,
+        values.trailersPerWeek,
+        values.status,
+        values.notes
       )
       .run();
 
@@ -212,24 +142,13 @@ density_per_ha,
       id:
         result.meta?.last_row_id,
       estimated_seed_cost:
-        estimatedSeedCost
+        values.estimatedSeedCost
     });
 
   } catch (exception) {
-    const message = String(
-      exception.message || ''
-    );
-
-    if (
-      message.includes('UNIQUE')
-    ) {
-      return error(
-        'Ya existe una siembra con ese número de contrato.'
-      );
-    }
-
-    return error(
-      'No fue posible guardar la siembra.'
+    return plantingError(
+      exception,
+      'guardar'
     );
   }
 }
@@ -255,37 +174,22 @@ export async function onRequestPut({
     );
   }
 
-  const hectares = Number(
-  data.hectares || 0
-);
+  const validation =
+    validatePlanting(
+      data
+    );
 
-const expectedYield = Number(
-  data.expected_yield_boxes_ha || 0
-);
+  if (validation.error) {
+    return error(
+      validation.error
+    );
+  }
 
-const density = Number(
-  data.density_per_ha || 0
-);
-
-if (
-  hectares <= 0 ||
-  expectedYield <= 0 ||
-  density <= 0
-) {
-  return error(
-    'Hectáreas, rendimiento esperado y densidad deben ser mayores a cero.'
-  );
-}
-
-const seedCost = parseMoney(
-  data.seed_cost_per_thousand
-) || 0;
-  const estimatedSeedCost =
-    (hectares * density / 1000) *
-    seedCost;
+  const values =
+    validation.values;
 
   try {
-    await env.DB
+    const result = await env.DB
       .prepare(`
         UPDATE plantings
 
@@ -294,11 +198,9 @@ const seedCost = parseMoney(
           product_id = ?,
           client_id = ?,
           hectares = ?,
+          expected_yield_boxes_ha = ?,
           density_per_ha = ?,
-          hectares = ?,
-expected_yield_boxes_ha = ?,
-density_per_ha = ?,
-seed_cost_per_thousand = ?,
+          seed_cost_per_thousand = ?,
           estimated_seed_cost = ?,
           actual_seed_cost = ?,
           seed_currency = ?,
@@ -315,51 +217,49 @@ seed_cost_per_thousand = ?,
         WHERE id = ?
       `)
       .bind(
-  data.contract_number.trim(),
-  Number(data.product_id),
-  Number(data.client_id),
-  hectares,
-  expectedYield,
-  density,
-  seedCost,
-  estimatedSeedCost,
-        parseMoney(
-          data.actual_seed_cost
-        ),
-        validCurrency(
-          data.seed_currency,
-          'USD'
-        ),
-        data.harvest_start,
-        data.harvest_end,
-        parseMoney(
-          data.price_per_box
-        ) || 0,
-        validCurrency(
-          data.price_currency,
-          'USD'
-        ),
-        Number(
-          data.standard_box_lbs || 12
-        ),
-        Number(
-          data.trailers_per_week || 1
-        ),
-        data.status || 'Activa',
-        data.notes || null,
+        values.contractNumber,
+        values.productId,
+        values.clientId,
+        values.hectares,
+        values.expectedYield,
+        values.density,
+        values.seedCost,
+        values.estimatedSeedCost,
+        values.actualSeedCost,
+        values.seedCurrency,
+        values.harvestStart,
+        values.harvestEnd,
+        values.pricePerBox,
+        values.priceCurrency,
+        values.standardBoxLbs,
+        values.trailersPerWeek,
+        values.status,
+        values.notes,
         id
       )
       .run();
 
+    if (
+      Number(
+        result.meta?.changes || 0
+      ) === 0
+    ) {
+      return error(
+        'No se encontró la siembra que intentas actualizar.'
+      );
+    }
+
     return json({
       ok: true,
+      id,
       estimated_seed_cost:
-        estimatedSeedCost
+        values.estimatedSeedCost
     });
 
-  } catch {
-    return error(
-      'No fue posible actualizar la siembra.'
+  } catch (exception) {
+    return plantingError(
+      exception,
+      'actualizar'
     );
   }
 }
@@ -386,13 +286,37 @@ export async function onRequestDelete({
   }
 
   try {
-    await env.DB
+    const dependencies =
+      await hasRelatedMovements(
+        env.DB,
+        id
+      );
+
+    if (dependencies) {
+      return error(
+        'Esta siembra ya tiene movimientos relacionados y no puede eliminarse. Puedes conservarla y cambiar su estado.'
+      );
+    }
+
+    const result = await env.DB
       .prepare(`
         DELETE FROM plantings
         WHERE id = ?
       `)
-      .bind(id)
+      .bind(
+        id
+      )
       .run();
+
+    if (
+      Number(
+        result.meta?.changes || 0
+      ) === 0
+    ) {
+      return error(
+        'No se encontró la siembra que intentas eliminar.'
+      );
+    }
 
     return json({
       ok: true
@@ -400,14 +324,269 @@ export async function onRequestDelete({
 
   } catch {
     return error(
-      'Esta siembra ya tiene movimientos relacionados y no puede eliminarse.'
+      'No fue posible eliminar la siembra.'
     );
   }
 }
 
 
 /* =========================================================
-   6. UTILIDADES MONETARIAS
+   6. VALIDAR Y NORMALIZAR SIEMBRA
+   ========================================================= */
+
+function validatePlanting(
+  data
+) {
+  const contractNumber =
+    String(
+      data.contract_number || ''
+    ).trim();
+
+  const productId = Number(
+    data.product_id
+  );
+
+  const clientId = Number(
+    data.client_id
+  );
+
+  const hectares = positiveNumber(
+    data.hectares
+  );
+
+  const expectedYield = positiveNumber(
+    data.expected_yield_boxes_ha
+  );
+
+  const density = positiveNumber(
+    data.density_per_ha
+  );
+
+  const seedCost =
+    parseMoney(
+      data.seed_cost_per_thousand
+    ) ?? 0;
+
+  const actualSeedCost =
+    parseMoney(
+      data.actual_seed_cost
+    );
+
+  const seedCurrency =
+    validCurrency(
+      data.seed_currency,
+      'USD'
+    );
+
+  const harvestStart =
+    String(
+      data.harvest_start || ''
+    ).trim();
+
+  const harvestEnd =
+    String(
+      data.harvest_end || ''
+    ).trim();
+
+  const pricePerBox =
+    parseMoney(
+      data.price_per_box
+    ) ?? 0;
+
+  const priceCurrency =
+    validCurrency(
+      data.price_currency,
+      'USD'
+    );
+
+  const standardBoxLbs =
+    positiveNumber(
+      data.standard_box_lbs
+    ) ?? 12;
+
+  const trailersPerWeek =
+    positiveNumber(
+      data.trailers_per_week
+    ) ?? 1;
+
+  const status =
+    validStatus(
+      data.status
+    );
+
+  const notes =
+    optionalText(
+      data.notes
+    );
+
+  if (!contractNumber) {
+    return {
+      error:
+        'El número de contrato es obligatorio.'
+    };
+  }
+
+  if (!productId) {
+    return {
+      error:
+        'Debes seleccionar un producto.'
+    };
+  }
+
+  if (!clientId) {
+    return {
+      error:
+        'Debes seleccionar un cliente.'
+    };
+  }
+
+  if (
+    hectares === null ||
+    hectares <= 0
+  ) {
+    return {
+      error:
+        'Las hectáreas deben ser mayores a cero.'
+    };
+  }
+
+  if (
+    expectedYield === null ||
+    expectedYield <= 0
+  ) {
+    return {
+      error:
+        'El rendimiento esperado por hectárea debe ser mayor a cero.'
+    };
+  }
+
+  if (
+    density === null ||
+    density <= 0
+  ) {
+    return {
+      error:
+        'La densidad de siembra debe ser mayor a cero.'
+    };
+  }
+
+  if (
+    seedCost < 0 ||
+    pricePerBox < 0
+  ) {
+    return {
+      error:
+        'Los importes no pueden ser negativos.'
+    };
+  }
+
+  if (
+    actualSeedCost !== null &&
+    actualSeedCost < 0
+  ) {
+    return {
+      error:
+        'El costo real de semilla no puede ser negativo.'
+    };
+  }
+
+  if (
+    !harvestStart ||
+    !harvestEnd
+  ) {
+    return {
+      error:
+        'Debes indicar el periodo de cosecha.'
+    };
+  }
+
+  if (
+    harvestEnd < harvestStart
+  ) {
+    return {
+      error:
+        'La fecha final de cosecha no puede ser anterior a la fecha inicial.'
+    };
+  }
+
+  if (!status) {
+    return {
+      error:
+        'El estado de la siembra no es válido.'
+    };
+  }
+
+  const estimatedSeedCost =
+    (
+      hectares *
+      density /
+      1000
+    ) *
+    seedCost;
+
+  return {
+    values: {
+      contractNumber,
+      productId,
+      clientId,
+      hectares,
+      expectedYield,
+      density,
+      seedCost,
+      estimatedSeedCost,
+      actualSeedCost,
+      seedCurrency,
+      harvestStart,
+      harvestEnd,
+      pricePerBox,
+      priceCurrency,
+      standardBoxLbs,
+      trailersPerWeek,
+      status,
+      notes
+    }
+  };
+}
+
+
+/* =========================================================
+   7. PROTEGER REGISTROS CON MOVIMIENTOS
+   ========================================================= */
+
+async function hasRelatedMovements(
+  db,
+  plantingId
+) {
+  const checks = [
+    'production_records',
+    'shipments',
+    'expenses'
+  ];
+
+  for (const table of checks) {
+    const result = await db
+      .prepare(`
+        SELECT id
+        FROM ${table}
+        WHERE planting_id = ?
+        LIMIT 1
+      `)
+      .bind(
+        plantingId
+      )
+      .first();
+
+    if (result) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+
+/* =========================================================
+   8. UTILIDADES
    ========================================================= */
 
 function parseMoney(
@@ -421,9 +600,10 @@ function parseMoney(
     return null;
   }
 
-  const normalized = String(value)
-    .replaceAll(',', '')
-    .replace(/[^\d.-]/g, '');
+  const normalized =
+    String(value)
+      .replaceAll(',', '')
+      .replace(/[^\d.-]/g, '');
 
   const amount = Number(
     normalized
@@ -435,12 +615,97 @@ function parseMoney(
 }
 
 
+function positiveNumber(
+  value
+) {
+  if (
+    value === null ||
+    value === undefined ||
+    value === ''
+  ) {
+    return null;
+  }
+
+  const result = Number(
+    String(value)
+      .replaceAll(',', '')
+  );
+
+  return Number.isFinite(result)
+    ? result
+    : null;
+}
+
+
 function validCurrency(
   value,
   fallback = 'USD'
 ) {
-  return ['MXN', 'USD']
-    .includes(value)
-      ? value
-      : fallback;
+  return [
+    'MXN',
+    'USD'
+  ].includes(value)
+    ? value
+    : fallback;
+}
+
+
+function validStatus(
+  value
+) {
+  const status =
+    String(
+      value || 'Activa'
+    ).trim();
+
+  return [
+    'Activa',
+    'Finalizada',
+    'Cancelada'
+  ].includes(status)
+    ? status
+    : null;
+}
+
+
+function optionalText(
+  value
+) {
+  const result =
+    String(
+      value || ''
+    ).trim();
+
+  return result || null;
+}
+
+
+function plantingError(
+  exception,
+  action
+) {
+  const message =
+    String(
+      exception?.message || ''
+    );
+
+  if (
+    message.includes('UNIQUE')
+  ) {
+    return error(
+      'Ya existe una siembra con ese número de contrato.'
+    );
+  }
+
+  if (
+    message.includes('FOREIGN KEY')
+  ) {
+    return error(
+      'El cliente o producto seleccionado ya no existe.'
+    );
+  }
+
+  return error(
+    `No fue posible ${action} la siembra.`
+  );
 }
