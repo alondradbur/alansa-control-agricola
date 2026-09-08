@@ -2,11 +2,11 @@
    SISTEMA DE CONTROL AGRÍCOLA
    MÓDULO: SIEMBRAS / CONTRATOS
 
-   Funciones:
-   - Crear y editar siembras.
-   - Capturar datos productivos para proyección.
-   - Capturar costos aproximados por siembra.
-   - Eliminar siembras sin movimientos relacionados.
+   Objetivo:
+   - Registrar los datos base de cada siembra.
+   - Construir la proyección productiva y comercial.
+   - Presupuestar costos usando conceptos y unidades de Catálogo.
+   - Mostrar resultados por hectárea y por siembra completa.
    ========================================================= */
 
 
@@ -31,14 +31,16 @@ import {
 
 
 /* =========================================================
-   2. ESTADO DEL MÓDULO
+   2. ESTADO
    ========================================================= */
 
 let rows = [];
 
 let catalogs = {
   products: [],
-  clients: []
+  clients: [],
+  expense_categories: [],
+  expense_units: []
 };
 
 
@@ -48,38 +50,47 @@ let catalogs = {
 
 export async function plantings() {
   try {
-    const responses =
-      await Promise.all([
-        api('plantings'),
-        api('catalogs')
-      ]);
+    const [
+      plantingResponse,
+      catalogResponse
+    ] = await Promise.all([
+      api('plantings'),
+      api('catalogs')
+    ]);
 
     rows =
-      responses[0] || [];
+      plantingResponse || [];
 
-    catalogs =
-      responses[1] || {
-        products: [],
-        clients: []
-      };
+    catalogs = {
+      products:
+        catalogResponse?.products || [],
+      clients:
+        catalogResponse?.clients || [],
+      expense_categories:
+        catalogResponse?.expense_categories || [],
+      expense_units:
+        catalogResponse?.expense_units || []
+    };
 
   } catch {
     rows = [];
 
     catalogs = {
       products: [],
-      clients: []
+      clients: [],
+      expense_categories: [],
+      expense_units: []
     };
   }
 
   const tableBody =
     rows.length
       ? rows
-          .map(row => createRow(row))
+          .map(createRow)
           .join('')
       : `
           <tr>
-            <td colspan="11">
+            <td colspan="10">
               ${empty(
                 'Todavía no hay siembras registradas.'
               )}
@@ -90,7 +101,7 @@ export async function plantings() {
   return `
     ${moduleHeader(
       'Siembras',
-      'Datos productivos y costos aproximados para proyección',
+      'Planeación productiva, comercial y de costos por contrato',
       `
         <button
           class="btn primary"
@@ -107,9 +118,16 @@ export async function plantings() {
       <section class="card table-card">
 
         <div class="table-toolbar">
-          <strong>
-            Siembras / contratos
-          </strong>
+          <div>
+            <strong>
+              Siembras / contratos
+            </strong>
+
+            <div class="muted">
+              Cada contrato identifica una siembra y alimenta
+              la proyección del Dashboard.
+            </div>
+          </div>
         </div>
 
         <div class="table-scroll">
@@ -122,10 +140,10 @@ export async function plantings() {
                 <th>Cliente</th>
                 <th>Producto</th>
                 <th>Hectáreas</th>
-                <th>Rendimiento esperado</th>
+                <th>Rendimiento / ha</th>
                 <th>Cajas proyectadas</th>
-                <th>Periodo de cosecha</th>
-                <th>Otros costos aproximados</th>
+                <th>Ingreso proyectado</th>
+                <th>Costos proyectados</th>
                 <th>Estado</th>
                 <th>Acciones</th>
               </tr>
@@ -156,12 +174,28 @@ function createRow(
   row
 ) {
   const projectedBoxes =
-    numeric(row.hectares) *
     numeric(
-      row.expected_yield_boxes_ha
+      row.projected_boxes
+    ) ||
+    (
+      numeric(row.hectares) *
+      numeric(
+        row.expected_yield_boxes_ha
+      )
     );
 
-  const otherCosts =
+  const projectedRevenue =
+    numeric(
+      row.projected_revenue
+    ) ||
+    (
+      projectedBoxes *
+      numeric(
+        row.price_per_box
+      )
+    );
+
+  const costTotals =
     summarizeEstimatedCosts(
       row.estimated_costs || []
     );
@@ -201,7 +235,7 @@ function createRow(
           row.expected_yield_boxes_ha,
           0
         )}
-        cajas/ha
+        cajas
       </td>
 
       <td>
@@ -212,19 +246,15 @@ function createRow(
       </td>
 
       <td>
-        ${date(
-          row.harvest_start
-        )}
-        –
-        ${date(
-          row.harvest_end
+        ${money(
+          projectedRevenue,
+          row.price_currency || 'USD'
         )}
       </td>
 
-
       <td>
         ${estimatedCostSummaryHtml(
-          otherCosts
+          costTotals
         )}
       </td>
 
@@ -266,7 +296,7 @@ function createRow(
 
 
 /* =========================================================
-   5. EVENTOS DEL MÓDULO
+   5. EVENTOS PRINCIPALES
    ========================================================= */
 
 export function bindPlantings(
@@ -337,13 +367,13 @@ export function bindPlantings(
               return Number(item.id) === id;
             });
 
-          const folio =
+          const contract =
             row?.contract_number ||
             'esta siembra';
 
           if (
             !confirm(
-              `¿Eliminar la siembra "${folio}"?`
+              `¿Eliminar la siembra del contrato "${contract}"?`
             )
           ) {
             return;
@@ -392,19 +422,19 @@ function openPlantingForm(
   const defaultProduct =
     editing
       ? catalogs.products
-          ?.find(product => {
+          .find(product => {
             return Number(product.id) ===
               Number(row.product_id);
           })
       : (
           catalogs.products
-            ?.find(product => {
+            .find(product => {
               return Number(
                 product.is_default
               ) === 1;
             })
           ||
-          catalogs.products?.[0]
+          catalogs.products[0]
           ||
           {}
         );
@@ -431,7 +461,7 @@ function openPlantingForm(
   modalRoot.innerHTML = `
     <div class="modal-backdrop">
 
-      <div class="modal">
+      <div class="modal planting-modal">
 
         <div class="modal-head">
 
@@ -439,13 +469,16 @@ function openPlantingForm(
             <h2>
               ${
                 editing
-                  ? 'Editar siembra'
+                  ? `Editar contrato ${escapeHtml(
+                      row.contract_number
+                    )}`
                   : 'Nueva siembra'
               }
             </h2>
 
             <p class="muted">
-              Estos datos alimentan la proyección del Dashboard.
+              Registra la información de la siembra y construye
+              su proyección completa antes de guardar.
             </p>
           </div>
 
@@ -460,7 +493,7 @@ function openPlantingForm(
         </div>
 
         <form
-          class="modal-body"
+          class="modal-body planting-form"
           id="plantingForm"
         >
 
@@ -470,240 +503,383 @@ function openPlantingForm(
             value="${row?.id || ''}"
           >
 
-          <div class="form-grid">
 
-            ${inputField(
-              'contract_number',
-              'Contrato / folio',
-              row?.contract_number || '',
-              'text',
-              'required'
-            )}
+          ${formSection(
+            '1',
+            'Identificación de la siembra',
+            'El contrato es el identificador operativo de esta siembra.',
+            `
+              <div class="form-grid">
 
-            <div class="field">
-              <label>
-                Cliente
-              </label>
+                ${inputField(
+                  'contract_number',
+                  'Contrato',
+                  row?.contract_number || '',
+                  'text',
+                  'required placeholder="Ej. 01"'
+                )}
 
-              <select
-                class="input"
-                name="client_id"
-                required
+                <div class="field">
+                  <label>
+                    Cliente
+                  </label>
+
+                  <select
+                    class="input"
+                    name="client_id"
+                    required
+                  >
+                    <option value="">
+                      Seleccionar cliente
+                    </option>
+
+                    ${clientOptions(
+                      row?.client_id
+                    )}
+                  </select>
+                </div>
+
+                <div class="field">
+                  <label>
+                    Producto
+                  </label>
+
+                  <select
+                    class="input"
+                    name="product_id"
+                    id="plantingProduct"
+                    required
+                  >
+                    ${productOptions(
+                      row?.product_id ||
+                      selectedProduct.id
+                    )}
+                  </select>
+                </div>
+
+                <div class="field">
+                  <label>
+                    Estado
+                  </label>
+
+                  <select
+                    class="input"
+                    name="status"
+                    required
+                  >
+                    ${statusOption(
+                      'Activa',
+                      row?.status || 'Activa'
+                    )}
+
+                    ${statusOption(
+                      'Finalizada',
+                      row?.status || 'Activa'
+                    )}
+
+                    ${statusOption(
+                      'Cancelada',
+                      row?.status || 'Activa'
+                    )}
+                  </select>
+                </div>
+
+              </div>
+            `
+          )}
+
+
+          ${formSection(
+            '2',
+            'Superficie y establecimiento',
+            'Estos datos determinan la escala de la siembra y los costos vinculados a hectáreas o millares de plantas.',
+            `
+              <div class="form-grid">
+
+                ${inputField(
+                  'hectares',
+                  'Hectáreas',
+                  row?.hectares ?? '',
+                  'number',
+                  'required min="0.01" step="0.01"'
+                )}
+
+                ${inputField(
+                  'density_per_ha',
+                  'Densidad de plantas / ha',
+                  row?.density_per_ha ??
+                    selectedProduct.default_density_per_ha ??
+                    '',
+                  'number',
+                  'required min="1" step="1"'
+                )}
+
+                ${readonlyField(
+                  'Plantas por hectárea',
+                  'plantsPerHaPreview',
+                  '0'
+                )}
+
+                ${readonlyField(
+                  'Plantas totales',
+                  'totalPlantsPreview',
+                  '0'
+                )}
+
+              </div>
+            `
+          )}
+
+
+          ${formSection(
+            '3',
+            'Proyección de producción',
+            'Define el rendimiento esperado. El sistema calcula automáticamente la producción de toda la siembra.',
+            `
+              <div class="form-grid">
+
+                ${inputField(
+                  'expected_yield_boxes_ha',
+                  'Rendimiento esperado (cajas / ha)',
+                  row?.expected_yield_boxes_ha ?? '',
+                  'number',
+                  'required min="0" step="0.01"'
+                )}
+
+                ${inputField(
+                  'standard_box_lbs',
+                  'Peso estimado por caja (lb)',
+                  row?.standard_box_lbs ??
+                    selectedProduct.standard_box_lbs ??
+                    12,
+                  'number',
+                  'required min="0.01" step="0.01"'
+                )}
+
+                ${readonlyField(
+                  'Cajas proyectadas',
+                  'projectedBoxesPreview',
+                  '0'
+                )}
+
+                ${readonlyField(
+                  'Libras proyectadas',
+                  'projectedPoundsPreview',
+                  '0'
+                )}
+
+              </div>
+            `
+          )}
+
+
+          ${formSection(
+            '4',
+            'Comercialización proyectada',
+            'El ingreso se calcula con la producción proyectada y el precio esperado por caja.',
+            `
+              <div class="form-grid">
+
+                ${moneyField(
+                  'price_per_box',
+                  'Precio esperado por caja',
+                  formatMoneyText(
+                    row?.price_per_box ??
+                    selectedProduct.default_price_per_box ??
+                    0
+                  )
+                )}
+
+                ${currencyField(
+                  'price_currency',
+                  'Moneda del ingreso',
+                  row?.price_currency ||
+                    selectedProduct.price_currency ||
+                    'USD'
+                )}
+
+                ${readonlyField(
+                  'Ingreso proyectado / ha',
+                  'revenuePerHaPreview',
+                  '—'
+                )}
+
+                ${readonlyField(
+                  'Ingreso proyectado total',
+                  'totalRevenuePreview',
+                  '—'
+                )}
+
+              </div>
+            `
+          )}
+
+
+          ${formSection(
+            '5',
+            'Periodo productivo',
+            'Periodo estimado en el que se realizará la cosecha.',
+            `
+              <div class="form-grid">
+
+                ${inputField(
+                  'harvest_start',
+                  'Inicio estimado de cosecha',
+                  row?.harvest_start || '',
+                  'date',
+                  'required'
+                )}
+
+                ${inputField(
+                  'harvest_end',
+                  'Fin estimado de cosecha',
+                  row?.harvest_end || '',
+                  'date',
+                  'required'
+                )}
+
+              </div>
+            `
+          )}
+
+
+          ${formSection(
+            '6',
+            'Costos proyectados',
+            'Selecciona conceptos definidos en Catálogo. La cantidad se calcula automáticamente según la unidad seleccionada.',
+            `
+              <div class="planting-costs-head">
+
+                <div class="muted">
+                  Ejemplo: un costo por hectárea utilizará
+                  automáticamente las hectáreas de este contrato.
+                </div>
+
+                <button
+                  class="btn soft"
+                  id="addEstimatedCost"
+                  type="button"
+                >
+                  ＋ Agregar costo proyectado
+                </button>
+
+              </div>
+
+              <div
+                id="estimatedCostsList"
+                class="planting-costs-list"
               >
-                <option value="">
-                  Seleccionar cliente
-                </option>
-
-                ${clientOptions(
-                  row?.client_id
+                ${estimatedCostRows(
+                  initialCosts
                 )}
-              </select>
-            </div>
-
-            <div class="field">
-              <label>
-                Producto
-              </label>
-
-              <select
-                class="input"
-                name="product_id"
-                id="plantingProduct"
-                required
-              >
-                ${productOptions(
-                  row?.product_id ||
-                  selectedProduct.id
-                )}
-              </select>
-            </div>
-
-            ${inputField(
-              'hectares',
-              'Hectáreas',
-              row?.hectares ?? '',
-              'number',
-              'required min="0.01" step="0.01"'
-            )}
-
-            ${inputField(
-              'expected_yield_boxes_ha',
-              'Rendimiento esperado (cajas/ha)',
-              row?.expected_yield_boxes_ha ?? '',
-              'number',
-              'required min="1" step="1"'
-            )}
-
-            ${inputField(
-              'density_per_ha',
-              'Densidad de siembra (semillas/ha)',
-              row?.density_per_ha ??
-                selectedProduct.default_density_per_ha ??
-                100000,
-              'number',
-              'required min="1" step="1"'
-            )}
-
-
-            ${inputField(
-              'harvest_start',
-              'Inicio estimado de cosecha',
-              row?.harvest_start || '',
-              'date',
-              'required'
-            )}
-
-            ${inputField(
-              'harvest_end',
-              'Fin estimado de cosecha',
-              row?.harvest_end || '',
-              'date',
-              'required'
-            )}
-
-            ${moneyField(
-              'price_per_box',
-              'Precio esperado por caja',
-              formatMoneyText(
-                row?.price_per_box ??
-                selectedProduct.default_price_per_box ??
-                14
-              )
-            )}
-
-            ${currencyField(
-              'price_currency',
-              'Moneda del precio por caja',
-              row?.price_currency ||
-                selectedProduct.price_currency ||
-                'USD'
-            )}
-
-            ${inputField(
-              'standard_box_lbs',
-              'Peso estimado por caja (lb)',
-              row?.standard_box_lbs ??
-                selectedProduct.standard_box_lbs ??
-                12,
-              'number',
-              'min="0.01" step="0.01"'
-            )}
-
-
-            <div class="field">
-              <label>
-                Estado
-              </label>
-
-              <select
-                class="input"
-                name="status"
-                required
-              >
-                ${statusOption(
-                  'Activa',
-                  row?.status || 'Activa'
-                )}
-
-                ${statusOption(
-                  'Finalizada',
-                  row?.status || 'Activa'
-                )}
-
-                ${statusOption(
-                  'Cancelada',
-                  row?.status || 'Activa'
-                )}
-              </select>
-            </div>
-
-            <div class="field span-2">
-              <label>
-                Notas
-              </label>
-
-              <textarea
-                class="input"
-                name="notes"
-                rows="3"
-              >${escapeHtml(
-                row?.notes || ''
-              )}</textarea>
-            </div>
-
-          </div>
-
-
-          <section class="planting-costs-section">
-
-            <div class="planting-costs-head">
-
-              <div>
-                <h3>
-                  Costos aproximados
-                </h3>
-
-                <p class="muted">
-                  Captura los costos que estimas para esta siembra.
-                  Los gastos reales y sus unidades se registran en Gastos.
-                </p>
               </div>
 
-              <button
-                class="btn soft"
-                id="addEstimatedCost"
-                type="button"
-              >
-                ＋ Agregar costo
-              </button>
+              ${
+                catalogs.expense_categories.length === 0
+                  ? `
+                      <div class="planting-form-notice">
+                        Primero agrega conceptos en
+                        Catálogo → Categorías de gastos.
+                      </div>
+                    `
+                  : ''
+              }
 
-            </div>
+              ${
+                catalogs.expense_units.length === 0
+                  ? `
+                      <div class="planting-form-notice">
+                        Primero configura unidades de costo
+                        en Catálogo.
+                      </div>
+                    `
+                  : ''
+              }
+            `
+          )}
 
-            <div
-              id="estimatedCostsList"
-              class="planting-costs-list"
-            >
-              ${estimatedCostRows(
-                initialCosts
-              )}
-            </div>
 
-            <div class="planting-projection-preview">
+          ${formSection(
+            '7',
+            'Resultado de la proyección',
+            'Resumen por hectárea y de la siembra completa.',
+            `
+              <div class="planting-projection-table">
 
-              <div>
-                <span>Producción estimada</span>
-                <strong id="projectedProductionPreview">
-                  0 cajas
-                </strong>
+                <div class="projection-table-head">
+                  <span>Indicador</span>
+                  <span>Por hectárea</span>
+                  <span>Siembra completa</span>
+                </div>
+
+                ${projectionLine(
+                  'Producción',
+                  'summaryBoxesHa',
+                  'summaryBoxesTotal'
+                )}
+
+                ${projectionLine(
+                  'Libras',
+                  'summaryPoundsHa',
+                  'summaryPoundsTotal'
+                )}
+
+                ${projectionLine(
+                  'Ingresos proyectados',
+                  'summaryRevenueHa',
+                  'summaryRevenueTotal'
+                )}
+
+                ${projectionLine(
+                  'Costos proyectados MXN',
+                  'summaryCostMxnHa',
+                  'summaryCostMxnTotal'
+                )}
+
+                ${projectionLine(
+                  'Costos proyectados USD',
+                  'summaryCostUsdHa',
+                  'summaryCostUsdTotal'
+                )}
+
               </div>
 
-              <div>
-                <span>Venta proyectada</span>
-                <strong id="projectedSalesPreview">
-                  —
-                </strong>
+              <p class="muted planting-projection-note">
+                Los costos e ingresos permanecen separados por moneda.
+                No se convierten MXN y USD sin un tipo de cambio definido.
+              </p>
+            `
+          )}
+
+
+          ${formSection(
+            '8',
+            'Notas',
+            'Información adicional de la siembra.',
+            `
+              <div class="field">
+                <textarea
+                  class="input"
+                  name="notes"
+                  rows="3"
+                  placeholder="Notas opcionales"
+                >${escapeHtml(
+                  row?.notes || ''
+                )}</textarea>
               </div>
-
-              <div>
-                <span>Costos aproximados MXN</span>
-                <strong id="otherCostsMxnPreview">
-                  $0.00 MXN
-                </strong>
-              </div>
-
-              <div>
-                <span>Costos aproximados USD</span>
-                <strong id="otherCostsUsdPreview">
-                  $0.00 USD
-                </strong>
-              </div>
-
-            </div>
-
-          </section>
+            `
+          )}
 
 
           <div class="modal-actions">
+
+            <button
+              class="btn"
+              id="cancelPlanting"
+              type="button"
+            >
+              Cancelar
+            </button>
 
             <button
               class="btn primary"
@@ -730,11 +906,14 @@ function openPlantingForm(
   );
 
   bindProductDefaults(
-    modalRoot,
-    editing
+    modalRoot
   );
 
   bindEstimatedCosts(
+    modalRoot
+  );
+
+  bindProjectionFields(
     modalRoot
   );
 
@@ -742,15 +921,26 @@ function openPlantingForm(
     modalRoot
   );
 
+  const closeModal = () => {
+    modalRoot.innerHTML = '';
+  };
+
   modalRoot
     .querySelector(
       '#closePlantingModal'
     )
     ?.addEventListener(
       'click',
-      () => {
-        modalRoot.innerHTML = '';
-      }
+      closeModal
+    );
+
+  modalRoot
+    .querySelector(
+      '#cancelPlanting'
+    )
+    ?.addEventListener(
+      'click',
+      closeModal
     );
 
   modalRoot
@@ -772,6 +962,16 @@ function openPlantingForm(
           return;
         }
 
+        if (
+          catalogs.products.length === 0
+        ) {
+          toast(
+            'Primero agrega un producto en Catálogos.'
+          );
+
+          return;
+        }
+
         const formData =
           new FormData(
             event.currentTarget
@@ -788,9 +988,8 @@ function openPlantingForm(
           );
 
         /*
-         * Compatibilidad con columnas existentes en D1.
-         * Estos valores ya no se capturan ni se usan
-         * para la proyección financiera.
+         * Columnas heredadas de la estructura anterior.
+         * La proyección de costos ya no utiliza estos campos.
          */
         payload.seed_cost_per_thousand = 0;
         payload.seed_currency = 'USD';
@@ -820,7 +1019,7 @@ function openPlantingForm(
             }
           );
 
-          modalRoot.innerHTML = '';
+          closeModal();
 
           toast(
             editing
@@ -841,22 +1040,104 @@ function openPlantingForm(
 
 
 /* =========================================================
-   7. COSTOS APROXIMADOS
+   7. SECCIONES Y CAMPOS
+   ========================================================= */
+
+function formSection(
+  numberValue,
+  title,
+  description,
+  content
+) {
+  return `
+    <section class="planting-form-section">
+
+      <div class="planting-section-head">
+
+        <div class="planting-section-number">
+          ${numberValue}
+        </div>
+
+        <div>
+          <h3>
+            ${title}
+          </h3>
+
+          <p class="muted">
+            ${description}
+          </p>
+        </div>
+
+      </div>
+
+      <div class="planting-section-body">
+        ${content}
+      </div>
+
+    </section>
+  `;
+}
+
+
+function readonlyField(
+  label,
+  id,
+  value
+) {
+  return `
+    <div class="field">
+
+      <label>
+        ${label}
+      </label>
+
+      <div
+        class="input planting-readonly"
+        id="${id}"
+      >
+        ${value}
+      </div>
+
+    </div>
+  `;
+}
+
+
+function projectionLine(
+  label,
+  perHaId,
+  totalId
+) {
+  return `
+    <div class="projection-table-row">
+      <span>${label}</span>
+      <strong id="${perHaId}">—</strong>
+      <strong id="${totalId}">—</strong>
+    </div>
+  `;
+}
+
+
+/* =========================================================
+   8. COSTOS PROYECTADOS
    ========================================================= */
 
 function estimatedCostRows(
   costs
 ) {
   if (!costs.length) {
-    return '';
+    return `
+      <div
+        class="planting-costs-empty"
+        id="plantingCostsEmpty"
+      >
+        No hay costos proyectados agregados.
+      </div>
+    `;
   }
 
   return costs
-    .map(cost => {
-      return estimatedCostRow(
-        cost
-      );
-    })
+    .map(estimatedCostRow)
     .join('');
 }
 
@@ -864,6 +1145,32 @@ function estimatedCostRows(
 function estimatedCostRow(
   cost = {}
 ) {
+  const categoryId =
+    Number(
+      cost.category_id
+    ) || '';
+
+  const unitId =
+    Number(
+      cost.expense_unit_id
+    ) || '';
+
+  const unit =
+    catalogs.expense_units
+      .find(item => {
+        return Number(item.id) ===
+          Number(unitId);
+      });
+
+  const quantitySource =
+    unit?.quantity_source ||
+    cost.quantity_source ||
+    'MANUAL';
+
+  const legacy =
+    !categoryId ||
+    !unitId;
+
   return `
     <div class="planting-cost-row">
 
@@ -872,33 +1179,104 @@ function estimatedCostRow(
           Concepto
         </label>
 
-        <input
-          class="input estimated-cost-concept"
-          type="text"
-          value="${escapeHtml(
-            cost.concept || ''
-          )}"
-          placeholder="Ej. Fertilizante"
-        >
+        ${
+          legacy &&
+          cost.concept
+            ? `
+                <select
+                  class="input estimated-cost-category"
+                >
+                  <option value="">
+                    ${escapeHtml(
+                      cost.concept
+                    )} — seleccionar del catálogo
+                  </option>
+
+                  ${expenseCategoryOptions(
+                    ''
+                  )}
+                </select>
+              `
+            : `
+                <select
+                  class="input estimated-cost-category"
+                >
+                  <option value="">
+                    Seleccionar concepto
+                  </option>
+
+                  ${expenseCategoryOptions(
+                    categoryId
+                  )}
+                </select>
+              `
+        }
       </div>
 
       <div class="field">
         <label>
-          Monto aproximado
+          Unidad
+        </label>
+
+        <select
+          class="input estimated-cost-unit"
+        >
+          <option value="">
+            Seleccionar unidad
+          </option>
+
+          ${expenseUnitOptions(
+            unitId
+          )}
+        </select>
+      </div>
+
+      <div class="field">
+        <label>
+          Costo unitario
         </label>
 
         <input
-          class="input money-input estimated-cost-amount"
+          class="input money-input estimated-cost-unit-amount"
           type="text"
           inputmode="decimal"
           autocomplete="off"
           value="${escapeHtml(
             formatMoneyText(
-              cost.amount ?? ''
+              cost.unit_amount ??
+              cost.amount ??
+              ''
             )
           )}"
           placeholder="0.00"
         >
+      </div>
+
+      <div class="field">
+        <label>
+          Cantidad
+        </label>
+
+        <input
+          class="input estimated-cost-quantity"
+          type="number"
+          min="0.0001"
+          step="0.0001"
+          value="${escapeHtml(
+            cost.quantity ?? ''
+          )}"
+          ${
+            quantitySource === 'MANUAL'
+              ? ''
+              : 'readonly'
+          }
+        >
+
+        <small class="muted estimated-cost-rule">
+          ${quantitySourceLabel(
+            quantitySource
+          )}
+        </small>
       </div>
 
       <div class="field">
@@ -935,6 +1313,19 @@ function estimatedCostRow(
         </select>
       </div>
 
+      <div class="field">
+        <label>
+          Total proyectado
+        </label>
+
+        <div class="input planting-readonly estimated-cost-total">
+          ${money(
+            numeric(cost.amount),
+            cost.currency || 'MXN'
+          )}
+        </div>
+      </div>
+
       <div class="planting-cost-remove">
         <button
           class="btn danger remove-estimated-cost"
@@ -964,7 +1355,33 @@ function bindEstimatedCosts(
     ?.addEventListener(
       'click',
       () => {
-        list.insertAdjacentHTML(
+        if (
+          catalogs.expense_categories.length === 0
+        ) {
+          toast(
+            'Primero agrega conceptos de gasto en Catálogos.'
+          );
+
+          return;
+        }
+
+        if (
+          catalogs.expense_units.length === 0
+        ) {
+          toast(
+            'Primero configura unidades de costo en Catálogos.'
+          );
+
+          return;
+        }
+
+        list
+          ?.querySelector(
+            '#plantingCostsEmpty'
+          )
+          ?.remove();
+
+        list?.insertAdjacentHTML(
           'beforeend',
           estimatedCostRow()
         );
@@ -979,9 +1396,13 @@ function bindEstimatedCosts(
 
         newRow
           ?.querySelector(
-            '.estimated-cost-concept'
+            '.estimated-cost-category'
           )
           ?.focus();
+
+        updateProjectionPreview(
+          root
+        );
       }
     );
 
@@ -989,45 +1410,12 @@ function bindEstimatedCosts(
     ?.querySelectorAll(
       '.planting-cost-row'
     )
-    .forEach(row => {
+    .forEach(costRow => {
       bindEstimatedCostRow(
-        row,
+        costRow,
         root
       );
     });
-
-  [
-    'hectares',
-    'expected_yield_boxes_ha',
-    'price_per_box',
-    'price_currency'
-  ].forEach(name => {
-    root
-      .querySelector(
-        `[name="${name}"]`
-      )
-      ?.addEventListener(
-        'input',
-        () => {
-          updateProjectionPreview(
-            root
-          );
-        }
-      );
-
-    root
-      .querySelector(
-        `[name="${name}"]`
-      )
-      ?.addEventListener(
-        'change',
-        () => {
-          updateProjectionPreview(
-            root
-          );
-        }
-      );
-  });
 }
 
 
@@ -1044,6 +1432,28 @@ function bindEstimatedCostRow(
       () => {
         row.remove();
 
+        ensureCostsEmptyState(
+          root
+        );
+
+        updateProjectionPreview(
+          root
+        );
+      }
+    );
+
+  row
+    ?.querySelector(
+      '.estimated-cost-unit'
+    )
+    ?.addEventListener(
+      'change',
+      () => {
+        updateCostRow(
+          row,
+          root
+        );
+
         updateProjectionPreview(
           root
         );
@@ -1052,12 +1462,17 @@ function bindEstimatedCostRow(
 
   row
     ?.querySelectorAll(
-      'input, select'
+      '.estimated-cost-category, .estimated-cost-unit-amount, .estimated-cost-quantity, .estimated-cost-currency'
     )
     .forEach(field => {
       field.addEventListener(
         'input',
         () => {
+          updateCostRow(
+            row,
+            root
+          );
+
           updateProjectionPreview(
             root
           );
@@ -1067,6 +1482,11 @@ function bindEstimatedCostRow(
       field.addEventListener(
         'change',
         () => {
+          updateCostRow(
+            row,
+            root
+          );
+
           updateProjectionPreview(
             root
           );
@@ -1077,6 +1497,112 @@ function bindEstimatedCostRow(
   bindMoneyInputs(
     row
   );
+
+  updateCostRow(
+    row,
+    root
+  );
+}
+
+
+function updateCostRow(
+  row,
+  root
+) {
+  if (!row) {
+    return;
+  }
+
+  const unitId =
+    Number(
+      row
+        .querySelector(
+          '.estimated-cost-unit'
+        )
+        ?.value
+    );
+
+  const unit =
+    catalogs.expense_units
+      .find(item => {
+        return Number(item.id) ===
+          unitId;
+      });
+
+  const source =
+    unit?.quantity_source ||
+    'MANUAL';
+
+  const quantityInput =
+    row.querySelector(
+      '.estimated-cost-quantity'
+    );
+
+  const rule =
+    row.querySelector(
+      '.estimated-cost-rule'
+    );
+
+  if (quantityInput) {
+    if (source === 'MANUAL') {
+      quantityInput.readOnly = false;
+
+    } else {
+      quantityInput.readOnly = true;
+
+      quantityInput.value =
+        calculatedQuantity(
+          source,
+          root
+        );
+    }
+  }
+
+  if (rule) {
+    rule.textContent =
+      quantitySourceLabel(
+        source
+      );
+  }
+
+  const unitAmount =
+    numeric(
+      normalizeMoneyText(
+        row
+          .querySelector(
+            '.estimated-cost-unit-amount'
+          )
+          ?.value || ''
+      )
+    );
+
+  const quantity =
+    numeric(
+      quantityInput?.value
+    );
+
+  const currency =
+    row
+      .querySelector(
+        '.estimated-cost-currency'
+      )
+      ?.value || 'MXN';
+
+  const total =
+    unitAmount * quantity;
+
+  const totalElement =
+    row.querySelector(
+      '.estimated-cost-total'
+    );
+
+  if (totalElement) {
+    totalElement.textContent =
+      money(
+        total,
+        currency
+      );
+  }
 }
 
 
@@ -1091,21 +1617,40 @@ function collectEstimatedCosts(
     )
     .map(row => {
       return {
-        concept:
-          row
-            .querySelector(
-              '.estimated-cost-concept'
-            )
-            ?.value
-            ?.trim() || '',
+        category_id:
+          Number(
+            row
+              .querySelector(
+                '.estimated-cost-category'
+              )
+              ?.value
+          ) || null,
 
-        amount:
+        expense_unit_id:
+          Number(
+            row
+              .querySelector(
+                '.estimated-cost-unit'
+              )
+              ?.value
+          ) || null,
+
+        unit_amount:
           normalizeMoneyText(
             row
               .querySelector(
-                '.estimated-cost-amount'
+                '.estimated-cost-unit-amount'
               )
               ?.value || ''
+          ),
+
+        quantity:
+          numeric(
+            row
+              .querySelector(
+                '.estimated-cost-quantity'
+              )
+              ?.value
           ),
 
         currency:
@@ -1118,18 +1663,92 @@ function collectEstimatedCosts(
     })
     .filter(cost => {
       return (
-        cost.concept ||
-        numeric(cost.amount) > 0
+        cost.category_id ||
+        cost.expense_unit_id ||
+        numeric(
+          cost.unit_amount
+        ) > 0
       );
     });
 }
 
 
+function ensureCostsEmptyState(
+  root
+) {
+  const list =
+    root.querySelector(
+      '#estimatedCostsList'
+    );
+
+  if (
+    list &&
+    !list.querySelector(
+      '.planting-cost-row'
+    )
+  ) {
+    list.innerHTML = `
+      <div
+        class="planting-costs-empty"
+        id="plantingCostsEmpty"
+      >
+        No hay costos proyectados agregados.
+      </div>
+    `;
+  }
+}
+
+
 /* =========================================================
-   8. PREVISUALIZACIÓN DE PROYECCIÓN
+   9. CÁLCULOS DE PROYECCIÓN
    ========================================================= */
 
-function updateProjectionPreview(
+function bindProjectionFields(
+  root
+) {
+  [
+    'hectares',
+    'density_per_ha',
+    'expected_yield_boxes_ha',
+    'standard_box_lbs',
+    'price_per_box',
+    'price_currency'
+  ].forEach(name => {
+    const field =
+      root.querySelector(
+        `[name="${name}"]`
+      );
+
+    field?.addEventListener(
+      'input',
+      () => {
+        refreshCalculatedCostQuantities(
+          root
+        );
+
+        updateProjectionPreview(
+          root
+        );
+      }
+    );
+
+    field?.addEventListener(
+      'change',
+      () => {
+        refreshCalculatedCostQuantities(
+          root
+        );
+
+        updateProjectionPreview(
+          root
+        );
+      }
+    );
+  });
+}
+
+
+function projectionValues(
   root
 ) {
   const hectares =
@@ -1141,11 +1760,29 @@ function updateProjectionPreview(
         ?.value
     );
 
-  const expectedYield =
+  const density =
+    numeric(
+      root
+        .querySelector(
+          '[name="density_per_ha"]'
+        )
+        ?.value
+    );
+
+  const yieldPerHa =
     numeric(
       root
         .querySelector(
           '[name="expected_yield_boxes_ha"]'
+        )
+        ?.value
+    );
+
+  const boxLbs =
+    numeric(
+      root
+        .querySelector(
+          '[name="standard_box_lbs"]'
         )
         ?.value
     );
@@ -1161,18 +1798,152 @@ function updateProjectionPreview(
       )
     );
 
-  const priceCurrency =
+  const currency =
     root
       .querySelector(
         '[name="price_currency"]'
       )
       ?.value || 'USD';
 
-  const projectedBoxes =
-    hectares * expectedYield;
+  const totalPlants =
+    hectares * density;
 
-  const projectedSales =
+  const projectedBoxes =
+    hectares * yieldPerHa;
+
+  const projectedPounds =
+    projectedBoxes * boxLbs;
+
+  const revenuePerHa =
+    yieldPerHa * pricePerBox;
+
+  const totalRevenue =
     projectedBoxes * pricePerBox;
+
+  return {
+    hectares,
+    density,
+    yieldPerHa,
+    boxLbs,
+    pricePerBox,
+    currency,
+    totalPlants,
+    projectedBoxes,
+    projectedPounds,
+    revenuePerHa,
+    totalRevenue
+  };
+}
+
+
+function calculatedQuantity(
+  source,
+  root
+) {
+  const values =
+    projectionValues(
+      root
+    );
+
+  switch (source) {
+    case 'ONE':
+      return 1;
+
+    case 'HECTARES':
+      return values.hectares;
+
+    case 'PROJECTED_BOXES':
+      return values.projectedBoxes;
+
+    case 'PROJECTED_POUNDS':
+      return values.projectedPounds;
+
+    case 'THOUSAND_PLANTS':
+      return values.totalPlants / 1000;
+
+    default:
+      return 0;
+  }
+}
+
+
+function refreshCalculatedCostQuantities(
+  root
+) {
+  root
+    .querySelectorAll(
+      '.planting-cost-row'
+    )
+    .forEach(row => {
+      updateCostRow(
+        row,
+        root
+      );
+    });
+}
+
+
+function updateProjectionPreview(
+  root
+) {
+  const values =
+    projectionValues(
+      root
+    );
+
+  setText(
+    root,
+    '#plantsPerHaPreview',
+    number(
+      values.density,
+      0
+    )
+  );
+
+  setText(
+    root,
+    '#totalPlantsPreview',
+    number(
+      values.totalPlants,
+      0
+    )
+  );
+
+  setText(
+    root,
+    '#projectedBoxesPreview',
+    `${number(
+      values.projectedBoxes,
+      0
+    )} cajas`
+  );
+
+  setText(
+    root,
+    '#projectedPoundsPreview',
+    `${number(
+      values.projectedPounds,
+      0
+    )} lb`
+  );
+
+  setText(
+    root,
+    '#revenuePerHaPreview',
+    money(
+      values.revenuePerHa,
+      values.currency
+    )
+  );
+
+  setText(
+    root,
+    '#totalRevenuePreview',
+    money(
+      values.totalRevenue,
+      values.currency
+    )
+  );
 
   const costs =
     collectEstimatedCosts(
@@ -1181,62 +1952,122 @@ function updateProjectionPreview(
 
   const totals =
     summarizeEstimatedCosts(
-      costs
+      costs.map(cost => {
+        return {
+          ...cost,
+          amount:
+            numeric(
+              cost.unit_amount
+            ) *
+            numeric(
+              cost.quantity
+            )
+        };
+      })
     );
 
-  const production =
-    root.querySelector(
-      '#projectedProductionPreview'
-    );
+  const hectares =
+    values.hectares;
 
-  const sales =
-    root.querySelector(
-      '#projectedSalesPreview'
-    );
+  setText(
+    root,
+    '#summaryBoxesHa',
+    `${number(
+      values.yieldPerHa,
+      0
+    )} cajas`
+  );
 
-  const mxn =
-    root.querySelector(
-      '#otherCostsMxnPreview'
-    );
+  setText(
+    root,
+    '#summaryBoxesTotal',
+    `${number(
+      values.projectedBoxes,
+      0
+    )} cajas`
+  );
 
-  const usd =
-    root.querySelector(
-      '#otherCostsUsdPreview'
-    );
+  setText(
+    root,
+    '#summaryPoundsHa',
+    `${number(
+      values.yieldPerHa *
+      values.boxLbs,
+      0
+    )} lb`
+  );
 
-  if (production) {
-    production.textContent =
-      `${number(projectedBoxes, 0)} cajas`;
-  }
+  setText(
+    root,
+    '#summaryPoundsTotal',
+    `${number(
+      values.projectedPounds,
+      0
+    )} lb`
+  );
 
-  if (sales) {
-    sales.textContent =
-      money(
-        projectedSales,
-        priceCurrency
-      );
-  }
+  setText(
+    root,
+    '#summaryRevenueHa',
+    money(
+      values.revenuePerHa,
+      values.currency
+    )
+  );
 
-  if (mxn) {
-    mxn.textContent =
-      money(
-        totals.mxn,
-        'MXN'
-      );
-  }
+  setText(
+    root,
+    '#summaryRevenueTotal',
+    money(
+      values.totalRevenue,
+      values.currency
+    )
+  );
 
-  if (usd) {
-    usd.textContent =
-      money(
-        totals.usd,
-        'USD'
-      );
-  }
+  setText(
+    root,
+    '#summaryCostMxnHa',
+    money(
+      hectares > 0
+        ? totals.mxn / hectares
+        : 0,
+      'MXN'
+    )
+  );
+
+  setText(
+    root,
+    '#summaryCostMxnTotal',
+    money(
+      totals.mxn,
+      'MXN'
+    )
+  );
+
+  setText(
+    root,
+    '#summaryCostUsdHa',
+    money(
+      hectares > 0
+        ? totals.usd / hectares
+        : 0,
+      'USD'
+    )
+  );
+
+  setText(
+    root,
+    '#summaryCostUsdTotal',
+    money(
+      totals.usd,
+      'USD'
+    )
+  );
 }
 
 
 /* =========================================================
-   9. OPCIONES DE CLIENTES, PRODUCTOS Y ESTADO
+   10. OPCIONES DE CATÁLOGO
    ========================================================= */
 
 function clientOptions(
@@ -1287,6 +2118,54 @@ function productOptions(
 }
 
 
+function expenseCategoryOptions(
+  selectedId
+) {
+  return catalogs.expense_categories
+    .map(category => {
+      const selected =
+        Number(category.id) ===
+        Number(selectedId);
+
+      return `
+        <option
+          value="${category.id}"
+          ${selected ? 'selected' : ''}
+        >
+          ${escapeHtml(
+            category.name
+          )}
+        </option>
+      `;
+    })
+    .join('');
+}
+
+
+function expenseUnitOptions(
+  selectedId
+) {
+  return catalogs.expense_units
+    .map(unit => {
+      const selected =
+        Number(unit.id) ===
+        Number(selectedId);
+
+      return `
+        <option
+          value="${unit.id}"
+          ${selected ? 'selected' : ''}
+        >
+          ${escapeHtml(
+            unit.name
+          )}
+        </option>
+      `;
+    })
+    .join('');
+}
+
+
 function statusOption(
   value,
   selectedValue
@@ -1303,7 +2182,7 @@ function statusOption(
 
 
 /* =========================================================
-   10. GENERADORES DE CAMPOS
+   11. CAMPOS GENÉRICOS
    ========================================================= */
 
 function inputField(
@@ -1381,7 +2260,6 @@ function currencyField(
         name="${name}"
         required
       >
-
         <option
           value="MXN"
           ${selected === 'MXN' ? 'selected' : ''}
@@ -1395,7 +2273,6 @@ function currencyField(
         >
           USD
         </option>
-
       </select>
 
     </div>
@@ -1404,12 +2281,11 @@ function currencyField(
 
 
 /* =========================================================
-   11. VALORES DEL PRODUCTO
+   12. VALORES PREDETERMINADOS DEL PRODUCTO
    ========================================================= */
 
 function bindProductDefaults(
-  root,
-  editing = false
+  root
 ) {
   const productSelect =
     root.querySelector(
@@ -1439,7 +2315,6 @@ function bindProductDefaults(
           product.default_density_per_ha || ''
         );
 
-
         setFieldValue(
           root,
           'price_per_box',
@@ -1460,15 +2335,15 @@ function bindProductDefaults(
           product.standard_box_lbs || 12
         );
 
+        refreshCalculatedCostQuantities(
+          root
+        );
+
         updateProjectionPreview(
           root
         );
       }
     );
-
-  if (editing) {
-    return;
-  }
 }
 
 
@@ -1489,7 +2364,7 @@ function setFieldValue(
 
 
 /* =========================================================
-   12. RESUMEN DE COSTOS
+   13. RESUMEN Y REGLAS DE COSTOS
    ========================================================= */
 
 function summarizeEstimatedCosts(
@@ -1554,8 +2429,31 @@ function estimatedCostSummaryHtml(
 }
 
 
+function quantitySourceLabel(
+  source
+) {
+  const labels = {
+    ONE:
+      'Cantidad automática: 1',
+    HECTARES:
+      'Cantidad automática: hectáreas',
+    PROJECTED_BOXES:
+      'Cantidad automática: cajas proyectadas',
+    PROJECTED_POUNDS:
+      'Cantidad automática: libras proyectadas',
+    THOUSAND_PLANTS:
+      'Cantidad automática: millares de plantas',
+    MANUAL:
+      'Cantidad capturada manualmente'
+  };
+
+  return labels[source] ||
+    'Cantidad capturada manualmente';
+}
+
+
 /* =========================================================
-   13. FORMATO DE CAMPOS MONETARIOS
+   14. FORMATO DE DINERO
    ========================================================= */
 
 function bindMoneyInputs(
@@ -1638,8 +2536,25 @@ function formatMoneyText(
 
 
 /* =========================================================
-   14. UTILIDADES
+   15. UTILIDADES
    ========================================================= */
+
+function setText(
+  root,
+  selector,
+  value
+) {
+  const element =
+    root.querySelector(
+      selector
+    );
+
+  if (element) {
+    element.textContent =
+      value;
+  }
+}
+
 
 function numeric(
   value
