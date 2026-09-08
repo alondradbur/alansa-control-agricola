@@ -60,13 +60,11 @@ const cfg = {
   ],
 
   expense_categories: [
-    'Categorías de gastos',
-    [
-      'name',
-      'default_amount',
-      'default_currency'
-    ]
-  ],
+  'Categorías de gastos',
+  [
+    'name'
+  ]
+],
 
   expense_units: [
     'Unidades de costo',
@@ -785,33 +783,16 @@ function fields(
   }
 
   if (entity === 'expense_categories') {
-    return `
-      ${inputField(
-        'name',
-        'Categoría',
-        row.name || '',
-        'text',
-        'required'
-      )}
-
-      ${moneyField(
-        'default_amount',
-        'Monto predeterminado',
-        row.default_amount === null ||
-        row.default_amount === undefined
-          ? ''
-          : formatMoneyText(
-              row.default_amount
-            )
-      )}
-
-      ${currencyField(
-        'default_currency',
-        'Moneda',
-        row.default_currency || 'MXN'
-      )}
-    `;
-  }
+  return `
+    ${inputField(
+      'name',
+      'Concepto de gasto',
+      row.name || '',
+      'text',
+      'required'
+    )}
+  `;
+}
 
   if (entity === 'expense_units') {
     return `
