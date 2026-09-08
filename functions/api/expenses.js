@@ -2,11 +2,12 @@
    SISTEMA DE CONTROL AGRÍCOLA
    API: GASTOS
 
-   Funciones:
-   - GET: consultar gastos.
-   - POST: crear gasto.
-   - PUT: actualizar gasto.
-   - DELETE: eliminar gasto.
+   El gasto guarda:
+   - Monto unitario.
+   - Unidad de costo.
+   - Cantidad aplicada.
+   - Importe total.
+   - Moneda y equivalente MXN.
    ========================================================= */
 
 
@@ -32,7 +33,10 @@ export async function onRequestGet({
       SELECT
         e.*,
         pl.contract_number,
+        pl.hectares,
         ec.name AS category_name,
+        eu.name AS expense_unit_name,
+        eu.quantity_source,
         s.name AS supplier_name,
         pm.name AS payment_method_name
 
@@ -43,6 +47,9 @@ export async function onRequestGet({
 
       JOIN expense_categories ec
         ON ec.id = e.category_id
+
+      LEFT JOIN expense_units eu
+        ON eu.id = e.expense_unit_id
 
       LEFT JOIN suppliers s
         ON s.id = e.supplier_id
@@ -101,12 +108,16 @@ export async function onRequestPost({
           mxn_equivalent,
           payment_method_id,
           invoice_number,
-          notes
+          notes,
+          expense_unit_id,
+          unit_amount,
+          quantity
         )
 
         VALUES (
-          ?, ?, ?, ?, ?, ?, ?,
-          ?, ?, ?, ?, ?
+          ?, ?, ?, ?, ?, ?,
+          ?, ?, ?, ?, ?, ?,
+          ?, ?, ?
         )
       `)
       .bind(
@@ -121,7 +132,10 @@ export async function onRequestPost({
         values.mxnEquivalent,
         values.paymentMethodId,
         values.invoiceNumber,
-        values.notes
+        values.notes,
+        values.expenseUnitId,
+        values.unitAmount,
+        values.quantity
       )
       .run();
 
@@ -191,6 +205,9 @@ export async function onRequestPut({
           payment_method_id = ?,
           invoice_number = ?,
           notes = ?,
+          expense_unit_id = ?,
+          unit_amount = ?,
+          quantity = ?,
           updated_at = CURRENT_TIMESTAMP
 
         WHERE id = ?
@@ -208,6 +225,9 @@ export async function onRequestPut({
         values.paymentMethodId,
         values.invoiceNumber,
         values.notes,
+        values.expenseUnitId,
+        values.unitAmount,
+        values.quantity,
         id
       )
       .run();
@@ -308,6 +328,10 @@ function validateExpense(
     data.category_id
   );
 
+  const expenseUnitId = Number(
+    data.expense_unit_id
+  );
+
   const supplierId =
     optionalId(
       data.supplier_id
@@ -318,9 +342,14 @@ function validateExpense(
       data.concept || ''
     ).trim();
 
-  const amount =
+  const unitAmount =
     parseMoney(
-      data.amount
+      data.unit_amount
+    );
+
+  const quantity =
+    positiveNumber(
+      data.quantity
     );
 
   const currency =
@@ -369,6 +398,13 @@ function validateExpense(
     };
   }
 
+  if (!expenseUnitId) {
+    return {
+      error:
+        'Debes seleccionar cómo se aplica el monto.'
+    };
+  }
+
   if (!concept) {
     return {
       error:
@@ -377,12 +413,22 @@ function validateExpense(
   }
 
   if (
-    amount === null ||
-    amount < 0
+    unitAmount === null ||
+    unitAmount < 0
   ) {
     return {
       error:
-        'El monto del gasto no es válido.'
+        'El monto unitario no es válido.'
+    };
+  }
+
+  if (
+    quantity === null ||
+    quantity <= 0
+  ) {
+    return {
+      error:
+        'La cantidad debe ser mayor a cero.'
     };
   }
 
@@ -406,6 +452,9 @@ function validateExpense(
     };
   }
 
+  const amount =
+    unitAmount * quantity;
+
   const mxnEquivalent =
     currency === 'MXN'
       ? amount
@@ -416,8 +465,11 @@ function validateExpense(
       expenseDate,
       plantingId,
       categoryId,
+      expenseUnitId,
       supplierId,
       concept,
+      unitAmount,
+      quantity,
       amount,
       currency,
       exchangeRate:
@@ -460,6 +512,27 @@ function parseMoney(
 
   return Number.isFinite(amount)
     ? amount
+    : null;
+}
+
+
+function positiveNumber(
+  value
+) {
+  if (
+    value === null ||
+    value === undefined ||
+    value === ''
+  ) {
+    return null;
+  }
+
+  const result = Number(
+    String(value).replaceAll(',', '')
+  );
+
+  return Number.isFinite(result)
+    ? result
     : null;
 }
 
