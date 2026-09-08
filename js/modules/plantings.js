@@ -3,11 +3,10 @@
    MÓDULO: SIEMBRAS / CONTRATOS
 
    Funciones:
-   - Crear siembras.
-   - Editar registros existentes.
-   - Guardar cambios en D1.
+   - Crear y editar siembras.
+   - Capturar datos productivos para proyección.
+   - Capturar costos aproximados por siembra.
    - Eliminar siembras sin movimientos relacionados.
-   - Mantener importes y monedas.
    ========================================================= */
 
 
@@ -49,17 +48,20 @@ let catalogs = {
 
 export async function plantings() {
   try {
-    const responses = await Promise.all([
-      api('plantings'),
-      api('catalogs')
-    ]);
+    const responses =
+      await Promise.all([
+        api('plantings'),
+        api('catalogs')
+      ]);
 
-    rows = responses[0] || [];
+    rows =
+      responses[0] || [];
 
-    catalogs = responses[1] || {
-      products: [],
-      clients: []
-    };
+    catalogs =
+      responses[1] || {
+        products: [],
+        clients: []
+      };
 
   } catch {
     rows = [];
@@ -70,24 +72,25 @@ export async function plantings() {
     };
   }
 
-  const tableBody = rows.length
-    ? rows
-        .map(row => createRow(row))
-        .join('')
-    : `
-        <tr>
-          <td colspan="10">
-            ${empty(
-              'Todavía no hay siembras registradas.'
-            )}
-          </td>
-        </tr>
-      `;
+  const tableBody =
+    rows.length
+      ? rows
+          .map(row => createRow(row))
+          .join('')
+      : `
+          <tr>
+            <td colspan="11">
+              ${empty(
+                'Todavía no hay siembras registradas.'
+              )}
+            </td>
+          </tr>
+        `;
 
   return `
     ${moduleHeader(
       'Siembras',
-      'Contratos, hectáreas y periodos de cosecha',
+      'Datos productivos y costos aproximados para proyección',
       `
         <button
           class="btn primary"
@@ -120,9 +123,10 @@ export async function plantings() {
                 <th>Producto</th>
                 <th>Hectáreas</th>
                 <th>Rendimiento esperado</th>
+                <th>Cajas proyectadas</th>
                 <th>Periodo de cosecha</th>
                 <th>Semilla estimada</th>
-                <th>Precio / caja</th>
+                <th>Otros costos aproximados</th>
                 <th>Estado</th>
                 <th>Acciones</th>
               </tr>
@@ -152,6 +156,17 @@ export async function plantings() {
 function createRow(
   row
 ) {
+  const projectedBoxes =
+    numeric(row.hectares) *
+    numeric(
+      row.expected_yield_boxes_ha
+    );
+
+  const otherCosts =
+    summarizeEstimatedCosts(
+      row.estimated_costs || []
+    );
+
   return `
     <tr>
 
@@ -191,6 +206,13 @@ function createRow(
       </td>
 
       <td>
+        ${number(
+          projectedBoxes,
+          0
+        )}
+      </td>
+
+      <td>
         ${date(
           row.harvest_start
         )}
@@ -208,9 +230,8 @@ function createRow(
       </td>
 
       <td>
-        ${money(
-          row.price_per_box,
-          row.price_currency
+        ${estimatedCostSummaryHtml(
+          otherCosts
         )}
       </td>
 
@@ -225,14 +246,8 @@ function createRow(
       </td>
 
       <td>
-        <div
-          style="
-            display:flex;
-            gap:7px;
-            align-items:center;
-            white-space:nowrap;
-          "
-        >
+        <div class="row-actions">
+
           <button
             class="btn soft edit-planting"
             type="button"
@@ -248,6 +263,7 @@ function createRow(
           >
             Eliminar
           </button>
+
         </div>
       </td>
 
@@ -263,11 +279,6 @@ function createRow(
 export function bindPlantings(
   rerender
 ) {
-
-  /* ---------------------------------------------------------
-     5.1. NUEVA SIEMBRA
-     --------------------------------------------------------- */
-
   document
     .querySelector(
       '#newPlantingBtn'
@@ -281,11 +292,6 @@ export function bindPlantings(
       }
     );
 
-
-  /* ---------------------------------------------------------
-     5.2. EDITAR SIEMBRA
-     --------------------------------------------------------- */
-
   document
     .querySelectorAll(
       '.edit-planting'
@@ -294,15 +300,15 @@ export function bindPlantings(
       button.addEventListener(
         'click',
         () => {
-          const id = Number(
-            button.dataset.id
-          );
+          const id =
+            Number(
+              button.dataset.id
+            );
 
-          const row = rows.find(
-            item => {
+          const row =
+            rows.find(item => {
               return Number(item.id) === id;
-            }
-          );
+            });
 
           if (!row) {
             toast(
@@ -320,11 +326,6 @@ export function bindPlantings(
       );
     });
 
-
-  /* ---------------------------------------------------------
-     5.3. ELIMINAR SIEMBRA
-     --------------------------------------------------------- */
-
   document
     .querySelectorAll(
       '.delete-planting'
@@ -333,25 +334,25 @@ export function bindPlantings(
       button.addEventListener(
         'click',
         async () => {
-          const id = Number(
-            button.dataset.id
-          );
+          const id =
+            Number(
+              button.dataset.id
+            );
 
-          const row = rows.find(
-            item => {
+          const row =
+            rows.find(item => {
               return Number(item.id) === id;
-            }
-          );
+            });
 
           const folio =
             row?.contract_number ||
             'esta siembra';
 
-          const confirmed = confirm(
-            `¿Eliminar la siembra "${folio}"?`
-          );
-
-          if (!confirmed) {
+          if (
+            !confirm(
+              `¿Eliminar la siembra "${folio}"?`
+            )
+          ) {
             return;
           }
 
@@ -360,9 +361,10 @@ export function bindPlantings(
               'plantings',
               {
                 method: 'DELETE',
-                body: JSON.stringify({
-                  id
-                })
+                body:
+                  JSON.stringify({
+                    id
+                  })
               }
             );
 
@@ -391,9 +393,8 @@ function openPlantingForm(
   rerender,
   row = null
 ) {
-  const editing = Boolean(
-    row?.id
-  );
+  const editing =
+    Boolean(row?.id);
 
   const defaultProduct =
     editing
@@ -402,16 +403,18 @@ function openPlantingForm(
             return Number(product.id) ===
               Number(row.product_id);
           })
-      : catalogs.products
-          ?.find(product => {
-            return Number(
-              product.is_default
-            ) === 1;
-          })
-        ||
-        catalogs.products?.[0]
-        ||
-        {};
+      : (
+          catalogs.products
+            ?.find(product => {
+              return Number(
+                product.is_default
+              ) === 1;
+            })
+          ||
+          catalogs.products?.[0]
+          ||
+          {}
+        );
 
   const selectedProduct =
     defaultProduct || {};
@@ -424,6 +427,13 @@ function openPlantingForm(
   if (!modalRoot) {
     return;
   }
+
+  const initialCosts =
+    Array.isArray(
+      row?.estimated_costs
+    )
+      ? row.estimated_costs
+      : [];
 
   modalRoot.innerHTML = `
     <div class="modal-backdrop">
@@ -441,15 +451,9 @@ function openPlantingForm(
               }
             </h2>
 
-            ${
-              editing
-                ? `
-                  <p class="muted">
-                    Modifica los datos y guarda los cambios.
-                  </p>
-                `
-                : ''
-            }
+            <p class="muted">
+              Estos datos alimentan la proyección del Dashboard.
+            </p>
           </div>
 
           <button
@@ -484,7 +488,6 @@ function openPlantingForm(
             )}
 
             <div class="field">
-
               <label>
                 Cliente
               </label>
@@ -502,11 +505,9 @@ function openPlantingForm(
                   row?.client_id
                 )}
               </select>
-
             </div>
 
             <div class="field">
-
               <label>
                 Producto
               </label>
@@ -522,7 +523,6 @@ function openPlantingForm(
                   selectedProduct.id
                 )}
               </select>
-
             </div>
 
             ${inputField(
@@ -553,7 +553,7 @@ function openPlantingForm(
 
             ${moneyField(
               'seed_cost_per_thousand',
-              'Costo de semilla por millar',
+              'Costo aproximado de semilla por millar',
               formatMoneyText(
                 row?.seed_cost_per_thousand ??
                 selectedProduct.seed_cost_per_thousand ??
@@ -567,17 +567,6 @@ function openPlantingForm(
               row?.seed_currency ||
                 selectedProduct.seed_currency ||
                 'USD'
-            )}
-
-            ${moneyField(
-              'actual_seed_cost',
-              'Costo real de semilla',
-              row?.actual_seed_cost === null ||
-              row?.actual_seed_cost === undefined
-                ? ''
-                : formatMoneyText(
-                    row.actual_seed_cost
-                  )
             )}
 
             ${inputField(
@@ -598,7 +587,7 @@ function openPlantingForm(
 
             ${moneyField(
               'price_per_box',
-              'Precio por caja',
+              'Precio esperado por caja',
               formatMoneyText(
                 row?.price_per_box ??
                 selectedProduct.default_price_per_box ??
@@ -621,7 +610,7 @@ function openPlantingForm(
                 selectedProduct.standard_box_lbs ??
                 12,
               'number',
-              'min="0" step="0.01"'
+              'min="0.01" step="0.01"'
             )}
 
             ${inputField(
@@ -633,7 +622,6 @@ function openPlantingForm(
             )}
 
             <div class="field">
-
               <label>
                 Estado
               </label>
@@ -658,11 +646,9 @@ function openPlantingForm(
                   row?.status || 'Activa'
                 )}
               </select>
-
             </div>
 
             <div class="field span-2">
-
               <label>
                 Notas
               </label>
@@ -674,10 +660,81 @@ function openPlantingForm(
               >${escapeHtml(
                 row?.notes || ''
               )}</textarea>
-
             </div>
 
           </div>
+
+
+          <section class="planting-costs-section">
+
+            <div class="planting-costs-head">
+
+              <div>
+                <h3>
+                  Costos aproximados
+                </h3>
+
+                <p class="muted">
+                  Agrega únicamente costos para la proyección.
+                  Los gastos reales se capturan en Gastos.
+                </p>
+              </div>
+
+              <button
+                class="btn soft"
+                id="addEstimatedCost"
+                type="button"
+              >
+                ＋ Agregar costo
+              </button>
+
+            </div>
+
+            <div
+              id="estimatedCostsList"
+              class="planting-costs-list"
+            >
+              ${estimatedCostRows(
+                initialCosts
+              )}
+            </div>
+
+            <div class="planting-projection-preview">
+
+              <div>
+                <span>
+                  Semilla estimada
+                </span>
+
+                <strong id="seedEstimatePreview">
+                  —
+                </strong>
+              </div>
+
+              <div>
+                <span>
+                  Otros costos MXN
+                </span>
+
+                <strong id="otherCostsMxnPreview">
+                  $0.00 MXN
+                </strong>
+              </div>
+
+              <div>
+                <span>
+                  Otros costos USD
+                </span>
+
+                <strong id="otherCostsUsdPreview">
+                  $0.00 USD
+                </strong>
+              </div>
+
+            </div>
+
+          </section>
+
 
           <div class="modal-actions">
 
@@ -708,6 +765,14 @@ function openPlantingForm(
   bindProductDefaults(
     modalRoot,
     editing
+  );
+
+  bindEstimatedCosts(
+    modalRoot
+  );
+
+  updateProjectionPreview(
+    modalRoot
   );
 
   modalRoot
@@ -750,6 +815,11 @@ function openPlantingForm(
             formData.entries()
           );
 
+        payload.estimated_costs =
+          collectEstimatedCosts(
+            modalRoot
+          );
+
         if (editing) {
           payload.id =
             Number(row.id);
@@ -766,9 +836,10 @@ function openPlantingForm(
                   ? 'PUT'
                   : 'POST',
 
-              body: JSON.stringify(
-                payload
-              )
+              body:
+                JSON.stringify(
+                  payload
+                )
             }
           );
 
@@ -793,7 +864,394 @@ function openPlantingForm(
 
 
 /* =========================================================
-   7. OPCIONES DE CLIENTES, PRODUCTOS Y ESTADO
+   7. COSTOS APROXIMADOS
+   ========================================================= */
+
+function estimatedCostRows(
+  costs
+) {
+  if (!costs.length) {
+    return '';
+  }
+
+  return costs
+    .map(cost => {
+      return estimatedCostRow(
+        cost
+      );
+    })
+    .join('');
+}
+
+
+function estimatedCostRow(
+  cost = {}
+) {
+  return `
+    <div class="planting-cost-row">
+
+      <div class="field">
+        <label>
+          Concepto
+        </label>
+
+        <input
+          class="input estimated-cost-concept"
+          type="text"
+          value="${escapeHtml(
+            cost.concept || ''
+          )}"
+          placeholder="Ej. Fertilizante"
+        >
+      </div>
+
+      <div class="field">
+        <label>
+          Monto aproximado
+        </label>
+
+        <input
+          class="input money-input estimated-cost-amount"
+          type="text"
+          inputmode="decimal"
+          autocomplete="off"
+          value="${escapeHtml(
+            formatMoneyText(
+              cost.amount ?? ''
+            )
+          )}"
+          placeholder="0.00"
+        >
+      </div>
+
+      <div class="field">
+        <label>
+          Moneda
+        </label>
+
+        <select
+          class="input estimated-cost-currency"
+        >
+          <option
+            value="MXN"
+            ${
+              (
+                cost.currency || 'MXN'
+              ) === 'MXN'
+                ? 'selected'
+                : ''
+            }
+          >
+            MXN
+          </option>
+
+          <option
+            value="USD"
+            ${
+              cost.currency === 'USD'
+                ? 'selected'
+                : ''
+            }
+          >
+            USD
+          </option>
+        </select>
+      </div>
+
+      <div class="planting-cost-remove">
+        <button
+          class="btn danger remove-estimated-cost"
+          type="button"
+        >
+          Eliminar
+        </button>
+      </div>
+
+    </div>
+  `;
+}
+
+
+function bindEstimatedCosts(
+  root
+) {
+  const list =
+    root.querySelector(
+      '#estimatedCostsList'
+    );
+
+  root
+    .querySelector(
+      '#addEstimatedCost'
+    )
+    ?.addEventListener(
+      'click',
+      () => {
+        list.insertAdjacentHTML(
+          'beforeend',
+          estimatedCostRow()
+        );
+
+        const newRow =
+          list.lastElementChild;
+
+        bindEstimatedCostRow(
+          newRow,
+          root
+        );
+
+        newRow
+          ?.querySelector(
+            '.estimated-cost-concept'
+          )
+          ?.focus();
+      }
+    );
+
+  list
+    ?.querySelectorAll(
+      '.planting-cost-row'
+    )
+    .forEach(row => {
+      bindEstimatedCostRow(
+        row,
+        root
+      );
+    });
+
+  [
+    'hectares',
+    'density_per_ha',
+    'seed_cost_per_thousand',
+    'seed_currency'
+  ].forEach(name => {
+    root
+      .querySelector(
+        `[name="${name}"]`
+      )
+      ?.addEventListener(
+        'input',
+        () => {
+          updateProjectionPreview(
+            root
+          );
+        }
+      );
+
+    root
+      .querySelector(
+        `[name="${name}"]`
+      )
+      ?.addEventListener(
+        'change',
+        () => {
+          updateProjectionPreview(
+            root
+          );
+        }
+      );
+  });
+}
+
+
+function bindEstimatedCostRow(
+  row,
+  root
+) {
+  row
+    ?.querySelector(
+      '.remove-estimated-cost'
+    )
+    ?.addEventListener(
+      'click',
+      () => {
+        row.remove();
+
+        updateProjectionPreview(
+          root
+        );
+      }
+    );
+
+  row
+    ?.querySelectorAll(
+      'input, select'
+    )
+    .forEach(field => {
+      field.addEventListener(
+        'input',
+        () => {
+          updateProjectionPreview(
+            root
+          );
+        }
+      );
+
+      field.addEventListener(
+        'change',
+        () => {
+          updateProjectionPreview(
+            root
+          );
+        }
+      );
+    });
+
+  bindMoneyInputs(
+    row
+  );
+}
+
+
+function collectEstimatedCosts(
+  root
+) {
+  return Array
+    .from(
+      root.querySelectorAll(
+        '.planting-cost-row'
+      )
+    )
+    .map(row => {
+      return {
+        concept:
+          row
+            .querySelector(
+              '.estimated-cost-concept'
+            )
+            ?.value
+            ?.trim() || '',
+
+        amount:
+          normalizeMoneyText(
+            row
+              .querySelector(
+                '.estimated-cost-amount'
+              )
+              ?.value || ''
+          ),
+
+        currency:
+          row
+            .querySelector(
+              '.estimated-cost-currency'
+            )
+            ?.value || 'MXN'
+      };
+    })
+    .filter(cost => {
+      return (
+        cost.concept ||
+        numeric(cost.amount) > 0
+      );
+    });
+}
+
+
+/* =========================================================
+   8. PREVISUALIZACIÓN DE PROYECCIÓN
+   ========================================================= */
+
+function updateProjectionPreview(
+  root
+) {
+  const hectares =
+    numeric(
+      root
+        .querySelector(
+          '[name="hectares"]'
+        )
+        ?.value
+    );
+
+  const density =
+    numeric(
+      root
+        .querySelector(
+          '[name="density_per_ha"]'
+        )
+        ?.value
+    );
+
+  const seedCost =
+    numeric(
+      normalizeMoneyText(
+        root
+          .querySelector(
+            '[name="seed_cost_per_thousand"]'
+          )
+          ?.value || ''
+      )
+    );
+
+  const seedCurrency =
+    root
+      .querySelector(
+        '[name="seed_currency"]'
+      )
+      ?.value || 'USD';
+
+  const estimatedSeed =
+    (
+      hectares *
+      density /
+      1000
+    ) *
+    seedCost;
+
+  const costs =
+    collectEstimatedCosts(
+      root
+    );
+
+  const totals =
+    summarizeEstimatedCosts(
+      costs
+    );
+
+  const seedPreview =
+    root.querySelector(
+      '#seedEstimatePreview'
+    );
+
+  const mxnPreview =
+    root.querySelector(
+      '#otherCostsMxnPreview'
+    );
+
+  const usdPreview =
+    root.querySelector(
+      '#otherCostsUsdPreview'
+    );
+
+  if (seedPreview) {
+    seedPreview.textContent =
+      money(
+        estimatedSeed,
+        seedCurrency
+      );
+  }
+
+  if (mxnPreview) {
+    mxnPreview.textContent =
+      money(
+        totals.mxn,
+        'MXN'
+      );
+  }
+
+  if (usdPreview) {
+    usdPreview.textContent =
+      money(
+        totals.usd,
+        'USD'
+      );
+  }
+}
+
+
+/* =========================================================
+   9. OPCIONES DE CLIENTES, PRODUCTOS Y ESTADO
    ========================================================= */
 
 function clientOptions(
@@ -860,7 +1318,7 @@ function statusOption(
 
 
 /* =========================================================
-   8. GENERADORES DE CAMPOS
+   10. GENERADORES DE CAMPOS
    ========================================================= */
 
 function inputField(
@@ -961,7 +1419,7 @@ function currencyField(
 
 
 /* =========================================================
-   9. ACTUALIZAR VALORES AL CAMBIAR PRODUCTO
+   11. VALORES DEL PRODUCTO
    ========================================================= */
 
 function bindProductDefaults(
@@ -1029,11 +1487,13 @@ function bindProductDefaults(
           'standard_box_lbs',
           product.standard_box_lbs || 12
         );
+
+        updateProjectionPreview(
+          root
+        );
       }
     );
 
-  // Al abrir edición NO dispara cambios automáticos,
-  // para conservar los valores históricos de la siembra.
   if (editing) {
     return;
   }
@@ -1045,9 +1505,10 @@ function setFieldValue(
   name,
   value
 ) {
-  const field = root.querySelector(
-    `[name="${name}"]`
-  );
+  const field =
+    root.querySelector(
+      `[name="${name}"]`
+    );
 
   if (field) {
     field.value = value;
@@ -1056,7 +1517,73 @@ function setFieldValue(
 
 
 /* =========================================================
-   10. FORMATO DE CAMPOS MONETARIOS
+   12. RESUMEN DE COSTOS
+   ========================================================= */
+
+function summarizeEstimatedCosts(
+  costs
+) {
+  return costs.reduce(
+    (totals, cost) => {
+      const amount =
+        numeric(
+          cost.amount
+        );
+
+      if (
+        cost.currency === 'USD'
+      ) {
+        totals.usd += amount;
+      } else {
+        totals.mxn += amount;
+      }
+
+      return totals;
+    },
+    {
+      mxn: 0,
+      usd: 0
+    }
+  );
+}
+
+
+function estimatedCostSummaryHtml(
+  totals
+) {
+  if (
+    totals.mxn === 0 &&
+    totals.usd === 0
+  ) {
+    return '—';
+  }
+
+  const values = [];
+
+  if (totals.mxn > 0) {
+    values.push(
+      money(
+        totals.mxn,
+        'MXN'
+      )
+    );
+  }
+
+  if (totals.usd > 0) {
+    values.push(
+      money(
+        totals.usd,
+        'USD'
+      )
+    );
+  }
+
+  return values.join('<br>');
+}
+
+
+/* =========================================================
+   13. FORMATO DE CAMPOS MONETARIOS
    ========================================================= */
 
 function bindMoneyInputs(
@@ -1067,6 +1594,14 @@ function bindMoneyInputs(
       '.money-input'
     )
     .forEach(input => {
+      if (
+        input.dataset.moneyBound === '1'
+      ) {
+        return;
+      }
+
+      input.dataset.moneyBound = '1';
+
       input.addEventListener(
         'focus',
         () => {
@@ -1093,7 +1628,9 @@ function bindMoneyInputs(
 function normalizeMoneyText(
   value
 ) {
-  return String(value || '')
+  return String(
+    value || ''
+  )
     .replaceAll(',', '')
     .replace(/[^\d.-]/g, '');
 }
@@ -1111,9 +1648,8 @@ function formatMoneyText(
     return '';
   }
 
-  const amount = Number(
-    normalized
-  );
+  const amount =
+    Number(normalized);
 
   if (!Number.isFinite(amount)) {
     return '';
@@ -1126,4 +1662,25 @@ function formatMoneyText(
       maximumFractionDigits: 2
     }
   ).format(amount);
+}
+
+
+/* =========================================================
+   14. UTILIDADES
+   ========================================================= */
+
+function numeric(
+  value
+) {
+  const result =
+    Number(
+      String(
+        value ?? 0
+      )
+        .replaceAll(',', '')
+    );
+
+  return Number.isFinite(result)
+    ? result
+    : 0;
 }
