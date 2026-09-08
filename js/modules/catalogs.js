@@ -1014,4 +1014,3 @@ function formatMoneyText(
     }
   ).format(amount);
 }
-
