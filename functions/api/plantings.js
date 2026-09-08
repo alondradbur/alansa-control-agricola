@@ -7,7 +7,8 @@
    - Crear nuevas siembras.
    - Editar registros existentes.
    - Eliminar siembras sin movimientos relacionados.
-   - Guardar costos aproximados para proyección.
+   - Guardar costos proyectados por concepto y unidad.
+   - Calcular cantidades proyectadas en el backend.
    ========================================================= */
 
 
@@ -57,17 +58,30 @@ export async function onRequestGet({
       env.DB
         .prepare(`
           SELECT
-            id,
-            planting_id,
-            concept,
-            amount,
-            currency
+            pec.id,
+            pec.planting_id,
+            pec.category_id,
+            pec.expense_unit_id,
+            pec.concept,
+            pec.unit_amount,
+            pec.quantity,
+            pec.amount,
+            pec.currency,
+            ec.name AS category_name,
+            eu.name AS unit_name,
+            eu.quantity_source
 
-          FROM planting_estimated_costs
+          FROM planting_estimated_costs pec
+
+          LEFT JOIN expense_categories ec
+            ON ec.id = pec.category_id
+
+          LEFT JOIN expense_units eu
+            ON eu.id = pec.expense_unit_id
 
           ORDER BY
-            planting_id,
-            id
+            pec.planting_id,
+            pec.id
         `)
         .all()
     ]);
@@ -89,27 +103,128 @@ export async function onRequestGet({
       }
 
       costsByPlanting[key].push({
-        id: cost.id,
-        concept: cost.concept,
-        amount: Number(
-          cost.amount || 0
-        ),
+        id: Number(cost.id),
+        category_id:
+          cost.category_id === null
+            ? null
+            : Number(cost.category_id),
+        expense_unit_id:
+          cost.expense_unit_id === null
+            ? null
+            : Number(cost.expense_unit_id),
+        concept:
+          cost.category_name ||
+          cost.concept ||
+          '',
+        category_name:
+          cost.category_name ||
+          cost.concept ||
+          '',
+        unit_name:
+          cost.unit_name || '',
+        quantity_source:
+          cost.quantity_source || 'MANUAL',
+        unit_amount:
+          Number(
+            cost.unit_amount ??
+            cost.amount ??
+            0
+          ),
+        quantity:
+          Number(
+            cost.quantity ??
+            1
+          ),
+        amount:
+          Number(
+            cost.amount || 0
+          ),
         currency:
           cost.currency || 'MXN'
       });
     });
 
     return json(
-      plantings.map(planting => ({
-        ...planting,
-        estimated_costs:
-          costsByPlanting[
-            Number(planting.id)
-          ] || []
-      }))
+      plantings.map(planting => {
+        const hectares =
+          Number(planting.hectares || 0);
+
+        const expectedYield =
+          Number(
+            planting.expected_yield_boxes_ha || 0
+          );
+
+        const standardBoxLbs =
+          Number(
+            planting.standard_box_lbs || 0
+          );
+
+        const pricePerBox =
+          Number(
+            planting.price_per_box || 0
+          );
+
+        const density =
+          Number(
+            planting.density_per_ha || 0
+          );
+
+        const projectedBoxes =
+          hectares * expectedYield;
+
+        const projectedPounds =
+          projectedBoxes * standardBoxLbs;
+
+        const projectedPlants =
+          hectares * density;
+
+        const projectedRevenue =
+          projectedBoxes * pricePerBox;
+
+        return {
+          ...planting,
+
+          hectares,
+          expected_yield_boxes_ha:
+            expectedYield,
+          standard_box_lbs:
+            standardBoxLbs,
+          price_per_box:
+            pricePerBox,
+          density_per_ha:
+            density,
+
+          projected_boxes:
+            projectedBoxes,
+
+          projected_pounds:
+            projectedPounds,
+
+          projected_plants:
+            projectedPlants,
+
+          projected_revenue:
+            projectedRevenue,
+
+          projected_revenue_per_ha:
+            hectares > 0
+              ? projectedRevenue / hectares
+              : 0,
+
+          estimated_costs:
+            costsByPlanting[
+              Number(planting.id)
+            ] || []
+        };
+      })
     );
 
-  } catch {
+  } catch (exception) {
+    console.error(
+      'Error al consultar siembras:',
+      exception
+    );
+
     return error(
       'No fue posible consultar las siembras.'
     );
@@ -143,8 +258,10 @@ export async function onRequestPost({
     validation.values;
 
   const estimatedCosts =
-    validateEstimatedCosts(
-      data.estimated_costs
+    await validateProjectedCosts(
+      env.DB,
+      data.estimated_costs,
+      values
     );
 
   if (estimatedCosts.error) {
@@ -207,7 +324,7 @@ export async function onRequestPost({
         result.meta?.last_row_id
       );
 
-    await replaceEstimatedCosts(
+    await replaceProjectedCosts(
       env.DB,
       plantingId,
       estimatedCosts.values
@@ -216,8 +333,11 @@ export async function onRequestPost({
     return json({
       ok: true,
       id: plantingId,
-      estimated_seed_cost:
-        values.estimatedSeedCost
+      projection:
+        buildProjectionSummary(
+          values,
+          estimatedCosts.values
+        )
     });
 
   } catch (exception) {
@@ -240,9 +360,8 @@ export async function onRequestPut({
   const data =
     await request.json();
 
-  const id = Number(
-    data.id
-  );
+  const id =
+    Number(data.id);
 
   if (!id) {
     return error(
@@ -261,9 +380,14 @@ export async function onRequestPut({
     );
   }
 
+  const values =
+    validation.values;
+
   const estimatedCosts =
-    validateEstimatedCosts(
-      data.estimated_costs
+    await validateProjectedCosts(
+      env.DB,
+      data.estimated_costs,
+      values
     );
 
   if (estimatedCosts.error) {
@@ -271,9 +395,6 @@ export async function onRequestPut({
       estimatedCosts.error
     );
   }
-
-  const values =
-    validation.values;
 
   try {
     const result = await env.DB
@@ -334,7 +455,7 @@ export async function onRequestPut({
       );
     }
 
-    await replaceEstimatedCosts(
+    await replaceProjectedCosts(
       env.DB,
       id,
       estimatedCosts.values
@@ -343,8 +464,11 @@ export async function onRequestPut({
     return json({
       ok: true,
       id,
-      estimated_seed_cost:
-        values.estimatedSeedCost
+      projection:
+        buildProjectionSummary(
+          values,
+          estimatedCosts.values
+        )
     });
 
   } catch (exception) {
@@ -367,9 +491,8 @@ export async function onRequestDelete({
   const body =
     await request.json();
 
-  const id = Number(
-    body.id
-  );
+  const id =
+    Number(body.id);
 
   if (!id) {
     return error(
@@ -410,7 +533,12 @@ export async function onRequestDelete({
       ok: true
     });
 
-  } catch {
+  } catch (exception) {
+    console.error(
+      'Error al eliminar siembra:',
+      exception
+    );
+
     return error(
       'No fue posible eliminar la siembra.'
     );
@@ -536,11 +664,11 @@ function validatePlanting(
 
   if (
     expectedYield === null ||
-    expectedYield <= 0
+    expectedYield < 0
   ) {
     return {
       error:
-        'El rendimiento esperado por hectárea debe ser mayor a cero.'
+        'El rendimiento esperado por hectárea no puede ser negativo.'
     };
   }
 
@@ -583,6 +711,16 @@ function validatePlanting(
     };
   }
 
+  if (
+    standardBoxLbs === null ||
+    standardBoxLbs <= 0
+  ) {
+    return {
+      error:
+        'El peso estándar por caja debe ser mayor a cero.'
+    };
+  }
+
   if (!status) {
     return {
       error:
@@ -590,7 +728,20 @@ function validatePlanting(
     };
   }
 
-  const estimatedSeedCost = 0;
+  /*
+   * Compatibilidad con la estructura anterior.
+   * La semilla dejará de sumarse por separado en el nuevo
+   * formulario de proyección; el costo real de la proyección
+   * vivirá en planting_estimated_costs.
+   */
+  const estimatedSeedCost =
+    seedCost > 0
+      ? (
+          hectares *
+          density /
+          1000
+        ) * seedCost
+      : 0;
 
   return {
     values: {
@@ -617,11 +768,13 @@ function validatePlanting(
 
 
 /* =========================================================
-   7. VALIDAR COSTOS APROXIMADOS
+   7. VALIDAR COSTOS PROYECTADOS
    ========================================================= */
 
-function validateEstimatedCosts(
-  costs
+async function validateProjectedCosts(
+  db,
+  costs,
+  planting
 ) {
   if (
     costs === undefined ||
@@ -635,74 +788,300 @@ function validateEstimatedCosts(
   if (!Array.isArray(costs)) {
     return {
       error:
-        'Los costos aproximados no tienen un formato válido.'
+        'Los costos proyectados no tienen un formato válido.'
     };
   }
 
-  const values = [];
+  const normalized = [];
 
-  for (const cost of costs) {
-    const concept =
-      String(
-        cost?.concept || ''
-      ).trim();
+  for (const rawCost of costs) {
+    const categoryId =
+      Number(
+        rawCost?.category_id
+      ) || null;
 
-    const amount =
-      parseMoney(
-        cost?.amount
-      );
+    const unitId =
+      Number(
+        rawCost?.expense_unit_id
+      ) || null;
 
-    const currency =
-      validCurrency(
-        cost?.currency,
-        'MXN'
-      );
-
+    /*
+     * Compatibilidad temporal con el formulario anterior:
+     * concept + amount + currency.
+     */
     if (
-      !concept &&
-      (
-        amount === null ||
-        amount === 0
-      )
+      !categoryId &&
+      !unitId
     ) {
+      const legacyConcept =
+        String(
+          rawCost?.concept || ''
+        ).trim();
+
+      const legacyAmount =
+        parseMoney(
+          rawCost?.amount
+        );
+
+      if (
+        !legacyConcept &&
+        (
+          legacyAmount === null ||
+          legacyAmount === 0
+        )
+      ) {
+        continue;
+      }
+
+      if (!legacyConcept) {
+        return {
+          error:
+            'Cada costo proyectado debe tener un concepto.'
+        };
+      }
+
+      if (
+        legacyAmount === null ||
+        legacyAmount < 0
+      ) {
+        return {
+          error:
+            `El costo proyectado de "${legacyConcept}" no es válido.`
+        };
+      }
+
+      normalized.push({
+        categoryId: null,
+        expenseUnitId: null,
+        concept: legacyConcept,
+        unitAmount: legacyAmount,
+        quantity: 1,
+        amount: legacyAmount,
+        currency:
+          validCurrency(
+            rawCost?.currency,
+            'MXN'
+          ),
+        quantitySource: 'ONE'
+      });
+
       continue;
     }
 
-    if (!concept) {
+    if (!categoryId) {
       return {
         error:
-          'Cada costo aproximado debe tener un concepto.'
+          'Selecciona un concepto para cada costo proyectado.'
       };
     }
 
+    if (!unitId) {
+      return {
+        error:
+          'Selecciona una unidad para cada costo proyectado.'
+      };
+    }
+
+    const [
+      category,
+      unit
+    ] = await Promise.all([
+      db
+        .prepare(`
+          SELECT
+            id,
+            name
+          FROM expense_categories
+          WHERE id = ?
+          LIMIT 1
+        `)
+        .bind(
+          categoryId
+        )
+        .first(),
+
+      db
+        .prepare(`
+          SELECT
+            id,
+            name,
+            quantity_source
+          FROM expense_units
+          WHERE id = ?
+          LIMIT 1
+        `)
+        .bind(
+          unitId
+        )
+        .first()
+    ]);
+
+    if (!category) {
+      return {
+        error:
+          'Uno de los conceptos de gasto seleccionados ya no existe.'
+      };
+    }
+
+    if (!unit) {
+      return {
+        error:
+          'Una de las unidades seleccionadas ya no existe.'
+      };
+    }
+
+    const unitAmount =
+      parseMoney(
+        rawCost?.unit_amount
+      );
+
     if (
-      amount === null ||
-      amount < 0
+      unitAmount === null ||
+      unitAmount < 0
     ) {
       return {
         error:
-          `El monto aproximado de "${concept}" no es válido.`
+          `El costo unitario de "${category.name}" no es válido.`
       };
     }
 
-    values.push({
-      concept,
+    const quantityResult =
+      resolveProjectedQuantity(
+        unit.quantity_source,
+        rawCost?.quantity,
+        planting
+      );
+
+    if (quantityResult.error) {
+      return {
+        error:
+          `${category.name}: ${quantityResult.error}`
+      };
+    }
+
+    const quantity =
+      quantityResult.value;
+
+    const amount =
+      roundMoney(
+        unitAmount *
+        quantity
+      );
+
+    normalized.push({
+      categoryId:
+        Number(category.id),
+      expenseUnitId:
+        Number(unit.id),
+      concept:
+        String(category.name),
+      unitAmount,
+      quantity,
       amount,
-      currency
+      currency:
+        validCurrency(
+          rawCost?.currency,
+          'MXN'
+        ),
+      quantitySource:
+        unit.quantity_source
     });
   }
 
   return {
-    values
+    values:
+      normalized
   };
 }
 
 
 /* =========================================================
-   8. GUARDAR COSTOS APROXIMADOS
+   8. RESOLVER CANTIDAD SEGÚN UNIDAD
    ========================================================= */
 
-async function replaceEstimatedCosts(
+function resolveProjectedQuantity(
+  source,
+  manualQuantity,
+  planting
+) {
+  const projectedBoxes =
+    planting.hectares *
+    planting.expectedYield;
+
+  const projectedPounds =
+    projectedBoxes *
+    planting.standardBoxLbs;
+
+  const projectedPlants =
+    planting.hectares *
+    planting.density;
+
+  switch (source) {
+    case 'ONE':
+      return {
+        value: 1
+      };
+
+    case 'HECTARES':
+      return {
+        value:
+          planting.hectares
+      };
+
+    case 'PROJECTED_BOXES':
+      return {
+        value:
+          projectedBoxes
+      };
+
+    case 'PROJECTED_POUNDS':
+      return {
+        value:
+          projectedPounds
+      };
+
+    case 'THOUSAND_PLANTS':
+      return {
+        value:
+          projectedPlants / 1000
+      };
+
+    case 'MANUAL': {
+      const quantity =
+        positiveNumber(
+          manualQuantity
+        );
+
+      if (
+        quantity === null ||
+        quantity <= 0
+      ) {
+        return {
+          error:
+            'la cantidad debe ser mayor a cero.'
+        };
+      }
+
+      return {
+        value:
+          quantity
+      };
+    }
+
+    default:
+      return {
+        error:
+          'la regla de cálculo de la unidad no es válida.'
+      };
+  }
+}
+
+
+/* =========================================================
+   9. GUARDAR COSTOS PROYECTADOS
+   ========================================================= */
+
+async function replaceProjectedCosts(
   db,
   plantingId,
   costs
@@ -724,15 +1103,26 @@ async function replaceEstimatedCosts(
         .prepare(`
           INSERT INTO planting_estimated_costs (
             planting_id,
+            category_id,
+            expense_unit_id,
             concept,
+            unit_amount,
+            quantity,
             amount,
             currency
           )
-          VALUES (?, ?, ?, ?)
+
+          VALUES (
+            ?, ?, ?, ?, ?, ?, ?, ?
+          )
         `)
         .bind(
           plantingId,
+          cost.categoryId,
+          cost.expenseUnitId,
           cost.concept,
+          cost.unitAmount,
+          cost.quantity,
           cost.amount,
           cost.currency
         )
@@ -746,7 +1136,123 @@ async function replaceEstimatedCosts(
 
 
 /* =========================================================
-   9. PROTEGER REGISTROS CON MOVIMIENTOS
+   10. RESUMEN DE PROYECCIÓN
+   ========================================================= */
+
+function buildProjectionSummary(
+  planting,
+  costs
+) {
+  const projectedBoxes =
+    planting.hectares *
+    planting.expectedYield;
+
+  const projectedPounds =
+    projectedBoxes *
+    planting.standardBoxLbs;
+
+  const projectedPlants =
+    planting.hectares *
+    planting.density;
+
+  const projectedRevenue =
+    projectedBoxes *
+    planting.pricePerBox;
+
+  const costTotals =
+    costs.reduce(
+      (accumulator, cost) => {
+        const currency =
+          cost.currency || 'MXN';
+
+        accumulator[currency] =
+          (
+            accumulator[currency] ||
+            0
+          ) + Number(
+            cost.amount || 0
+          );
+
+        return accumulator;
+      },
+      {
+        MXN: 0,
+        USD: 0
+      }
+    );
+
+  return {
+    hectares:
+      planting.hectares,
+
+    projected_boxes:
+      projectedBoxes,
+
+    projected_boxes_per_ha:
+      planting.expectedYield,
+
+    projected_pounds:
+      projectedPounds,
+
+    projected_pounds_per_ha:
+      planting.expectedYield *
+      planting.standardBoxLbs,
+
+    projected_plants:
+      projectedPlants,
+
+    projected_plants_per_ha:
+      planting.density,
+
+    projected_revenue:
+      projectedRevenue,
+
+    projected_revenue_per_ha:
+      planting.hectares > 0
+        ? projectedRevenue /
+          planting.hectares
+        : 0,
+
+    revenue_currency:
+      planting.priceCurrency,
+
+    projected_costs:
+      {
+        MXN:
+          roundMoney(
+            costTotals.MXN
+          ),
+
+        USD:
+          roundMoney(
+            costTotals.USD
+          )
+      },
+
+    projected_costs_per_ha:
+      {
+        MXN:
+          planting.hectares > 0
+            ? roundMoney(
+                costTotals.MXN /
+                planting.hectares
+              )
+            : 0,
+
+        USD:
+          planting.hectares > 0
+            ? roundMoney(
+                costTotals.USD /
+                planting.hectares
+              )
+            : 0
+      }
+  };
+}
+
+
+/* =========================================================
+   11. PROTEGER REGISTROS CON MOVIMIENTOS
    ========================================================= */
 
 async function hasRelatedMovements(
@@ -782,7 +1288,7 @@ async function hasRelatedMovements(
 
 
 /* =========================================================
-   10. UTILIDADES
+   12. UTILIDADES
    ========================================================= */
 
 function parseMoney(
@@ -830,6 +1336,25 @@ function positiveNumber(
   return Number.isFinite(result)
     ? result
     : null;
+}
+
+
+function roundMoney(
+  value
+) {
+  const number =
+    Number(value);
+
+  if (!Number.isFinite(number)) {
+    return 0;
+  }
+
+  return Math.round(
+    (
+      number +
+      Number.EPSILON
+    ) * 100
+  ) / 100;
 }
 
 
@@ -885,6 +1410,11 @@ function plantingError(
       exception?.message || ''
     );
 
+  console.error(
+    `Error al ${action} siembra:`,
+    exception
+  );
+
   if (
     message.includes('UNIQUE')
   ) {
@@ -897,7 +1427,15 @@ function plantingError(
     message.includes('FOREIGN KEY')
   ) {
     return error(
-      'El cliente o producto seleccionado ya no existe.'
+      'Alguno de los registros relacionados ya no existe.'
+    );
+  }
+
+  if (
+    message.includes('CHECK')
+  ) {
+    return error(
+      'Uno de los datos de la siembra no cumple con las reglas permitidas.'
     );
   }
 
