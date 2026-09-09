@@ -119,6 +119,18 @@ export async function shipments() {
    2. EVENTOS
    ========================================================= */
 
+export function bindShipments() {
+  document
+    .querySelector(
+      '#newShipment'
+    )
+    ?.addEventListener(
+      'click',
+      async () => {
+        await openShipmentForm();
+      }
+    );
+
   document
     .querySelector(
       '#reportShipmentsPdf'
@@ -139,7 +151,6 @@ export async function shipments() {
 
   bindShipmentTableEvents();
 }
-
 
 /* =========================================================
    3. CARGA DE DATOS
