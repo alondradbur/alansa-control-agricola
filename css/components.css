@@ -2264,3 +2264,233 @@ textarea.input {
     padding: 15px;
   }
 }
+
+/* =========================================================
+   ALANSA - REMISIONES
+   Filtros tipo Excel + totales fijos
+   ========================================================= */
+
+.shipments-table-card {
+  overflow: visible;
+}
+
+.shipments-filter-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 2px 12px;
+  color: #66736d;
+  font-size: 13px;
+}
+
+.shipments-v2-scroll {
+  position: relative;
+  overflow: auto;
+  max-height: 68vh;
+}
+
+.shipments-v2-table {
+  position: relative;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.shipments-v2-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 12;
+  overflow: visible;
+}
+
+.shipments-v2-table tfoot td {
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+  background: #f2f7f4;
+  border-top: 2px solid #cbd9d1;
+  box-shadow: 0 -5px 12px rgba(24, 63, 44, 0.06);
+}
+
+.shipment-th-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: max-content;
+}
+
+.shipment-filter-trigger {
+  width: 26px;
+  height: 26px;
+  flex: 0 0 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.shipment-filter-trigger:hover,
+.shipment-filter-trigger.active {
+  border-color: #b8cec1;
+  background: #e5f0e9;
+  color: #1b6b45;
+}
+
+.shipment-filter-active {
+  background: #e9f3ed !important;
+}
+
+.shipment-filter-menu {
+  position: absolute;
+  top: calc(100% - 2px);
+  left: 6px;
+  z-index: 80;
+  width: 285px;
+  max-width: calc(100vw - 32px);
+  padding: 12px;
+  border: 1px solid #cfdad4;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 12px 30px rgba(20, 48, 35, 0.18);
+  color: #172536;
+  text-align: left;
+  font-weight: 400;
+}
+
+.shipments-v2-table th:nth-last-child(-n+4) .shipment-filter-menu {
+  right: 6px;
+  left: auto;
+}
+
+.shipment-filter-menu-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.shipment-filter-close {
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+  font-size: 20px;
+  line-height: 1;
+}
+
+.shipment-filter-close:hover {
+  background: #eef2f0;
+}
+
+.shipment-filter-range {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.shipment-filter-range label {
+  display: grid;
+  gap: 5px;
+  font-size: 11px;
+  color: #66736d;
+}
+
+.shipment-filter-select-row {
+  padding: 9px 2px;
+  margin-top: 8px;
+  border-bottom: 1px solid #e5ebe7;
+  font-size: 12px;
+}
+
+.shipment-filter-select-row label,
+.shipment-filter-value {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.shipment-filter-values {
+  max-height: 210px;
+  overflow: auto;
+  padding: 5px 0;
+}
+
+.shipment-filter-value {
+  padding: 6px 2px;
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.shipment-filter-value:hover {
+  background: #f5f8f6;
+}
+
+.shipment-filter-no-values {
+  padding: 14px 4px;
+  color: #7b8781;
+  font-size: 12px;
+  text-align: center;
+}
+
+.shipment-filter-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px solid #e5ebe7;
+}
+
+.shipment-table-empty-cell {
+  padding: 34px 16px !important;
+  color: #77827d;
+  text-align: center !important;
+}
+
+.shipment-totals-row td {
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.shipment-total-records {
+  margin-left: 10px;
+  color: #6b7785;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+@media (max-width: 760px) {
+  .shipments-filter-summary {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .shipments-v2-scroll {
+    max-height: 64vh;
+  }
+
+  .shipment-filter-menu {
+    position: fixed;
+    top: 90px;
+    right: 16px !important;
+    left: 16px !important;
+    width: auto;
+    max-width: none;
+  }
+
+  .shipment-filter-range {
+    grid-template-columns: 1fr;
+  }
+}
+
