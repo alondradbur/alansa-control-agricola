@@ -25,13 +25,22 @@ let shipmentFormData = {
   products: []
 };
 
-let shipmentFilters = {
-  from: '',
-  to: '',
-  status: '',
-  product: '',
-  search: ''
-};
+const SHIPMENT_FILTER_COLUMNS = [
+  'folio',
+  'shipment_date',
+  'contract_number',
+  'client_name',
+  'product_names',
+  'total_boxes',
+  'total_pounds',
+  'total_mxn',
+  'total_usd',
+  'due_date',
+  'status'
+];
+
+let shipmentFilters = createEmptyShipmentFilters();
+let openShipmentFilter = null;
 
 let editingShipment = null;
 
@@ -69,8 +78,6 @@ export async function shipments() {
     )}
 
     <div class="content shipments-v2-content">
-
-      ${filtersHtml()}
 
       <section class="card table-card shipments-table-card">
 
@@ -123,69 +130,13 @@ export function bindShipments() {
       exportShipmentsExcel
     );
 
-  [
-    'shipmentFilterFrom',
-    'shipmentFilterTo',
-    'shipmentFilterStatus',
-    'shipmentFilterProduct'
-  ].forEach(id => {
-    document
-      .getElementById(id)
-      ?.addEventListener(
-        'change',
-        readAndRenderFilters
-      );
-  });
-
-  document
-    .getElementById(
-      'shipmentFilterSearch'
-    )
-    ?.addEventListener(
-      'input',
-      readAndRenderFilters
-    );
-
-  document
-    .getElementById(
-      'clearShipmentFilters'
-    )
-    ?.addEventListener(
-      'click',
-      () => {
-        shipmentFilters = {
-          from: '',
-          to: '',
-          status: '',
-          product: '',
-          search: ''
-        };
-
-        [
-          'shipmentFilterFrom',
-          'shipmentFilterTo',
-          'shipmentFilterStatus',
-          'shipmentFilterProduct',
-          'shipmentFilterSearch'
-        ].forEach(id => {
-          const field =
-            document.getElementById(id);
-
-          if (field) {
-            field.value = '';
-          }
-        });
-
-        renderTableArea();
-      }
-    );
-
-  bindRowActions();
+  bindShipmentTableEvents();
 }
 
 
 /* =========================================================
    3. CARGA DE DATOS
+
    ========================================================= */
 
 async function loadShipments() {
@@ -287,287 +238,911 @@ async function loadFormData() {
 }
 
 /* =========================================================
-   4. FILTROS
+   4. FILTROS TIPO EXCEL
    ========================================================= */
 
-function filtersHtml() {
+function createEmptyShipmentFilters() {
+  return Object.fromEntries(
+    SHIPMENT_FILTER_COLUMNS.map(
+      key => [
+        key,
+        {
+          selected: null,
+          search: '',
+          from: '',
+          to: '',
+          min: '',
+          max: ''
+        }
+      ]
+    )
+  );
+}
+
+
+function shipmentColumnValue(
+  row,
+  key
+) {
+  const totals =
+    bothCurrencies(row);
+
+  switch (key) {
+    case 'folio':
+      return String(
+        row.folio || ''
+      );
+
+    case 'shipment_date':
+      return String(
+        row.shipment_date || ''
+      ).slice(0, 10);
+
+    case 'contract_number':
+      return String(
+        row.contract_number || ''
+      );
+
+    case 'client_name':
+      return String(
+        row.client_name || ''
+      );
+
+    case 'product_names':
+      return String(
+        row.product_names || ''
+      );
+
+    case 'total_boxes':
+      return numeric(
+        row.total_boxes
+      );
+
+    case 'total_pounds':
+      return numeric(
+        row.total_pounds
+      );
+
+    case 'total_mxn':
+      return totals.mxn;
+
+    case 'total_usd':
+      return totals.usd;
+
+    case 'due_date':
+      return String(
+        row.due_date || ''
+      ).slice(0, 10);
+
+    case 'status':
+      return financialStatus(row);
+
+    default:
+      return '';
+  }
+}
+
+
+function shipmentFilterType(key) {
+  if (
+    key === 'shipment_date' ||
+    key === 'due_date'
+  ) {
+    return 'date';
+  }
+
+  if (
+    [
+      'total_boxes',
+      'total_pounds',
+      'total_mxn',
+      'total_usd'
+    ].includes(key)
+  ) {
+    return 'number';
+  }
+
+  return 'text';
+}
+
+
+function shipmentFilterIsActive(key) {
+  const filter =
+    shipmentFilters[key];
+
+  if (!filter) {
+    return false;
+  }
+
+  return Boolean(
+    filter.search ||
+    filter.from ||
+    filter.to ||
+    filter.min !== '' ||
+    filter.max !== '' ||
+    (
+      Array.isArray(
+        filter.selected
+      ) &&
+      filter.selected.length
+    )
+  );
+}
+
+
+function shipmentFilterLabel(
+  key,
+  value
+) {
+  if (
+    key === 'shipment_date' ||
+    key === 'due_date'
+  ) {
+    return value
+      ? safeDate(value)
+      : '(Vacío)';
+  }
+
+  if (key === 'total_boxes') {
+    return number(
+      numeric(value),
+      0
+    );
+  }
+
+  if (key === 'total_pounds') {
+    return number(
+      numeric(value),
+      2
+    );
+  }
+
+  if (key === 'total_mxn') {
+    return money(
+      numeric(value),
+      'MXN'
+    );
+  }
+
+  if (key === 'total_usd') {
+    return money(
+      numeric(value),
+      'USD'
+    );
+  }
+
+  return String(
+    value || '(Vacío)'
+  );
+}
+
+
+function shipmentUniqueValues(key) {
+  const type =
+    shipmentFilterType(key);
+
+  const values =
+    Array.from(
+      new Set(
+        shipmentRows.map(
+          row =>
+            String(
+              shipmentColumnValue(
+                row,
+                key
+              ) ?? ''
+            )
+        )
+      )
+    );
+
+  if (type === 'number') {
+    return values.sort(
+      (a, b) =>
+        numeric(a) -
+        numeric(b)
+    );
+  }
+
+  return values.sort(
+    (a, b) =>
+      a.localeCompare(
+        b,
+        'es',
+        {
+          numeric: true,
+          sensitivity: 'base'
+        }
+      )
+  );
+}
+
+
+function shipmentHeaderHtml(
+  key,
+  label
+) {
+  const active =
+    shipmentFilterIsActive(
+      key
+    );
+
   return `
-    <section class="card filters shipments-v2-filters">
+    <th class="${
+      active
+        ? 'shipment-filter-active'
+        : ''
+    }">
+      <div class="shipment-th-inner">
+        <span>
+          ${escapeHtml(label)}
+        </span>
 
-      <div class="field">
-        <label>Desde</label>
-
-        <input
-          class="input"
-          id="shipmentFilterFrom"
-          type="date"
-          value="${escapeHtml(
-            shipmentFilters.from
-          )}"
+        <button
+          class="shipment-filter-trigger ${
+            active
+              ? 'active'
+              : ''
+          }"
+          data-filter-column="${key}"
+          type="button"
+          title="Filtrar ${escapeHtml(label)}"
+          aria-label="Filtrar ${escapeHtml(label)}"
         >
+          ▾
+        </button>
       </div>
 
-      <div class="field">
-        <label>Hasta</label>
-
-        <input
-          class="input"
-          id="shipmentFilterTo"
-          type="date"
-          value="${escapeHtml(
-            shipmentFilters.to
-          )}"
-        >
-      </div>
-
-      <div class="field">
-        <label>Estado</label>
-
-        <select
-          class="input"
-          id="shipmentFilterStatus"
-        >
-          <option value="">
-            Todos
-          </option>
-
-          <option
-            value="Emitida"
-            ${shipmentFilters.status ===
-              'Emitida'
-                ? 'selected'
-                : ''}
-          >
-            Emitida
-          </option>
-
-          <option
-            value="Parcial"
-            ${shipmentFilters.status ===
-              'Parcial'
-                ? 'selected'
-                : ''}
-          >
-            Parcial
-          </option>
-
-          <option
-            value="Cobrada"
-            ${shipmentFilters.status ===
-              'Cobrada'
-                ? 'selected'
-                : ''}
-          >
-            Cobrada
-          </option>
-        </select>
-      </div>
-
-      <div class="field">
-        <label>Producto</label>
-
-        <select
-          class="input"
-          id="shipmentFilterProduct"
-        >
-          <option value="">
-            Todos
-          </option>
-
-          ${productFilterOptions()}
-        </select>
-      </div>
-
-      <div class="field shipments-search-field">
-        <label>Buscar</label>
-
-        <input
-          class="input"
-          id="shipmentFilterSearch"
-          type="search"
-          placeholder="Folio, cliente o contrato..."
-          value="${escapeHtml(
-            shipmentFilters.search
-          )}"
-        >
-      </div>
-
-      <button
-        class="btn"
-        id="clearShipmentFilters"
-        type="button"
-      >
-        Limpiar filtros
-      </button>
-
-    </section>
+      ${
+        openShipmentFilter === key
+          ? shipmentFilterMenuHtml(
+              key
+            )
+          : ''
+      }
+    </th>
   `;
 }
 
 
-function readAndRenderFilters() {
-  shipmentFilters = {
-    from:
-      document
-        .getElementById(
-          'shipmentFilterFrom'
-        )
-        ?.value || '',
+function shipmentFilterMenuHtml(key) {
+  const filter =
+    shipmentFilters[key];
 
-    to:
-      document
-        .getElementById(
-          'shipmentFilterTo'
-        )
-        ?.value || '',
+  const type =
+    shipmentFilterType(key);
 
-    status:
-      document
-        .getElementById(
-          'shipmentFilterStatus'
-        )
-        ?.value || '',
+  const values =
+    shipmentUniqueValues(key);
 
-    product:
-      document
-        .getElementById(
-          'shipmentFilterProduct'
-        )
-        ?.value || '',
+  const search =
+    String(
+      filter.search || ''
+    ).trim().toLowerCase();
 
-    search:
-      document
-        .getElementById(
-          'shipmentFilterSearch'
-        )
-        ?.value || ''
+  const visibleValues =
+    values.filter(value =>
+      !search ||
+      shipmentFilterLabel(
+        key,
+        value
+      )
+        .toLowerCase()
+        .includes(search)
+    );
+
+  const selected =
+    Array.isArray(
+      filter.selected
+    )
+      ? filter.selected
+      : null;
+
+  const allVisibleSelected =
+    visibleValues.length > 0 &&
+    visibleValues.every(value =>
+      !selected ||
+      selected.includes(value)
+    );
+
+  return `
+    <div
+      class="shipment-filter-menu"
+      data-filter-menu="${key}"
+    >
+      <div class="shipment-filter-menu-head">
+        <strong>
+          Filtrar columna
+        </strong>
+
+        <button
+          class="shipment-filter-close"
+          type="button"
+          title="Cerrar"
+        >
+          ×
+        </button>
+      </div>
+
+      ${
+        type === 'text'
+          ? `
+              <input
+                class="input shipment-filter-search"
+                data-filter-search="${key}"
+                type="search"
+                placeholder="Buscar..."
+                value="${escapeHtml(
+                  filter.search || ''
+                )}"
+              >
+            `
+          : ''
+      }
+
+      ${
+        type === 'date'
+          ? `
+              <div class="shipment-filter-range">
+                <label>
+                  Desde
+                  <input
+                    class="input shipment-filter-date-from"
+                    data-filter-date-from="${key}"
+                    type="date"
+                    value="${escapeHtml(
+                      filter.from || ''
+                    )}"
+                  >
+                </label>
+
+                <label>
+                  Hasta
+                  <input
+                    class="input shipment-filter-date-to"
+                    data-filter-date-to="${key}"
+                    type="date"
+                    value="${escapeHtml(
+                      filter.to || ''
+                    )}"
+                  >
+                </label>
+              </div>
+            `
+          : ''
+      }
+
+      ${
+        type === 'number'
+          ? `
+              <div class="shipment-filter-range">
+                <label>
+                  Mínimo
+                  <input
+                    class="input shipment-filter-number-min"
+                    data-filter-number-min="${key}"
+                    type="number"
+                    step="any"
+                    value="${escapeHtml(
+                      filter.min
+                    )}"
+                  >
+                </label>
+
+                <label>
+                  Máximo
+                  <input
+                    class="input shipment-filter-number-max"
+                    data-filter-number-max="${key}"
+                    type="number"
+                    step="any"
+                    value="${escapeHtml(
+                      filter.max
+                    )}"
+                  >
+                </label>
+              </div>
+            `
+          : ''
+      }
+
+      <div class="shipment-filter-select-row">
+        <label>
+          <input
+            class="shipment-filter-select-all"
+            data-filter-select-all="${key}"
+            type="checkbox"
+            ${allVisibleSelected
+              ? 'checked'
+              : ''}
+          >
+          Seleccionar todo
+        </label>
+      </div>
+
+      <div class="shipment-filter-values">
+        ${
+          visibleValues.length
+            ? visibleValues
+                .map(value => `
+                  <label
+                    class="shipment-filter-value"
+                  >
+                    <input
+                      class="shipment-filter-value-checkbox"
+                      data-filter-value-column="${key}"
+                      value="${escapeHtml(value)}"
+                      type="checkbox"
+                      ${
+                        !selected ||
+                        selected.includes(value)
+                          ? 'checked'
+                          : ''
+                      }
+                    >
+
+                    <span>
+                      ${escapeHtml(
+                        shipmentFilterLabel(
+                          key,
+                          value
+                        )
+                      )}
+                    </span>
+                  </label>
+                `)
+                .join('')
+            : `
+                <div class="shipment-filter-no-values">
+                  No se encontraron valores.
+                </div>
+              `
+        }
+      </div>
+
+      <div class="shipment-filter-actions">
+        <button
+          class="btn shipment-filter-clear-column"
+          data-filter-clear="${key}"
+          type="button"
+        >
+          Limpiar
+        </button>
+
+        <button
+          class="btn primary shipment-filter-apply"
+          data-filter-apply="${key}"
+          type="button"
+        >
+          Aplicar
+        </button>
+      </div>
+    </div>
+  `;
+}
+
+
+function rowMatchesShipmentFilter(
+  row,
+  key
+) {
+  const filter =
+    shipmentFilters[key];
+
+  if (!filter) {
+    return true;
+  }
+
+  const type =
+    shipmentFilterType(key);
+
+  const rawValue =
+    shipmentColumnValue(
+      row,
+      key
+    );
+
+  const stringValue =
+    String(
+      rawValue ?? ''
+    );
+
+  if (
+    Array.isArray(
+      filter.selected
+    ) &&
+    !filter.selected.includes(
+      stringValue
+    )
+  ) {
+    return false;
+  }
+
+  if (
+    type === 'text' &&
+    filter.search
+  ) {
+    const search =
+      filter.search
+        .trim()
+        .toLowerCase();
+
+    if (
+      !stringValue
+        .toLowerCase()
+        .includes(search)
+    ) {
+      return false;
+    }
+  }
+
+  if (type === 'date') {
+    const value =
+      stringValue.slice(
+        0,
+        10
+      );
+
+    if (
+      filter.from &&
+      value < filter.from
+    ) {
+      return false;
+    }
+
+    if (
+      filter.to &&
+      value > filter.to
+    ) {
+      return false;
+    }
+  }
+
+  if (type === 'number') {
+    const value =
+      numeric(rawValue);
+
+    if (
+      filter.min !== '' &&
+      value <
+        numeric(filter.min)
+    ) {
+      return false;
+    }
+
+    if (
+      filter.max !== '' &&
+      value >
+        numeric(filter.max)
+    ) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+
+function filteredRows() {
+  return shipmentRows.filter(
+    row =>
+      SHIPMENT_FILTER_COLUMNS.every(
+        key =>
+          rowMatchesShipmentFilter(
+            row,
+            key
+          )
+      )
+  );
+}
+
+
+function clearShipmentColumnFilter(key) {
+  shipmentFilters[key] = {
+    selected: null,
+    search: '',
+    from: '',
+    to: '',
+    min: '',
+    max: ''
   };
+}
+
+
+function clearAllShipmentFilters() {
+  shipmentFilters =
+    createEmptyShipmentFilters();
+
+  openShipmentFilter = null;
 
   renderTableArea();
 }
 
 
-function filteredRows() {
-  const search =
-    shipmentFilters.search
-      .trim()
-      .toLowerCase();
+function applyShipmentFilterMenu(key) {
+  const menu =
+    document.querySelector(
+      `[data-filter-menu="${key}"]`
+    );
 
-  return shipmentRows.filter(row => {
-    const shipmentDate =
-      String(
-        row.shipment_date || ''
-      ).slice(0, 10);
+  if (!menu) {
+    return;
+  }
 
-    if (
-      shipmentFilters.from &&
-      shipmentDate <
-        shipmentFilters.from
-    ) {
-      return false;
-    }
+  const values =
+    shipmentUniqueValues(key);
 
-    if (
-      shipmentFilters.to &&
-      shipmentDate >
-        shipmentFilters.to
-    ) {
-      return false;
-    }
-
-    if (
-      shipmentFilters.status &&
-      financialStatus(row) !==
-        shipmentFilters.status
-    ) {
-      return false;
-    }
-
-    if (
-      shipmentFilters.product &&
-      !String(
-        row.product_names || ''
+  const checked =
+    Array.from(
+      menu.querySelectorAll(
+        '.shipment-filter-value-checkbox:checked'
       )
-        .split(',')
-        .map(value =>
-          value.trim()
-        )
-        .includes(
-          shipmentFilters.product
-        )
-    ) {
-      return false;
-    }
+    ).map(
+      input =>
+        input.value
+    );
 
-    if (search) {
-      const haystack = [
-        row.folio,
-        row.client_name,
-        row.contract_number,
-        row.product_names
-      ]
-        .join(' ')
-        .toLowerCase();
+  shipmentFilters[key].selected =
+    checked.length ===
+      values.length
+      ? null
+      : checked;
 
-      if (
-        !haystack.includes(search)
-      ) {
-        return false;
-      }
-    }
+  const search =
+    menu.querySelector(
+      '.shipment-filter-search'
+    );
 
-    return true;
-  });
+  const from =
+    menu.querySelector(
+      '.shipment-filter-date-from'
+    );
+
+  const to =
+    menu.querySelector(
+      '.shipment-filter-date-to'
+    );
+
+  const min =
+    menu.querySelector(
+      '.shipment-filter-number-min'
+    );
+
+  const max =
+    menu.querySelector(
+      '.shipment-filter-number-max'
+    );
+
+  shipmentFilters[key].search =
+    search?.value || '';
+
+  shipmentFilters[key].from =
+    from?.value || '';
+
+  shipmentFilters[key].to =
+    to?.value || '';
+
+  shipmentFilters[key].min =
+    min?.value || '';
+
+  shipmentFilters[key].max =
+    max?.value || '';
+
+  openShipmentFilter = null;
+
+  renderTableArea();
 }
 
 
 /* =========================================================
    5. TABLA
+
    ========================================================= */
 
 function tableAreaHtml() {
   const rows =
     filteredRows();
 
-  if (!rows.length) {
-    return `
-      <div class="shipments-empty">
-        ${empty()}
-      </div>
-    `;
-  }
-
   return `
+    <div class="shipments-filter-summary">
+      <div>
+        <strong>
+          ${rows.length}
+        </strong>
+        de
+        ${shipmentRows.length}
+        remisión(es)
+      </div>
+
+      ${
+        SHIPMENT_FILTER_COLUMNS.some(
+          shipmentFilterIsActive
+        )
+          ? `
+              <button
+                class="btn"
+                id="clearAllShipmentColumnFilters"
+                type="button"
+              >
+                Limpiar todos los filtros
+              </button>
+            `
+          : ''
+      }
+    </div>
+
     <div class="table-scroll shipments-v2-scroll">
 
       <table class="shipments-v2-table">
 
         <thead>
           <tr>
-            <th>Folio</th>
-            <th>Fecha</th>
-            <th>Contrato</th>
-            <th>Cliente</th>
-            <th>Producto(s)</th>
-            <th>Cajas</th>
-            <th>Libras</th>
-            <th>Total MXN</th>
-            <th>Total USD</th>
-            <th>Vencimiento</th>
-            <th>Estado</th>
-            <th>Acciones</th>
+            ${shipmentHeaderHtml(
+              'folio',
+              'Folio'
+            )}
+            ${shipmentHeaderHtml(
+              'shipment_date',
+              'Fecha'
+            )}
+            ${shipmentHeaderHtml(
+              'contract_number',
+              'Contrato'
+            )}
+            ${shipmentHeaderHtml(
+              'client_name',
+              'Cliente'
+            )}
+            ${shipmentHeaderHtml(
+              'product_names',
+              'Producto(s)'
+            )}
+            ${shipmentHeaderHtml(
+              'total_boxes',
+              'Cajas'
+            )}
+            ${shipmentHeaderHtml(
+              'total_pounds',
+              'Libras'
+            )}
+            ${shipmentHeaderHtml(
+              'total_mxn',
+              'Total MXN'
+            )}
+            ${shipmentHeaderHtml(
+              'total_usd',
+              'Total USD'
+            )}
+            ${shipmentHeaderHtml(
+              'due_date',
+              'Vencimiento'
+            )}
+            ${shipmentHeaderHtml(
+              'status',
+              'Estado'
+            )}
+            <th class="shipment-actions-head">
+              Acciones
+            </th>
           </tr>
         </thead>
 
         <tbody>
-          ${rows
-            .map(tableRowHtml)
-            .join('')}
+          ${
+            rows.length
+              ? rows
+                  .map(
+                    tableRowHtml
+                  )
+                  .join('')
+              : `
+                  <tr>
+                    <td
+                      colspan="12"
+                      class="shipment-table-empty-cell"
+                    >
+                      No se encontraron remisiones con los filtros seleccionados.
+                    </td>
+                  </tr>
+                `
+          }
         </tbody>
+
+        ${shipmentTotalsHtml(rows)}
 
       </table>
 
     </div>
+  `;
+}
+
+
+function shipmentTotalsHtml(rows) {
+  const totals =
+    rows.reduce(
+      (acc, row) => {
+        const currencies =
+          bothCurrencies(row);
+
+        acc.boxes +=
+          numeric(
+            row.total_boxes
+          );
+
+        acc.pounds +=
+          numeric(
+            row.total_pounds
+          );
+
+        acc.mxn +=
+          currencies.mxn;
+
+        acc.usd +=
+          currencies.usd;
+
+        return acc;
+      },
+      {
+        boxes: 0,
+        pounds: 0,
+        mxn: 0,
+        usd: 0
+      }
+    );
+
+  return `
+    <tfoot>
+      <tr class="shipment-totals-row">
+        <td colspan="5">
+          <strong>
+            TOTALES FILTRADOS
+          </strong>
+
+          <span class="shipment-total-records">
+            ${rows.length}
+            remisión(es)
+          </span>
+        </td>
+
+        <td>
+          <strong>
+            ${number(
+              totals.boxes,
+              0
+            )}
+          </strong>
+        </td>
+
+        <td>
+          <strong>
+            ${number(
+              totals.pounds,
+              2
+            )}
+          </strong>
+        </td>
+
+        <td>
+          <strong>
+            ${money(
+              totals.mxn,
+              'MXN'
+            )}
+          </strong>
+        </td>
+
+        <td>
+          <strong>
+            ${money(
+              totals.usd,
+              'USD'
+            )}
+          </strong>
+        </td>
+
+        <td colspan="3"></td>
+      </tr>
+    </tfoot>
   `;
 }
 
@@ -708,13 +1283,163 @@ function renderTableArea() {
       `${filteredRows().length} registro(s)`;
   }
 
-  bindRowActions();
+  bindShipmentTableEvents();
 }
 
 
 /* =========================================================
    6. ACCIONES DE TABLA
+
    ========================================================= */
+
+function bindShipmentTableEvents() {
+  bindRowActions();
+
+  document
+    .querySelectorAll(
+      '.shipment-filter-trigger'
+    )
+    .forEach(button => {
+      button.onclick =
+        event => {
+          event.stopPropagation();
+
+          const key =
+            button.dataset.filterColumn;
+
+          openShipmentFilter =
+            openShipmentFilter === key
+              ? null
+              : key;
+
+          renderTableArea();
+        };
+    });
+
+  document
+    .querySelectorAll(
+      '.shipment-filter-close'
+    )
+    .forEach(button => {
+      button.onclick =
+        event => {
+          event.stopPropagation();
+
+          openShipmentFilter = null;
+          renderTableArea();
+        };
+    });
+
+  document
+    .querySelectorAll(
+      '.shipment-filter-menu'
+    )
+    .forEach(menu => {
+      menu.onclick =
+        event => {
+          event.stopPropagation();
+        };
+    });
+
+  document
+    .querySelectorAll(
+      '.shipment-filter-search'
+    )
+    .forEach(input => {
+      input.oninput =
+        () => {
+          const key =
+            input.dataset.filterSearch;
+
+          shipmentFilters[key].search =
+            input.value;
+
+          openShipmentFilter = key;
+          renderTableArea();
+
+          requestAnimationFrame(
+            () => {
+              const next =
+                document.querySelector(
+                  `[data-filter-search="${key}"]`
+                );
+
+              if (next) {
+                next.focus();
+                next.setSelectionRange(
+                  next.value.length,
+                  next.value.length
+                );
+              }
+            }
+          );
+        };
+    });
+
+  document
+    .querySelectorAll(
+      '.shipment-filter-select-all'
+    )
+    .forEach(input => {
+      input.onchange =
+        () => {
+          const menu =
+            input.closest(
+              '.shipment-filter-menu'
+            );
+
+          menu
+            ?.querySelectorAll(
+              '.shipment-filter-value-checkbox'
+            )
+            .forEach(
+              checkbox => {
+                checkbox.checked =
+                  input.checked;
+              }
+            );
+        };
+    });
+
+  document
+    .querySelectorAll(
+      '.shipment-filter-apply'
+    )
+    .forEach(button => {
+      button.onclick =
+        () => {
+          applyShipmentFilterMenu(
+            button.dataset.filterApply
+          );
+        };
+    });
+
+  document
+    .querySelectorAll(
+      '.shipment-filter-clear-column'
+    )
+    .forEach(button => {
+      button.onclick =
+        () => {
+          clearShipmentColumnFilter(
+            button.dataset.filterClear
+          );
+
+          openShipmentFilter = null;
+          renderTableArea();
+        };
+    });
+
+  document
+    .getElementById(
+      'clearAllShipmentColumnFilters'
+    )
+    ?.addEventListener(
+      'click',
+      clearAllShipmentFilters
+    );
+}
+
 
 function bindRowActions() {
   document
@@ -1554,16 +2279,7 @@ function applyProductDefaults(row) {
    ========================================================= */
 
 function preferredPlantingId() {
-  const planting001 =
-    shipmentFormData.plantings.find(
-      row =>
-        String(
-          row.contract_number
-        ) === '001'
-    );
-
   return (
-    planting001?.id ||
     shipmentFormData.plantings[0]?.id ||
     ''
   );
@@ -2765,43 +3481,6 @@ function productFormOptions(
 }
 
 
-function productFilterOptions() {
-  const names =
-    new Set();
-
-  shipmentRows.forEach(row => {
-    String(
-      row.product_names || ''
-    )
-      .split(',')
-      .map(value =>
-        value.trim()
-      )
-      .filter(Boolean)
-      .forEach(value =>
-        names.add(value)
-      );
-  });
-
-  return Array.from(names)
-    .sort(
-      (a, b) =>
-        a.localeCompare(b)
-    )
-    .map(name => `
-      <option
-        value="${escapeHtml(name)}"
-        ${shipmentFilters.product ===
-          name
-            ? 'selected'
-            : ''}
-      >
-        ${escapeHtml(name)}
-      </option>
-    `)
-    .join('');
-}
-
 
 /* =========================================================
    17. UTILIDADES
@@ -3049,3 +3728,4 @@ function safeDate(value) {
     return String(value);
   }
 }
+
