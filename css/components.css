@@ -3626,3 +3626,55 @@ textarea.input {
     grid-template-columns: 1fr;
   }
 }
+
+/* =========================================================
+   REMISIONES · ALINEACIÓN EXACTA DE COLUMNAS Y TOTALES
+   ========================================================= */
+
+/* Encabezados */
+.shipments-table th {
+  vertical-align: middle;
+}
+
+/* Columnas numéricas:
+   CAJAS, LIBRAS, TOTAL MXN y TOTAL USD */
+.shipments-table th:nth-child(4),
+.shipments-table th:nth-child(5),
+.shipments-table th:nth-child(6),
+.shipments-table th:nth-child(7),
+.shipments-table td:nth-child(4),
+.shipments-table td:nth-child(5),
+.shipments-table td:nth-child(6),
+.shipments-table td:nth-child(7),
+.shipments-table tfoot td:nth-child(4),
+.shipments-table tfoot td:nth-child(5),
+.shipments-table tfoot td:nth-child(6),
+.shipments-table tfoot td:nth-child(7) {
+  text-align: right;
+}
+
+/* Mismo padding para encabezado, registros y totales */
+.shipments-table th,
+.shipments-table td,
+.shipments-table tfoot td {
+  padding-left: 12px;
+  padding-right: 12px;
+  box-sizing: border-box;
+}
+
+/* Los números usan ancho uniforme para mejorar la alineación */
+.shipments-table td:nth-child(4),
+.shipments-table td:nth-child(5),
+.shipments-table td:nth-child(6),
+.shipments-table td:nth-child(7),
+.shipments-table tfoot td:nth-child(4),
+.shipments-table tfoot td:nth-child(5),
+.shipments-table tfoot td:nth-child(6),
+.shipments-table tfoot td:nth-child(7) {
+  font-variant-numeric: tabular-nums;
+}
+
+/* La fila de totales conserva exactamente la cuadrícula de la tabla */
+.shipments-table tfoot td {
+  vertical-align: middle;
+}
