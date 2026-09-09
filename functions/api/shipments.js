@@ -104,6 +104,7 @@ async function onGet({ env, request }) {
       s.id,
       s.folio,
       s.sequence,
+      planting_sequence,
       s.shipment_date,
       s.planting_id,
       s.client_id,
@@ -205,10 +206,24 @@ async function onPost({ env, request }) {
 
   try {
     const next =
-      await nextSequence(db);
+  await nextSequence(db);
 
-    const folio =
-      `REM-${String(next).padStart(6, '0')}`;
+const plantingSequence =
+  await nextPlantingSequence(
+    db,
+    data.plantingId
+  );
+
+const folio =
+  buildShipmentFolio({
+    productName:
+      data.plantingProductName,
+    contractNumber:
+      data.contractNumber,
+    plantingSequence,
+    shipmentDate:
+      data.shipmentDate
+  });
 
     const first =
       data.lines[0];
@@ -243,12 +258,13 @@ VALUES (
   ?, ?, ?, ?, ?, ?,
   ?, ?, ?, ?, ?, ?,
   ?, ?, ?, ?, ?, ?,
-  ?, ?, ?,
+  ?, ?, ?, ?,
   CURRENT_TIMESTAMP
 )
       `).bind(
         folio,
         next,
+         plantingSequence,
         data.shipmentDate,
         data.plantingId,
         data.clientId,
@@ -617,13 +633,21 @@ const signatureUser =
   const planting =
     await db.prepare(`
       SELECT
-        p.id,
-        p.client_id,
-        c.credit_days
-      FROM plantings p
-      JOIN clients c
-        ON c.id = p.client_id
-      WHERE p.id = ?
+  p.id,
+  p.client_id,
+  p.contract_number,
+  pr.name AS product_name,
+  c.credit_days
+
+FROM plantings p
+
+JOIN clients c
+  ON c.id = p.client_id
+
+JOIN products pr
+  ON pr.id = p.product_id
+
+WHERE p.id = ?
     `).bind(
       plantingId
     ).first();
@@ -770,11 +794,23 @@ const signatureUser =
   return {
   data: {
     plantingId,
-    clientId:
-      Number(
-        planting.client_id
-      ),
-    shipmentDate,
+
+clientId:
+  Number(
+    planting.client_id
+  ),
+
+contractNumber:
+  String(
+    planting.contract_number || ''
+  ),
+
+plantingProductName:
+  String(
+    planting.product_name || ''
+  ),
+
+shipmentDate,
     currency,
     exchangeRate,
     signatureUser,
@@ -814,6 +850,89 @@ async function nextSequence(db) {
   );
 }
 
+async function nextPlantingSequence(
+  db,
+  plantingId
+) {
+  const row =
+    await db.prepare(`
+      SELECT
+        COALESCE(
+          MAX(planting_sequence),
+          0
+        ) + 1 AS next_sequence
+
+      FROM shipments
+
+      WHERE planting_id = ?
+    `)
+    .bind(
+      plantingId
+    )
+    .first();
+
+  return Math.max(
+    1,
+    Number(
+      row?.next_sequence || 1
+    )
+  );
+}
+
+function buildShipmentFolio({
+  productName,
+  contractNumber,
+  plantingSequence,
+  shipmentDate
+}) {
+  const product =
+    String(
+      productName || 'PRODUCTO'
+    )
+      .trim()
+      .toUpperCase()
+      .normalize('NFD')
+      .replace(
+        /[\u0300-\u036f]/g,
+        ''
+      )
+      .replace(
+        /[^A-Z0-9]+/g,
+        '-'
+      )
+      .replace(
+        /^-+|-+$/g,
+        ''
+      );
+
+  const contract =
+    String(
+      contractNumber || ''
+    ).trim();
+
+  const consecutive =
+    String(
+      plantingSequence
+    ).padStart(
+      2,
+      '0'
+    );
+
+  const year =
+    String(
+      shipmentDate || ''
+    ).slice(
+      0,
+      4
+    );
+
+  return (
+    `REM-${product}-` +
+    `${contract}-` +
+    `${consecutive}-` +
+    `${year}`
+  );
+}
 
 /* =========================================================
    7. INSERTAR LÍNEAS
