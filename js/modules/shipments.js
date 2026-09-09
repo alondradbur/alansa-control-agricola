@@ -1153,7 +1153,7 @@ function tableRowHtml(row) {
 
   return `
     <tr>
-      <td>
+      <td class="shipment-cell-folio">
         <strong>
           ${escapeHtml(
             row.folio
@@ -1161,7 +1161,7 @@ function tableRowHtml(row) {
         </strong>
       </td>
 
-      <td>
+      <td class="shipment-cell-date">
         ${safeDate(
           row.shipment_date
         )}
@@ -1213,7 +1213,7 @@ function tableRowHtml(row) {
         )}
       </td>
 
-      <td>
+      <td class="shipment-cell-date">
         ${safeDate(
           row.due_date
         )}
@@ -1263,6 +1263,8 @@ function tableRowHtml(row) {
 
 
 function renderTableArea() {
+  removeShipmentFilterPortal();
+
   const area =
     document.getElementById(
       'shipmentsTableArea'
@@ -1284,6 +1286,7 @@ function renderTableArea() {
   }
 
   bindShipmentTableEvents();
+  mountOpenShipmentFilterMenu();
 }
 
 
@@ -1291,6 +1294,218 @@ function renderTableArea() {
    6. ACCIONES DE TABLA
 
    ========================================================= */
+
+
+function removeShipmentFilterPortal() {
+  document
+    .querySelectorAll(
+      '.shipment-filter-menu-portal'
+    )
+    .forEach(menu => {
+      menu.remove();
+    });
+}
+
+
+function mountOpenShipmentFilterMenu() {
+  if (!openShipmentFilter) {
+    return;
+  }
+
+  const trigger =
+    document.querySelector(
+      `[data-filter-column="${openShipmentFilter}"]`
+    );
+
+  const menu =
+    document.querySelector(
+      `[data-filter-menu="${openShipmentFilter}"]`
+    );
+
+  if (!trigger || !menu) {
+    return;
+  }
+
+  const rect =
+    trigger.getBoundingClientRect();
+
+  menu.classList.add(
+    'shipment-filter-menu-portal'
+  );
+
+  document.body.appendChild(
+    menu
+  );
+
+  menu.style.visibility =
+    'hidden';
+
+  menu.style.left =
+    '12px';
+
+  menu.style.top =
+    '12px';
+
+  const viewportPadding = 12;
+  const gap = 7;
+  const preferredWidth = 310;
+
+  const width =
+    Math.min(
+      preferredWidth,
+      window.innerWidth -
+      viewportPadding * 2
+    );
+
+  menu.style.width =
+    `${width}px`;
+
+  const spaceBelow =
+    window.innerHeight -
+    rect.bottom -
+    gap -
+    viewportPadding;
+
+  const spaceAbove =
+    rect.top -
+    gap -
+    viewportPadding;
+
+  const preferredHeight =
+    Math.min(
+      500,
+      window.innerHeight -
+      viewportPadding * 2
+    );
+
+  const openAbove =
+    spaceBelow < 290 &&
+    spaceAbove > spaceBelow;
+
+  const availableHeight =
+    Math.max(
+      220,
+      Math.min(
+        preferredHeight,
+        openAbove
+          ? spaceAbove
+          : spaceBelow
+      )
+    );
+
+  menu.style.maxHeight =
+    `${availableHeight}px`;
+
+  const maxLeft =
+    Math.max(
+      viewportPadding,
+      window.innerWidth -
+      width -
+      viewportPadding
+    );
+
+  const left =
+    Math.min(
+      Math.max(
+        viewportPadding,
+        rect.left
+      ),
+      maxLeft
+    );
+
+  let top;
+
+  if (openAbove) {
+    top =
+      Math.max(
+        viewportPadding,
+        rect.top -
+        availableHeight -
+        gap
+      );
+  } else {
+    top =
+      Math.min(
+        rect.bottom + gap,
+        window.innerHeight -
+        availableHeight -
+        viewportPadding
+      );
+  }
+
+  menu.style.left =
+    `${left}px`;
+
+  menu.style.top =
+    `${Math.max(
+      viewportPadding,
+      top
+    )}px`;
+
+  menu.style.visibility =
+    'visible';
+}
+
+
+function filterShipmentMenuValues(
+  input
+) {
+  const menu =
+    input.closest(
+      '.shipment-filter-menu'
+    );
+
+  if (!menu) {
+    return;
+  }
+
+  const search =
+    input.value
+      .trim()
+      .toLowerCase();
+
+  menu
+    .querySelectorAll(
+      '.shipment-filter-value'
+    )
+    .forEach(label => {
+      const text =
+        label.textContent
+          .trim()
+          .toLowerCase();
+
+      label.hidden =
+        Boolean(
+          search &&
+          !text.includes(search)
+        );
+    });
+
+  const visible =
+    Array.from(
+      menu.querySelectorAll(
+        '.shipment-filter-value'
+      )
+    ).filter(
+      label => !label.hidden
+    );
+
+  const selectAll =
+    menu.querySelector(
+      '.shipment-filter-select-all'
+    );
+
+  if (selectAll) {
+    selectAll.checked =
+      visible.length > 0 &&
+      visible.every(label =>
+        label.querySelector(
+          '.shipment-filter-value-checkbox'
+        )?.checked
+      );
+  }
+}
+
 
 function bindShipmentTableEvents() {
   bindRowActions();
@@ -1354,24 +1569,8 @@ function bindShipmentTableEvents() {
           shipmentFilters[key].search =
             input.value;
 
-          openShipmentFilter = key;
-          renderTableArea();
-
-          requestAnimationFrame(
-            () => {
-              const next =
-                document.querySelector(
-                  `[data-filter-search="${key}"]`
-                );
-
-              if (next) {
-                next.focus();
-                next.setSelectionRange(
-                  next.value.length,
-                  next.value.length
-                );
-              }
-            }
+          filterShipmentMenuValues(
+            input
           );
         };
     });
@@ -1390,14 +1589,23 @@ function bindShipmentTableEvents() {
 
           menu
             ?.querySelectorAll(
-              '.shipment-filter-value-checkbox'
+              '.shipment-filter-value'
             )
-            .forEach(
-              checkbox => {
+            .forEach(label => {
+              if (label.hidden) {
+                return;
+              }
+
+              const checkbox =
+                label.querySelector(
+                  '.shipment-filter-value-checkbox'
+                );
+
+              if (checkbox) {
                 checkbox.checked =
                   input.checked;
               }
-            );
+            });
         };
     });
 
@@ -3728,4 +3936,3 @@ function safeDate(value) {
     return String(value);
   }
 }
-
