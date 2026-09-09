@@ -982,6 +982,7 @@ function mountDashboardOpenFilterMenu(
 
   const padding = 12;
   const gap = 7;
+
   const width =
     Math.min(
       310,
@@ -1003,6 +1004,34 @@ function mountDashboardOpenFilterMenu(
   menu.style.visibility =
     'hidden';
 
+  /*
+   * Primero limitamos la altura máxima.
+   * Después medimos la altura REAL del menú.
+   * Esto evita que el filtro de la tabla inferior
+   * se coloque mucho más arriba de lo necesario.
+   */
+  const viewportMaxHeight =
+    Math.max(
+      220,
+      Math.min(
+        500,
+        window.innerHeight -
+        padding * 2
+      )
+    );
+
+  menu.style.maxHeight =
+    `${viewportMaxHeight}px`;
+
+  const menuRect =
+    menu.getBoundingClientRect();
+
+  const actualHeight =
+    Math.min(
+      menuRect.height,
+      viewportMaxHeight
+    );
+
   const spaceBelow =
     window.innerHeight -
     rect.bottom -
@@ -1015,22 +1044,8 @@ function mountDashboardOpenFilterMenu(
     gap;
 
   const openAbove =
-    spaceBelow < 300 &&
+    actualHeight > spaceBelow &&
     spaceAbove > spaceBelow;
-
-  const maxHeight =
-    Math.max(
-      230,
-      Math.min(
-        500,
-        openAbove
-          ? spaceAbove
-          : spaceBelow
-      )
-    );
-
-  menu.style.maxHeight =
-    `${maxHeight}px`;
 
   const left =
     Math.min(
@@ -1046,34 +1061,46 @@ function mountDashboardOpenFilterMenu(
       )
     );
 
-  const top =
-    openAbove
-      ? Math.max(
-          padding,
-          rect.top -
-          maxHeight -
-          gap
-        )
-      : Math.min(
-          rect.bottom + gap,
-          window.innerHeight -
-          maxHeight -
-          padding
-        );
+  let top;
+
+  if (openAbove) {
+    top =
+      rect.top -
+      actualHeight -
+      gap;
+  } else {
+    top =
+      rect.bottom +
+      gap;
+  }
+
+  /*
+   * Protección para que el menú nunca salga
+   * de los límites visibles de la pantalla.
+   */
+  top =
+    Math.min(
+      Math.max(
+        padding,
+        top
+      ),
+      Math.max(
+        padding,
+        window.innerHeight -
+        actualHeight -
+        padding
+      )
+    );
 
   menu.style.left =
     `${left}px`;
 
   menu.style.top =
-    `${Math.max(
-      padding,
-      top
-    )}px`;
+    `${top}px`;
 
   menu.style.visibility =
     'visible';
 }
-
 
 function renderDashboardTable(
   tableName
@@ -1808,6 +1835,12 @@ function realBlock(
 
       <div class="dashboard-v2-kpis">
 
+${realBoxesKpi(
+          'Cajas',
+          real.totalBoxes,
+          'boxes'
+        )}
+        
         ${realKpi(
           'Ingresos esperados',
           real.expectedMxn,
@@ -1849,6 +1882,32 @@ function realBlock(
   `;
 }
 
+function realBoxesKpi(
+  label,
+  boxes,
+  tone
+) {
+  return `
+    <article class="dashboard-v2-kpi dashboard-v2-kpi-${tone}">
+
+      <span>
+        ${label}
+      </span>
+
+      <strong>
+        ${number(
+          boxes,
+          0
+        )}
+      </strong>
+
+      <small>
+        cajas remitidas
+      </small>
+
+    </article>
+  `;
+}
 
 function realKpi(
   label,
@@ -2572,6 +2631,17 @@ function calculateRealSituation() {
       shipments
     );
 
+  const totalBoxes =
+    shipments.reduce(
+      (sum, row) =>
+        sum +
+        numeric(
+          row.total_boxes ??
+          row.boxes
+        ),
+      0
+    );
+
   const collected =
     shipments.reduce(
       (sum, row) => {
@@ -2617,6 +2687,8 @@ function calculateRealSituation() {
     );
 
   return {
+    totalBoxes,
+
     expectedMxn:
       expected.mxn,
 
