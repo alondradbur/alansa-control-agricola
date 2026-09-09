@@ -58,22 +58,30 @@ export async function shipments() {
       'Control de embarques, folios y vencimientos',
       `
         <div class="shipment-header-actions">
-          <button
-            class="btn"
-            id="exportShipmentsExcel"
-            type="button"
-          >
-            Descargar Excel
-          </button>
+  <button
+    class="btn"
+    id="reportShipmentsPdf"
+    type="button"
+  >
+    Reporte
+  </button>
 
-          <button
-            class="btn primary"
-            id="newShipment"
-            type="button"
-          >
-            ＋ Nueva remisión
-          </button>
-        </div>
+  <button
+    class="btn"
+    id="exportShipmentsExcel"
+    type="button"
+  >
+    Descargar Excel
+  </button>
+
+  <button
+    class="btn primary"
+    id="newShipment"
+    type="button"
+  >
+    ＋ Nueva remisión
+  </button>
+</div>
       `
     )}
 
@@ -111,14 +119,13 @@ export async function shipments() {
    2. EVENTOS
    ========================================================= */
 
-export function bindShipments() {
   document
-    .querySelector('#newShipment')
+    .querySelector(
+      '#reportShipmentsPdf'
+    )
     ?.addEventListener(
       'click',
-      async () => {
-        await openShipmentForm();
-      }
+      printShipmentsReport
     );
 
   document
@@ -3013,6 +3020,695 @@ async function deleteShipment(
 /* =========================================================
    14. PDF / IMPRESIÓN
    ========================================================= */
+
+function printShipmentsReport() {
+  const rows =
+    filteredRows();
+
+  if (!rows.length) {
+    toast(
+      'No hay remisiones para generar el reporte.'
+    );
+
+    return;
+  }
+
+  const totals =
+    rows.reduce(
+      (acc, row) => {
+        const currencies =
+          bothCurrencies(row);
+
+        acc.boxes +=
+          numeric(
+            row.total_boxes
+          );
+
+        acc.pounds +=
+          numeric(
+            row.total_pounds
+          );
+
+        acc.mxn +=
+          currencies.mxn;
+
+        acc.usd +=
+          currencies.usd;
+
+        return acc;
+      },
+      {
+        boxes: 0,
+        pounds: 0,
+        mxn: 0,
+        usd: 0
+      }
+    );
+
+  const generatedDate =
+    new Intl.DateTimeFormat(
+      'es-MX',
+      {
+        day: '2-digit',
+        month: 'long',
+        year: 'numeric'
+      }
+    ).format(
+      new Date()
+    );
+
+  const reportWindow =
+    window.open(
+      '',
+      '_blank',
+      'width=1200,height=850'
+    );
+
+  if (!reportWindow) {
+    toast(
+      'El navegador bloqueó la ventana del reporte.'
+    );
+
+    return;
+  }
+
+  reportWindow.document.write(`
+    <!doctype html>
+
+    <html lang="es">
+
+      <head>
+
+        <meta charset="utf-8">
+
+        <title>
+          Reporte de Remisiones
+        </title>
+
+        <style>
+
+          @page {
+            size: A4 landscape;
+            margin: 12mm 11mm 14mm;
+          }
+
+          * {
+            box-sizing: border-box;
+          }
+
+          html,
+          body {
+            margin: 0;
+            padding: 0;
+            background: #ffffff;
+            color: #17251e;
+            font-family:
+              Arial,
+              Helvetica,
+              sans-serif;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
+
+          body {
+            font-size: 9.5pt;
+          }
+
+          .report {
+            width: 100%;
+          }
+
+          /* ================================================
+             ENCABEZADO
+             ================================================ */
+
+          .report-head {
+            display: grid;
+            grid-template-columns: 185px 1fr;
+            align-items: center;
+            min-height: 72px;
+            padding-bottom: 13px;
+            border-bottom: 2px solid #164f38;
+          }
+
+          .report-logo-wrap {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            height: 62px;
+          }
+
+          .report-logo {
+            display: block;
+            width: 150px;
+            max-width: 100%;
+            max-height: 58px;
+            object-fit: contain;
+            object-position: left center;
+          }
+
+          .report-title-wrap {
+            padding-left: 22px;
+            border-left: 1px solid #cfdad4;
+          }
+
+          .report-title {
+            margin: 0;
+            color: #143f2f;
+            font-size: 18pt;
+            font-weight: 700;
+            line-height: 1.15;
+            letter-spacing: .2px;
+          }
+
+          .report-date {
+            margin-top: 7px;
+            color: #66736d;
+            font-size: 9pt;
+            line-height: 1.35;
+          }
+
+          .report-date strong {
+            color: #31483d;
+            font-weight: 600;
+          }
+
+          /* ================================================
+             RESUMEN
+             ================================================ */
+
+          .report-summary {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 18px;
+            margin: 14px 0 9px;
+            padding: 8px 10px;
+            background: #f4f7f5;
+            border: 1px solid #dce5e0;
+          }
+
+          .report-summary-left {
+            color: #526159;
+            font-size: 8.5pt;
+          }
+
+          .report-summary-left strong {
+            color: #173e2f;
+          }
+
+          .report-summary-right {
+            color: #526159;
+            font-size: 8.5pt;
+            text-align: right;
+            white-space: nowrap;
+          }
+
+          /* ================================================
+             TABLA
+             ================================================ */
+
+          .report-table {
+            width: 100%;
+            table-layout: fixed;
+            border-collapse: collapse;
+            border-spacing: 0;
+          }
+
+          .report-table thead {
+            display: table-header-group;
+          }
+
+          .report-table tfoot {
+            display: table-row-group;
+          }
+
+          .report-table tr {
+            page-break-inside: avoid;
+            break-inside: avoid;
+          }
+
+          .report-table th,
+          .report-table td {
+            padding: 7px 6px;
+            border: 1px solid #d4dfd9;
+            vertical-align: middle;
+            overflow-wrap: break-word;
+          }
+
+          .report-table th {
+            background: #eaf2ed;
+            color: #173e2f;
+            font-size: 7.7pt;
+            font-weight: 700;
+            text-transform: uppercase;
+            line-height: 1.2;
+          }
+
+          .report-table td {
+            background: #ffffff;
+            color: #23352c;
+            font-size: 8pt;
+            line-height: 1.25;
+          }
+
+          .report-table tbody tr:nth-child(even) td {
+            background: #fafcfb;
+          }
+
+          /* Anchos calculados específicamente para A4 horizontal */
+
+          .col-folio {
+            width: 15%;
+          }
+
+          .col-fecha {
+            width: 7%;
+          }
+
+          .col-contrato {
+            width: 7%;
+          }
+
+          .col-cliente {
+            width: 10%;
+          }
+
+          .col-producto {
+            width: 9%;
+          }
+
+          .col-cajas {
+            width: 5%;
+          }
+
+          .col-libras {
+            width: 6%;
+          }
+
+          .col-mxn {
+            width: 9%;
+          }
+
+          .col-usd {
+            width: 8%;
+          }
+
+          .col-vencimiento {
+            width: 8%;
+          }
+
+          .col-estado {
+            width: 8%;
+          }
+
+          /* Texto */
+
+          .text-left {
+            text-align: left;
+          }
+
+          .text-center {
+            text-align: center;
+          }
+
+          .text-right {
+            text-align: right;
+          }
+
+          .numeric {
+            text-align: right;
+            white-space: nowrap;
+            font-variant-numeric: tabular-nums;
+          }
+
+          .folio {
+            color: #124c37;
+            font-weight: 700;
+          }
+
+          .status {
+            display: inline-block;
+            min-width: 62px;
+            padding: 4px 7px;
+            border-radius: 20px;
+            background: #f5f1df;
+            color: #765d16;
+            font-size: 7.5pt;
+            font-weight: 700;
+            text-align: center;
+            white-space: nowrap;
+          }
+
+          /* ================================================
+             TOTALES
+             ================================================ */
+
+          .report-table tfoot td {
+            padding-top: 8px;
+            padding-bottom: 8px;
+            background: #eaf2ed;
+            color: #123e2c;
+            font-weight: 700;
+            border-top: 2px solid #aac5b7;
+          }
+
+          .totals-label {
+            text-align: left;
+          }
+
+          .totals-label span {
+            margin-left: 7px;
+            color: #66736d;
+            font-size: 7.5pt;
+            font-weight: 400;
+          }
+
+          /* ================================================
+             PIE
+             ================================================ */
+
+          .report-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+            margin-top: 10px;
+            padding-top: 8px;
+            border-top: 1px solid #dce5e0;
+            color: #7a857f;
+            font-size: 7.5pt;
+          }
+
+          @media print {
+
+            body {
+              width: 100%;
+            }
+
+            .report-summary,
+            .report-head,
+            .report-footer {
+              break-inside: avoid;
+            }
+
+          }
+
+        </style>
+
+      </head>
+
+      <body>
+
+        <main class="report">
+
+          <header class="report-head">
+
+            <div class="report-logo-wrap">
+
+              <img
+                src="/assets/logo-alansa.png"
+                alt="ALANSA"
+                class="report-logo"
+              >
+
+            </div>
+
+            <div class="report-title-wrap">
+
+              <h1 class="report-title">
+                REPORTE DE REMISIONES
+              </h1>
+
+              <div class="report-date">
+                Reporte generado el día
+                <strong>
+                  ${escapeHtml(
+                    generatedDate
+                  )}
+                </strong>
+              </div>
+
+            </div>
+
+          </header>
+
+          <section class="report-summary">
+
+            <div class="report-summary-left">
+              <strong>
+                Remisiones incluidas:
+              </strong>
+              ${rows.length}
+            </div>
+
+            <div class="report-summary-right">
+              El reporte respeta los filtros aplicados
+              en el módulo de Remisiones.
+            </div>
+
+          </section>
+
+          <table class="report-table">
+
+            <thead>
+
+              <tr>
+
+                <th class="col-folio text-left">
+                  Folio
+                </th>
+
+                <th class="col-fecha text-left">
+                  Fecha
+                </th>
+
+                <th class="col-contrato text-left">
+                  Contrato
+                </th>
+
+                <th class="col-cliente text-left">
+                  Cliente
+                </th>
+
+                <th class="col-producto text-left">
+                  Producto(s)
+                </th>
+
+                <th class="col-cajas text-right">
+                  Cajas
+                </th>
+
+                <th class="col-libras text-right">
+                  Libras
+                </th>
+
+                <th class="col-mxn text-right">
+                  Total MXN
+                </th>
+
+                <th class="col-usd text-right">
+                  Total USD
+                </th>
+
+                <th class="col-vencimiento text-left">
+                  Vencimiento
+                </th>
+
+                <th class="col-estado text-center">
+                  Estado
+                </th>
+
+              </tr>
+
+            </thead>
+
+            <tbody>
+
+              ${rows
+                .map(row => {
+                  const currencies =
+                    bothCurrencies(row);
+
+                  return `
+                    <tr>
+
+                      <td class="folio text-left">
+                        ${escapeHtml(
+                          row.folio || '—'
+                        )}
+                      </td>
+
+                      <td class="text-left">
+                        ${escapeHtml(
+                          safeDate(
+                            row.shipment_date
+                          )
+                        )}
+                      </td>
+
+                      <td class="text-left">
+                        ${escapeHtml(
+                          row.contract_number ||
+                          '—'
+                        )}
+                      </td>
+
+                      <td class="text-left">
+                        ${escapeHtml(
+                          row.client_name ||
+                          '—'
+                        )}
+                      </td>
+
+                      <td class="text-left">
+                        ${escapeHtml(
+                          row.product_names ||
+                          '—'
+                        )}
+                      </td>
+
+                      <td class="numeric">
+                        ${number(
+                          row.total_boxes,
+                          0
+                        )}
+                      </td>
+
+                      <td class="numeric">
+                        ${number(
+                          row.total_pounds,
+                          2
+                        )}
+                      </td>
+
+                      <td class="numeric">
+                        ${money(
+                          currencies.mxn,
+                          'MXN'
+                        )}
+                      </td>
+
+                      <td class="numeric">
+                        ${money(
+                          currencies.usd,
+                          'USD'
+                        )}
+                      </td>
+
+                      <td class="text-left">
+                        ${escapeHtml(
+                          safeDate(
+                            row.due_date
+                          )
+                        )}
+                      </td>
+
+                      <td class="text-center">
+                        <span class="status">
+                          ${escapeHtml(
+                            financialStatus(
+                              row
+                            )
+                          )}
+                        </span>
+                      </td>
+
+                    </tr>
+                  `;
+                })
+                .join('')}
+
+            </tbody>
+
+            <tfoot>
+
+              <tr>
+
+                <td
+                  colspan="5"
+                  class="totals-label"
+                >
+                  TOTALES FILTRADOS
+
+                  <span>
+                    ${rows.length}
+                    remisión(es)
+                  </span>
+                </td>
+
+                <td class="numeric">
+                  ${number(
+                    totals.boxes,
+                    0
+                  )}
+                </td>
+
+                <td class="numeric">
+                  ${number(
+                    totals.pounds,
+                    2
+                  )}
+                </td>
+
+                <td class="numeric">
+                  ${money(
+                    totals.mxn,
+                    'MXN'
+                  )}
+                </td>
+
+                <td class="numeric">
+                  ${money(
+                    totals.usd,
+                    'USD'
+                  )}
+                </td>
+
+                <td colspan="2"></td>
+
+              </tr>
+
+            </tfoot>
+
+          </table>
+
+          <footer class="report-footer">
+
+            <span>
+              Sistema de Control Agrícola
+            </span>
+
+            <span>
+              ALANSA
+            </span>
+
+          </footer>
+
+        </main>
+
+        <script>
+
+          window.onload = () => {
+
+            setTimeout(
+              () => {
+                window.print();
+              },
+              250
+            );
+
+          };
+
+        <\/script>
+
+      </body>
+
+    </html>
+  `);
+
+  reportWindow.document.close();
+}
 
 async function printShipmentPdf(id) {
   let shipment;
