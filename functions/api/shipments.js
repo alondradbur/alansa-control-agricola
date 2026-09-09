@@ -216,34 +216,36 @@ async function onPost({ env, request }) {
     const insert =
       await db.prepare(`
         INSERT INTO shipments (
-          folio,
-          sequence,
-          shipment_date,
-          planting_id,
-          client_id,
-          product_id,
-          boxes,
-          pounds,
-          standard_box_lbs,
-          price_per_box,
-          currency,
-          exchange_rate,
-          due_date,
-          status,
-          notes,
-          credit_days,
-          total_boxes,
-          total_pounds,
-          total_amount,
-          mxn_equivalent,
-          updated_at
-        )
-        VALUES (
-          ?, ?, ?, ?, ?, ?,
-          ?, ?, ?, ?, ?, ?,
-          ?, ?, ?, ?, ?, ?,
-          ?, ?, CURRENT_TIMESTAMP
-        )
+  folio,
+  sequence,
+  shipment_date,
+  planting_id,
+  client_id,
+  product_id,
+  boxes,
+  pounds,
+  standard_box_lbs,
+  price_per_box,
+  currency,
+  exchange_rate,
+  due_date,
+  status,
+  notes,
+  signature_user,
+  credit_days,
+  total_boxes,
+  total_pounds,
+  total_amount,
+  mxn_equivalent,
+  updated_at
+)
+VALUES (
+  ?, ?, ?, ?, ?, ?,
+  ?, ?, ?, ?, ?, ?,
+  ?, ?, ?, ?, ?, ?,
+  ?, ?, ?,
+  CURRENT_TIMESTAMP
+)
       `).bind(
         folio,
         next,
@@ -259,8 +261,9 @@ async function onPost({ env, request }) {
         data.exchangeRate || null,
         data.dueDate,
         'Emitida',
-        data.notes || null,
-        data.creditDays,
+data.notes || null,
+data.signatureUser,
+data.creditDays,
         data.totalBoxes,
         data.totalPounds,
         data.totalAmount,
@@ -381,8 +384,9 @@ async function onPut({ env, request }) {
         currency = ?,
         exchange_rate = ?,
         due_date = ?,
-        notes = ?,
-        credit_days = ?,
+notes = ?,
+signature_user = ?,
+credit_days = ?,
         total_boxes = ?,
         total_pounds = ?,
         total_amount = ?,
@@ -401,8 +405,9 @@ async function onPut({ env, request }) {
       data.currency,
       data.exchangeRate || null,
       data.dueDate,
-      data.notes || null,
-      data.creditDays,
+data.notes || null,
+data.signatureUser,
+data.creditDays,
       data.totalBoxes,
       data.totalPounds,
       data.totalAmount,
@@ -559,7 +564,14 @@ async function validatePayload(
     cleanText(
       body.notes
     );
-
+   
+const signatureUser =
+  ['A', 'R'].includes(
+    body.signature_user
+  )
+    ? body.signature_user
+    : null;
+   
   const rawLines =
     Array.isArray(
       body.lines
@@ -756,16 +768,17 @@ async function validatePayload(
       : totalAmount;
 
   return {
-    data: {
-      plantingId,
-      clientId:
-        Number(
-          planting.client_id
-        ),
-      shipmentDate,
-      currency,
-      exchangeRate,
-      notes,
+  data: {
+    plantingId,
+    clientId:
+      Number(
+        planting.client_id
+      ),
+    shipmentDate,
+    currency,
+    exchangeRate,
+    signatureUser,
+    notes,
       creditDays,
       dueDate,
       totalBoxes,
