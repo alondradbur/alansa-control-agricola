@@ -55,6 +55,7 @@ export async function onRequestGet({
       SELECT
         s.*,
         pl.contract_number,
+        pl.product_id AS planting_product_id,
         pl.projection_exchange_rate,
         c.name AS client_name,
         c.credit_days,
@@ -202,10 +203,15 @@ export async function onRequestGet({
 
       row.amount =
         Number(
-          row.boxes || 0
-        ) *
-        Number(
-          row.price_per_box || 0
+          row.total_amount || 0
+        ) ||
+        (
+          Number(
+            row.boxes || 0
+          ) *
+          Number(
+            row.price_per_box || 0
+          )
         );
 
       return row;
