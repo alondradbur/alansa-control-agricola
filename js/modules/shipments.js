@@ -2262,6 +2262,33 @@ async function printShipmentPdf(id) {
             font-size: 11px;
           }
 
+.signature-section {
+  width: 260px;
+  margin: 45px 0 10px auto;
+  text-align: center;
+}
+
+.signature-title {
+  margin-bottom: 6px;
+  font-size: 12px;
+  color: #6b7785;
+}
+
+.signature-image {
+  display: block;
+  max-width: 190px;
+  max-height: 75px;
+  margin: 0 auto 5px;
+  object-fit: contain;
+}
+
+.signature-user {
+  padding-top: 5px;
+  border-top: 1px solid #8c9892;
+  font-size: 11px;
+  font-weight: 700;
+}
+
           @media print {
             body {
               padding: 18px;
