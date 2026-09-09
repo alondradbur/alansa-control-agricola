@@ -32,17 +32,11 @@ function renderLogin() {
       <div class="login-visual">
 
         <div class="login-brand">
-          <img
-            src="/assets/icon-512.png"
-            alt="Sistema Agrícola"
-            class="login-brand-icon"
-          >
-
-          <h1>
-            Sistema de<br>
-            <span>Control Agrícola</span>
-          </h1>
-        </div>
+  <h1>
+    Sistema de<br>
+    <span>Control Agrícola</span>
+  </h1>
+</div>
 
       </div>
 
@@ -74,11 +68,23 @@ function renderLogin() {
 
         <div class="login-access-card">
 
-          <div class="login-access-accent"></div>
+  <div class="login-access-heading">
 
-          <h2>
-            Iniciar sesión
-          </h2>
+    <img
+      src="/assets/icon-512.png"
+      alt="Sistema Agrícola"
+      class="login-access-icon"
+    >
+
+    <div>
+      <div class="login-access-accent"></div>
+
+      <h2>
+        Iniciar sesión
+      </h2>
+    </div>
+
+  </div>
 
           <p class="login-access-subtitle">
             Selecciona quién está ingresando.
