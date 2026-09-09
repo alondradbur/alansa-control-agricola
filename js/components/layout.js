@@ -236,12 +236,9 @@ const icons = {
 const items = [
   ['dashboard', 'Dashboard'],
   ['plantings', 'Siembras'],
-  ['production', 'Producción'],
-  ['inventory', 'Inventario'],
   ['shipments', 'Remisiones'],
   ['collections', 'Cobranza'],
   ['expenses', 'Gastos'],
-  ['settlements', 'Liquidaciones'],
   ['reports', 'Reportes'],
   ['catalogs', 'Catálogos'],
   ['settings', 'Configuración']
