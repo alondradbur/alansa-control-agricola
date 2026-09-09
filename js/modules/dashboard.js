@@ -24,12 +24,14 @@ let filtersState = {
 let shipmentTableState = {
   status: '',
   client: '',
-  search: ''
+  search: '',
+  sort: 'date_desc'
 };
 
 let dueTableState = {
   days: '30',
-  client: ''
+  client: '',
+  sort: 'days_asc'
 };
 
 
@@ -81,6 +83,28 @@ export function bindDashboard() {
       ?.addEventListener(
         'change',
         () => {
+          if (
+            id === 'dashboardPlanting'
+          ) {
+            const plantingValue =
+              root
+                .getElementById(
+                  'dashboardPlanting'
+                )
+                ?.value || '';
+
+            if (plantingValue) {
+              const productField =
+                root.getElementById(
+                  'dashboardProduct'
+                );
+
+              if (productField) {
+                productField.value = '';
+              }
+            }
+          }
+
           filtersState = readDashboardFilters(
             root
           );
@@ -109,12 +133,14 @@ export function bindDashboard() {
         shipmentTableState = {
           status: '',
           client: '',
-          search: ''
+          search: '',
+          sort: 'date_desc'
         };
 
         dueTableState = {
           days: '30',
-          client: ''
+          client: '',
+          sort: 'days_asc'
         };
 
         [
@@ -196,6 +222,22 @@ function bindLocalTableFilters(
 
   root
     .querySelector(
+      '#shipmentSortFilter'
+    )
+    ?.addEventListener(
+      'change',
+      event => {
+        shipmentTableState.sort =
+          event.target.value;
+
+        renderShipmentTable(
+          root
+        );
+      }
+    );
+
+  root
+    .querySelector(
       '#dueDaysFilter'
     )
     ?.addEventListener(
@@ -218,6 +260,22 @@ function bindLocalTableFilters(
       'change',
       event => {
         dueTableState.client =
+          event.target.value;
+
+        renderDueTable(
+          root
+        );
+      }
+    );
+
+  root
+    .querySelector(
+      '#dueSortFilter'
+    )
+    ?.addEventListener(
+      'change',
+      event => {
+        dueTableState.sort =
           event.target.value;
 
         renderDueTable(
@@ -744,6 +802,37 @@ function shipmentsBlock() {
           >
         </div>
 
+        <div class="field">
+          <label>
+            Ordenar por fecha
+          </label>
+
+          <select
+            class="input"
+            id="shipmentSortFilter"
+          >
+            <option
+              value="date_desc"
+              ${shipmentTableState.sort ===
+                'date_desc'
+                  ? 'selected'
+                  : ''}
+            >
+              Más reciente a más antigua
+            </option>
+
+            <option
+              value="date_asc"
+              ${shipmentTableState.sort ===
+                'date_asc'
+                  ? 'selected'
+                  : ''}
+            >
+              Más antigua a más reciente
+            </option>
+          </select>
+        </div>
+
       </div>
 
       <div id="dashboardShipmentTable">
@@ -772,8 +861,11 @@ function renderShipmentTable(
 
 function shipmentTableHtml() {
   const rows =
-    filteredShipments(
-      true
+    sortShipmentRows(
+      filteredShipments(
+        true
+      ),
+      shipmentTableState.sort
     );
 
   if (rows.length === 0) {
@@ -956,6 +1048,57 @@ function dueBlock() {
           </select>
         </div>
 
+        <div class="field">
+          <label>
+            Ordenar por
+          </label>
+
+          <select
+            class="input"
+            id="dueSortFilter"
+          >
+            <option
+              value="days_asc"
+              ${dueTableState.sort ===
+                'days_asc'
+                  ? 'selected'
+                  : ''}
+            >
+              Días restantes: menor a mayor
+            </option>
+
+            <option
+              value="days_desc"
+              ${dueTableState.sort ===
+                'days_desc'
+                  ? 'selected'
+                  : ''}
+            >
+              Días restantes: mayor a menor
+            </option>
+
+            <option
+              value="date_asc"
+              ${dueTableState.sort ===
+                'date_asc'
+                  ? 'selected'
+                  : ''}
+            >
+              Fecha: más antigua a más reciente
+            </option>
+
+            <option
+              value="date_desc"
+              ${dueTableState.sort ===
+                'date_desc'
+                  ? 'selected'
+                  : ''}
+            >
+              Fecha: más reciente a más antigua
+            </option>
+          </select>
+        </div>
+
       </div>
 
       <div id="dashboardDueTable">
@@ -1037,22 +1180,25 @@ function dueTableHtml() {
           days >= 0 &&
           days <= limit
         );
-      })
-      .sort((a, b) => {
-        return String(
-          a.due_date
-        ).localeCompare(
-          String(
-            b.due_date
-          )
-        );
       });
 
-  if (rows.length === 0) {
+  const sortedRows =
+    sortDueRows(
+      rows,
+      dueTableState.sort,
+      today
+    );
+
+  if (sortedRows.length === 0) {
     return emptyState(
       'No hay remisiones próximas a vencer en el periodo seleccionado.'
     );
   }
+
+  const totals =
+    sumShipments(
+      sortedRows
+    );
 
   return `
     <div class="dashboard-v2-table-scroll dashboard-v2-due-scroll">
@@ -1072,10 +1218,45 @@ function dueTableHtml() {
         </thead>
 
         <tbody>
-          ${rows
+          ${sortedRows
             .map(dueRow)
             .join('')}
         </tbody>
+
+        <tfoot>
+          <tr>
+            <td colspan="4">
+              <strong>
+                Total general
+              </strong>
+            </td>
+
+            <td>
+              <strong>
+                ${money(
+                  totals.mxn,
+                  'MXN'
+                )}
+              </strong>
+            </td>
+
+            <td>
+              <strong>
+                ${money(
+                  totals.usd,
+                  'USD'
+                )}
+              </strong>
+            </td>
+
+            <td>
+              ${number(
+                sortedRows.length,
+                0
+              )} remisiones
+            </td>
+          </tr>
+        </tfoot>
 
       </table>
 
@@ -1487,7 +1668,10 @@ function filteredPlantings() {
 
     if (
       filtersState.productId &&
-      String(row.product_id) !==
+      String(
+        row.planting_product_id ??
+        row.product_id
+      ) !==
         String(
           filtersState.productId
         )
@@ -1525,7 +1709,10 @@ function filteredShipments(
 
     if (
       filtersState.productId &&
-      String(row.product_id) !==
+      String(
+        row.planting_product_id ??
+        row.product_id
+      ) !==
         String(
           filtersState.productId
         )
@@ -1630,6 +1817,9 @@ function shipmentAmounts(
 ) {
   const amount =
     numeric(
+      row.total_amount
+    ) ||
+    numeric(
       row.amount
     ) ||
     (
@@ -1665,6 +1855,9 @@ function shipmentCollectedAmounts(
       numeric(
         row.collected_amount
       ),
+      numeric(
+        row.total_amount
+      ) ||
       numeric(
         row.amount
       ) ||
@@ -1794,6 +1987,9 @@ function shipmentFinancialStatus(
 ) {
   const total =
     numeric(
+      row.total_amount
+    ) ||
+    numeric(
       row.amount
     ) ||
     (
@@ -1853,8 +2049,104 @@ function sumShipments(
 }
 
 
+
+function sortShipmentRows(
+  rows,
+  sort
+) {
+  const result =
+    rows.slice();
+
+  result.sort(
+    (a, b) => {
+      const aDate =
+        String(
+          a.shipment_date || ''
+        );
+
+      const bDate =
+        String(
+          b.shipment_date || ''
+        );
+
+      if (sort === 'date_asc') {
+        return aDate.localeCompare(
+          bDate
+        );
+      }
+
+      return bDate.localeCompare(
+        aDate
+      );
+    }
+  );
+
+  return result;
+}
+
+
+function sortDueRows(
+  rows,
+  sort,
+  today
+) {
+  const result =
+    rows.slice();
+
+  result.sort(
+    (a, b) => {
+      if (
+        sort === 'days_asc' ||
+        sort === 'days_desc'
+      ) {
+        const aDays =
+          daysBetween(
+            today,
+            parseDate(
+              a.due_date
+            )
+          );
+
+        const bDays =
+          daysBetween(
+            today,
+            parseDate(
+              b.due_date
+            )
+          );
+
+        return sort === 'days_asc'
+          ? aDays - bDays
+          : bDays - aDays;
+      }
+
+      const aDate =
+        String(
+          a.shipment_date || ''
+        );
+
+      const bDate =
+        String(
+          b.shipment_date || ''
+        );
+
+      return sort === 'date_asc'
+        ? aDate.localeCompare(
+            bDate
+          )
+        : bDate.localeCompare(
+            aDate
+          );
+    }
+  );
+
+  return result;
+}
+
+
 /* =========================================================
    14. OPCIONES DE FILTROS
+
    ========================================================= */
 
 function plantingOptions(
