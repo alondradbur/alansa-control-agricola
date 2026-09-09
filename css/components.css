@@ -3203,3 +3203,426 @@ textarea.input {
     grid-template-columns: 1fr;
   }
 }
+
+/* =========================================================
+   ALANSA - DASHBOARD
+   TABLAS LIMPIAS + FILTROS TIPO EXCEL
+   Agregar AL FINAL de css/components.css
+   ========================================================= */
+
+#dashboardBlocks {
+  display: grid;
+  gap: 20px;
+}
+
+#dashboardBlocks > .dashboard-v2-section {
+  margin: 0;
+}
+
+.dashboard-v2-section {
+  overflow: visible !important;
+}
+
+.dashboard-v2-section-head {
+  min-height: 74px;
+  padding: 16px 20px;
+  align-items: center;
+}
+
+.dashboard-v2-section-title {
+  align-items: center;
+  gap: 12px;
+}
+
+.dashboard-v2-section-title h2 {
+  margin: 0 0 3px;
+  font-size: 17px;
+  line-height: 1.2;
+}
+
+.dashboard-v2-section-title p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.dashboard-table-summary {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-height: 34px;
+  padding: 7px 16px 8px;
+  color: #6a7770;
+  font-size: 12px;
+}
+
+.dashboard-excel-table-scroll {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  max-height: calc(100vh - 285px);
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  border-top: 1px solid #dde5e1;
+  background: #fff;
+  scrollbar-gutter: stable;
+}
+
+.dashboard-excel-table {
+  width: 100% !important;
+  min-width: 0 !important;
+  table-layout: fixed !important;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.dashboard-excel-table th,
+.dashboard-excel-table td {
+  min-width: 0 !important;
+  padding: 11px 12px !important;
+  border-right: 1px solid #e0e7e3;
+  border-bottom: 1px solid #e0e7e3;
+  color: #26372e;
+  font-size: 12.5px !important;
+  line-height: 1.35;
+  vertical-align: middle;
+}
+
+.dashboard-excel-table th:last-child,
+.dashboard-excel-table td:last-child {
+  border-right: 0;
+}
+
+.dashboard-excel-table tbody tr {
+  background: #fff;
+  transition: background-color 120ms ease;
+}
+
+.dashboard-excel-table tbody tr:hover {
+  background: #f8fbf9;
+}
+
+.dashboard-excel-table thead th {
+  position: sticky !important;
+  top: 0;
+  z-index: 20;
+  background: #edf3f0 !important;
+  color: #42564b;
+  font-size: 10.5px !important;
+  font-weight: 800;
+  letter-spacing: .035em;
+  text-transform: uppercase;
+}
+
+.dashboard-excel-table tfoot td {
+  position: sticky !important;
+  bottom: 0;
+  z-index: 18;
+  background: #edf4f9 !important;
+  border-top: 1px solid #cddbe4;
+  border-bottom: 0;
+  font-size: 12px !important;
+  box-shadow: 0 -4px 12px rgba(30, 60, 44, .05);
+}
+
+/* Remisiones: 6 columnas */
+.dashboard-excel-table:not(.dashboard-due-excel-table) th:nth-child(1),
+.dashboard-excel-table:not(.dashboard-due-excel-table) td:nth-child(1) {
+  width: 24%;
+}
+
+.dashboard-excel-table:not(.dashboard-due-excel-table) th:nth-child(2),
+.dashboard-excel-table:not(.dashboard-due-excel-table) td:nth-child(2) {
+  width: 13%;
+}
+
+.dashboard-excel-table:not(.dashboard-due-excel-table) th:nth-child(3),
+.dashboard-excel-table:not(.dashboard-due-excel-table) td:nth-child(3) {
+  width: 19%;
+}
+
+.dashboard-excel-table:not(.dashboard-due-excel-table) th:nth-child(4),
+.dashboard-excel-table:not(.dashboard-due-excel-table) td:nth-child(4),
+.dashboard-excel-table:not(.dashboard-due-excel-table) th:nth-child(5),
+.dashboard-excel-table:not(.dashboard-due-excel-table) td:nth-child(5) {
+  width: 15%;
+  text-align: right;
+}
+
+.dashboard-excel-table:not(.dashboard-due-excel-table) th:nth-child(6),
+.dashboard-excel-table:not(.dashboard-due-excel-table) td:nth-child(6) {
+  width: 14%;
+  text-align: center;
+}
+
+/* Próximas a vencer: 7 columnas */
+.dashboard-due-excel-table th:nth-child(1),
+.dashboard-due-excel-table td:nth-child(1) {
+  width: 26%;
+}
+
+.dashboard-due-excel-table th:nth-child(2),
+.dashboard-due-excel-table td:nth-child(2) {
+  width: 10%;
+}
+
+.dashboard-due-excel-table th:nth-child(3),
+.dashboard-due-excel-table td:nth-child(3) {
+  width: 13%;
+}
+
+.dashboard-due-excel-table th:nth-child(4),
+.dashboard-due-excel-table td:nth-child(4) {
+  width: 16%;
+}
+
+.dashboard-due-excel-table th:nth-child(5),
+.dashboard-due-excel-table td:nth-child(5),
+.dashboard-due-excel-table th:nth-child(6),
+.dashboard-due-excel-table td:nth-child(6) {
+  width: 12%;
+  text-align: right;
+}
+
+.dashboard-due-excel-table th:nth-child(7),
+.dashboard-due-excel-table td:nth-child(7) {
+  width: 11%;
+  text-align: center;
+}
+
+.dashboard-excel-th {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  min-width: 0;
+}
+
+.dashboard-excel-th > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dashboard-excel-filter-trigger {
+  width: 25px;
+  height: 25px;
+  flex: 0 0 25px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: #52675b;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.dashboard-excel-filter-trigger:hover,
+.dashboard-excel-filter-trigger.active {
+  border-color: #b8cdc0;
+  background: #deebe3;
+  color: #17613f;
+}
+
+.dashboard-excel-filter-active {
+  background: #e4efe8 !important;
+}
+
+/* El menú se monta en BODY para que jamás sea recortado. */
+.dashboard-excel-filter-menu,
+.dashboard-excel-filter-menu-portal {
+  position: fixed !important;
+  z-index: 10000 !important;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden !important;
+  padding: 14px;
+  border: 1px solid #ccd8d1;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 18px 45px rgba(21, 45, 33, .20);
+  color: #1f3027;
+  text-align: left;
+  text-transform: none;
+  letter-spacing: normal;
+  font-size: 12.5px !important;
+  font-weight: 400;
+}
+
+.dashboard-excel-filter-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex: 0 0 auto;
+  gap: 10px;
+  margin-bottom: 9px;
+}
+
+.dashboard-excel-filter-head strong {
+  color: #2b3a32;
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.dashboard-excel-filter-close {
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: #5a665f;
+  cursor: pointer;
+  font-size: 20px;
+}
+
+.dashboard-excel-filter-close:hover {
+  background: #eef3f0;
+}
+
+.dashboard-excel-sort-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  flex: 0 0 auto;
+  gap: 7px;
+  margin-bottom: 9px;
+}
+
+.dashboard-excel-sort-actions .btn {
+  min-height: 34px;
+  padding: 6px 8px;
+  font-size: 11px;
+}
+
+.dashboard-excel-filter-menu .input {
+  min-height: 39px;
+  font-size: 12px;
+}
+
+.dashboard-excel-filter-range {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  flex: 0 0 auto;
+  gap: 8px;
+  margin-bottom: 9px;
+}
+
+.dashboard-excel-filter-range label {
+  display: grid;
+  gap: 5px;
+  color: #627068;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.dashboard-excel-select-all {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 9px 3px;
+  border-bottom: 1px solid #e2e9e5;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.dashboard-excel-values {
+  flex: 1 1 auto;
+  min-height: 80px;
+  overflow-y: auto !important;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  padding: 5px 0;
+}
+
+.dashboard-excel-value {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 34px;
+  padding: 7px 4px;
+  border-radius: 6px;
+  color: #2c3a33;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.dashboard-excel-value:hover {
+  background: #f1f6f3;
+}
+
+.dashboard-excel-value[hidden] {
+  display: none !important;
+}
+
+.dashboard-excel-filter-actions {
+  display: flex;
+  justify-content: flex-end;
+  flex: 0 0 auto;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px solid #e2e9e5;
+}
+
+.dashboard-excel-filter-actions .btn {
+  min-height: 34px;
+  padding: 7px 12px;
+  font-size: 11.5px;
+}
+
+.dashboard-table-empty-cell {
+  padding: 36px 16px !important;
+  color: #77847d;
+  text-align: center !important;
+  font-size: 13px !important;
+}
+
+@media (max-width: 1100px) {
+  .dashboard-excel-table th,
+  .dashboard-excel-table td {
+    padding: 9px 8px !important;
+    font-size: 11.5px !important;
+  }
+
+  .dashboard-excel-table thead th {
+    font-size: 9.8px !important;
+  }
+}
+
+@media (max-width: 760px) {
+  #dashboardBlocks {
+    gap: 14px;
+  }
+
+  .dashboard-v2-section-head {
+    min-height: auto;
+    padding: 14px 15px;
+  }
+
+  .dashboard-excel-table-scroll {
+    max-height: calc(100vh - 230px);
+    overflow-x: auto !important;
+  }
+
+  .dashboard-excel-table {
+    min-width: 900px !important;
+  }
+
+  .dashboard-excel-filter-menu,
+  .dashboard-excel-filter-menu-portal {
+    right: 12px !important;
+    left: 12px !important;
+    width: auto !important;
+    max-width: none !important;
+  }
+
+  .dashboard-excel-filter-range,
+  .dashboard-excel-sort-actions {
+    grid-template-columns: 1fr;
+  }
+}
