@@ -2459,6 +2459,50 @@ async function printShipmentPdf(id) {
 </div>
 
           </section>
+</section>
+
+${
+  shipment.signature_user
+    ? `
+        <section class="signature-section">
+          <div class="signature-title">
+            Revisó
+          </div>
+
+          <img
+            class="signature-image"
+            src="${
+              shipment.signature_user === 'A'
+                ? '/assets/firma-usuario-a.png'
+                : '/assets/firma-usuario-r.png'
+            }"
+            alt="Firma"
+          >
+
+          <div class="signature-user">
+            ${
+              shipment.signature_user === 'A'
+                ? 'Usuario A'
+                : 'Usuario R'
+            }
+          </div>
+        </section>
+      `
+    : ''
+}
+
+${
+  shipment.notes
+    ? `
+        <div class="notes">
+          <strong>Notas:</strong>
+          ${escapeHtml(
+            shipment.notes
+          )}
+        </div>
+      `
+    : ''
+}
 
         ${
           shipment.notes
