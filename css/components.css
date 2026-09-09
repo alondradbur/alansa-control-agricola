@@ -2678,3 +2678,24 @@ textarea.input {
     font-size: 9px;
   }
 }
+
+/* =========================================================
+   ALANSA - DASHBOARD
+   Separación visual entre bloques
+   Agregar AL FINAL de css/components.css
+   ========================================================= */
+
+#dashboardBlocks {
+  display: grid;
+  gap: 18px;
+}
+
+#dashboardBlocks > .dashboard-v2-section {
+  margin: 0;
+}
+
+@media (max-width: 760px) {
+  #dashboardBlocks {
+    gap: 14px;
+  }
+}
