@@ -2090,6 +2090,13 @@ async function printShipmentPdf(id) {
           )}
         </title>
 
+.pdf-total-secondary {
+  color: #777;
+}
+
+.pdf-total-secondary strong {
+  color: #777;
+}
         <style>
           * {
             box-sizing: border-box;
