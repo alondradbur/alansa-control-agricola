@@ -21,18 +21,34 @@ let filtersState = {
   productId: ''
 };
 
-let shipmentTableState = {
-  status: '',
-  client: '',
-  search: '',
-  sort: 'date_desc'
-};
+const SHIPMENT_TABLE_COLUMNS = [
+  { key: 'folio', label: 'No. remisión', type: 'text' },
+  { key: 'shipment_date', label: 'Fecha', type: 'date' },
+  { key: 'client_name', label: 'Cliente', type: 'text' },
+  { key: 'amount_mxn', label: 'Monto MXN', type: 'number' },
+  { key: 'amount_usd', label: 'Monto USD', type: 'number' },
+  { key: 'status', label: 'Estatus', type: 'text' }
+];
 
-let dueTableState = {
-  days: '30',
-  client: '',
-  sort: 'days_asc'
-};
+const DUE_TABLE_COLUMNS = [
+  { key: 'folio', label: 'No. remisión', type: 'text' },
+  { key: 'shipment_date', label: 'Fecha', type: 'date' },
+  { key: 'due_date', label: 'Vencimiento', type: 'date' },
+  { key: 'client_name', label: 'Cliente', type: 'text' },
+  { key: 'amount_mxn', label: 'Monto MXN', type: 'number' },
+  { key: 'amount_usd', label: 'Monto USD', type: 'number' },
+  { key: 'days_remaining', label: 'Días restantes', type: 'number' }
+];
+
+let shipmentTableState =
+  createDashboardTableState(
+    SHIPMENT_TABLE_COLUMNS
+  );
+
+let dueTableState =
+  createDashboardTableState(
+    DUE_TABLE_COLUMNS
+  );
 
 
 /* =========================================================
@@ -130,18 +146,15 @@ export function bindDashboard() {
           productId: ''
         };
 
-        shipmentTableState = {
-          status: '',
-          client: '',
-          search: '',
-          sort: 'date_desc'
-        };
+        shipmentTableState =
+          createDashboardTableState(
+            SHIPMENT_TABLE_COLUMNS
+          );
 
-        dueTableState = {
-          days: '30',
-          client: '',
-          sort: 'days_asc'
-        };
+        dueTableState =
+          createDashboardTableState(
+            DUE_TABLE_COLUMNS
+          );
 
         [
           'dashboardFrom',
@@ -172,122 +185,1252 @@ export function bindDashboard() {
 function bindLocalTableFilters(
   root
 ) {
-  root
-    .querySelector(
-      '#shipmentStatusFilter'
-    )
-    ?.addEventListener(
-      'change',
-      event => {
-        shipmentTableState.status =
-          event.target.value;
+  bindDashboardExcelFilters(
+    root
+  );
+}
 
-        renderShipmentTable(
-          root
-        );
-      }
+
+/* =========================================================
+   FILTROS TIPO EXCEL - TABLAS DASHBOARD
+   ========================================================= */
+
+function createDashboardTableState(
+  columns
+) {
+  return {
+    openColumn: '',
+    filters:
+      Object.fromEntries(
+        columns.map(column => [
+          column.key,
+          {
+            selected: null,
+            search: '',
+            from: '',
+            to: '',
+            min: '',
+            max: '',
+            sort: ''
+          }
+        ])
+      )
+  };
+}
+
+
+function dashboardTableConfig(
+  tableName
+) {
+  if (tableName === 'due') {
+    return {
+      columns: DUE_TABLE_COLUMNS,
+      state: dueTableState
+    };
+  }
+
+  return {
+    columns: SHIPMENT_TABLE_COLUMNS,
+    state: shipmentTableState
+  };
+}
+
+
+function dashboardColumnConfig(
+  tableName,
+  key
+) {
+  return dashboardTableConfig(
+    tableName
+  ).columns.find(
+    column =>
+      column.key === key
+  );
+}
+
+
+function dashboardTableValue(
+  row,
+  key
+) {
+  const amounts =
+    shipmentAmounts(
+      row
     );
 
-  root
-    .querySelector(
-      '#shipmentClientFilter'
-    )
-    ?.addEventListener(
-      'change',
-      event => {
-        shipmentTableState.client =
-          event.target.value;
+  switch (key) {
+    case 'folio':
+      return String(
+        row.folio || ''
+      );
 
-        renderShipmentTable(
-          root
-        );
-      }
+    case 'shipment_date':
+      return String(
+        row.shipment_date || ''
+      ).slice(0, 10);
+
+    case 'due_date':
+      return String(
+        row.due_date || ''
+      ).slice(0, 10);
+
+    case 'client_name':
+      return String(
+        row.client_name || ''
+      );
+
+    case 'amount_mxn':
+      return amounts.mxn;
+
+    case 'amount_usd':
+      return amounts.usd;
+
+    case 'status':
+      return shipmentFinancialStatus(
+        row
+      );
+
+    case 'days_remaining':
+      return daysBetween(
+        startOfToday(),
+        parseDate(
+          row.due_date
+        )
+      );
+
+    default:
+      return '';
+  }
+}
+
+
+function dashboardFilterIsActive(
+  tableName,
+  key
+) {
+  const filter =
+    dashboardTableConfig(
+      tableName
+    ).state.filters[key];
+
+  if (!filter) {
+    return false;
+  }
+
+  return Boolean(
+    filter.search ||
+    filter.from ||
+    filter.to ||
+    filter.min !== '' ||
+    filter.max !== '' ||
+    filter.sort ||
+    (
+      Array.isArray(
+        filter.selected
+      ) &&
+      filter.selected.length
+    )
+  );
+}
+
+
+function dashboardFilterLabel(
+  column,
+  value
+) {
+  if (column.type === 'date') {
+    return value
+      ? safeDate(value)
+      : '(Vacío)';
+  }
+
+  if (column.key === 'amount_mxn') {
+    return money(
+      numeric(value),
+      'MXN'
+    );
+  }
+
+  if (column.key === 'amount_usd') {
+    return money(
+      numeric(value),
+      'USD'
+    );
+  }
+
+  if (column.key === 'days_remaining') {
+    return `${number(
+      numeric(value),
+      0
+    )} día(s)`;
+  }
+
+  return String(
+    value || '(Vacío)'
+  );
+}
+
+
+function dashboardUniqueValues(
+  tableName,
+  key,
+  rows
+) {
+  const column =
+    dashboardColumnConfig(
+      tableName,
+      key
     );
 
-  root
-    .querySelector(
-      '#shipmentSearchFilter'
-    )
-    ?.addEventListener(
-      'input',
-      event => {
-        shipmentTableState.search =
-          event.target.value;
-
-        renderShipmentTable(
-          root
-        );
-      }
+  const values =
+    Array.from(
+      new Set(
+        rows.map(row =>
+          String(
+            dashboardTableValue(
+              row,
+              key
+            ) ?? ''
+          )
+        )
+      )
     );
 
-  root
-    .querySelector(
-      '#shipmentSortFilter'
-    )
-    ?.addEventListener(
-      'change',
-      event => {
-        shipmentTableState.sort =
-          event.target.value;
+  if (
+    column?.type === 'number'
+  ) {
+    return values.sort(
+      (a, b) =>
+        numeric(a) -
+        numeric(b)
+    );
+  }
 
-        renderShipmentTable(
-          root
-        );
-      }
+  return values.sort(
+    (a, b) =>
+      a.localeCompare(
+        b,
+        'es',
+        {
+          numeric: true,
+          sensitivity: 'base'
+        }
+      )
+  );
+}
+
+
+function dashboardFilterRowMatches(
+  row,
+  tableName,
+  column
+) {
+  const state =
+    dashboardTableConfig(
+      tableName
+    ).state;
+
+  const filter =
+    state.filters[
+      column.key
+    ];
+
+  const rawValue =
+    dashboardTableValue(
+      row,
+      column.key
     );
 
-  root
-    .querySelector(
-      '#dueDaysFilter'
-    )
-    ?.addEventListener(
-      'change',
-      event => {
-        dueTableState.days =
-          event.target.value;
-
-        renderDueTable(
-          root
-        );
-      }
+  const stringValue =
+    String(
+      rawValue ?? ''
     );
 
-  root
-    .querySelector(
-      '#dueClientFilter'
+  if (
+    Array.isArray(
+      filter.selected
+    ) &&
+    !filter.selected.includes(
+      stringValue
     )
-    ?.addEventListener(
-      'change',
-      event => {
-        dueTableState.client =
-          event.target.value;
+  ) {
+    return false;
+  }
 
-        renderDueTable(
-          root
-        );
-      }
+  if (
+    column.type === 'text' &&
+    filter.search
+  ) {
+    const search =
+      filter.search
+        .trim()
+        .toLowerCase();
+
+    if (
+      !stringValue
+        .toLowerCase()
+        .includes(search)
+    ) {
+      return false;
+    }
+  }
+
+  if (
+    column.type === 'date'
+  ) {
+    const value =
+      stringValue.slice(
+        0,
+        10
+      );
+
+    if (
+      filter.from &&
+      value < filter.from
+    ) {
+      return false;
+    }
+
+    if (
+      filter.to &&
+      value > filter.to
+    ) {
+      return false;
+    }
+  }
+
+  if (
+    column.type === 'number'
+  ) {
+    const value =
+      numeric(rawValue);
+
+    if (
+      filter.min !== '' &&
+      value <
+        numeric(
+          filter.min
+        )
+    ) {
+      return false;
+    }
+
+    if (
+      filter.max !== '' &&
+      value >
+        numeric(
+          filter.max
+        )
+    ) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+
+function applyDashboardTableFilters(
+  rows,
+  tableName
+) {
+  const config =
+    dashboardTableConfig(
+      tableName
     );
 
-  root
-    .querySelector(
-      '#dueSortFilter'
-    )
-    ?.addEventListener(
-      'change',
-      event => {
-        dueTableState.sort =
-          event.target.value;
-
-        renderDueTable(
-          root
-        );
-      }
+  const filtered =
+    rows.filter(row =>
+      config.columns.every(
+        column =>
+          dashboardFilterRowMatches(
+            row,
+            tableName,
+            column
+          )
+      )
     );
+
+  const sortColumn =
+    config.columns.find(
+      column =>
+        config.state.filters[
+          column.key
+        ]?.sort
+    );
+
+  if (!sortColumn) {
+    return filtered;
+  }
+
+  const direction =
+    config.state.filters[
+      sortColumn.key
+    ].sort;
+
+  return filtered
+    .slice()
+    .sort((a, b) => {
+      const valueA =
+        dashboardTableValue(
+          a,
+          sortColumn.key
+        );
+
+      const valueB =
+        dashboardTableValue(
+          b,
+          sortColumn.key
+        );
+
+      let result = 0;
+
+      if (
+        sortColumn.type === 'number'
+      ) {
+        result =
+          numeric(valueA) -
+          numeric(valueB);
+      } else {
+        result =
+          String(
+            valueA || ''
+          ).localeCompare(
+            String(
+              valueB || ''
+            ),
+            'es',
+            {
+              numeric: true,
+              sensitivity: 'base'
+            }
+          );
+      }
+
+      return direction === 'desc'
+        ? result * -1
+        : result;
+    });
+}
+
+
+function dashboardFilterHeaderHtml(
+  tableName,
+  column,
+  sourceRows
+) {
+  const state =
+    dashboardTableConfig(
+      tableName
+    ).state;
+
+  const active =
+    dashboardFilterIsActive(
+      tableName,
+      column.key
+    );
+
+  return `
+    <th class="${
+      active
+        ? 'dashboard-excel-filter-active'
+        : ''
+    }">
+      <div class="dashboard-excel-th">
+        <span>
+          ${escapeHtml(
+            column.label
+          )}
+        </span>
+
+        <button
+          class="dashboard-excel-filter-trigger ${
+            active
+              ? 'active'
+              : ''
+          }"
+          data-dashboard-table="${tableName}"
+          data-dashboard-column="${column.key}"
+          type="button"
+          title="Filtrar ${escapeHtml(
+            column.label
+          )}"
+        >
+          ▾
+        </button>
+      </div>
+
+      ${
+        state.openColumn ===
+        column.key
+          ? dashboardFilterMenuHtml(
+              tableName,
+              column,
+              sourceRows
+            )
+          : ''
+      }
+    </th>
+  `;
+}
+
+
+function dashboardFilterMenuHtml(
+  tableName,
+  column,
+  sourceRows
+) {
+  const config =
+    dashboardTableConfig(
+      tableName
+    );
+
+  const filter =
+    config.state.filters[
+      column.key
+    ];
+
+  const values =
+    dashboardUniqueValues(
+      tableName,
+      column.key,
+      sourceRows
+    );
+
+  const selected =
+    Array.isArray(
+      filter.selected
+    )
+      ? filter.selected
+      : null;
+
+  return `
+    <div
+      class="dashboard-excel-filter-menu"
+      data-dashboard-filter-menu="${tableName}:${column.key}"
+    >
+      <div class="dashboard-excel-filter-head">
+        <strong>
+          ${escapeHtml(
+            column.label
+          )}
+        </strong>
+
+        <button
+          class="dashboard-excel-filter-close"
+          type="button"
+        >
+          ×
+        </button>
+      </div>
+
+      <div class="dashboard-excel-sort-actions">
+        <button
+          class="btn dashboard-excel-sort"
+          data-dashboard-sort-table="${tableName}"
+          data-dashboard-sort-column="${column.key}"
+          data-dashboard-sort-direction="asc"
+          type="button"
+        >
+          ${
+            column.type === 'date'
+              ? 'Antigua → reciente'
+              : column.type === 'number'
+                ? 'Menor → mayor'
+                : 'A → Z'
+          }
+        </button>
+
+        <button
+          class="btn dashboard-excel-sort"
+          data-dashboard-sort-table="${tableName}"
+          data-dashboard-sort-column="${column.key}"
+          data-dashboard-sort-direction="desc"
+          type="button"
+        >
+          ${
+            column.type === 'date'
+              ? 'Reciente → antigua'
+              : column.type === 'number'
+                ? 'Mayor → menor'
+                : 'Z → A'
+          }
+        </button>
+      </div>
+
+      ${
+        column.type === 'text'
+          ? `
+              <input
+                class="input dashboard-excel-filter-search"
+                data-dashboard-search-table="${tableName}"
+                data-dashboard-search-column="${column.key}"
+                type="search"
+                placeholder="Buscar..."
+                value="${escapeHtml(
+                  filter.search || ''
+                )}"
+              >
+            `
+          : ''
+      }
+
+      ${
+        column.type === 'date'
+          ? `
+              <div class="dashboard-excel-filter-range">
+                <label>
+                  Desde
+                  <input
+                    class="input"
+                    data-dashboard-from-table="${tableName}"
+                    data-dashboard-from-column="${column.key}"
+                    type="date"
+                    value="${escapeHtml(
+                      filter.from || ''
+                    )}"
+                  >
+                </label>
+
+                <label>
+                  Hasta
+                  <input
+                    class="input"
+                    data-dashboard-to-table="${tableName}"
+                    data-dashboard-to-column="${column.key}"
+                    type="date"
+                    value="${escapeHtml(
+                      filter.to || ''
+                    )}"
+                  >
+                </label>
+              </div>
+            `
+          : ''
+      }
+
+      ${
+        column.type === 'number'
+          ? `
+              <div class="dashboard-excel-filter-range">
+                <label>
+                  Mínimo
+                  <input
+                    class="input"
+                    data-dashboard-min-table="${tableName}"
+                    data-dashboard-min-column="${column.key}"
+                    type="number"
+                    step="any"
+                    value="${escapeHtml(
+                      filter.min
+                    )}"
+                  >
+                </label>
+
+                <label>
+                  Máximo
+                  <input
+                    class="input"
+                    data-dashboard-max-table="${tableName}"
+                    data-dashboard-max-column="${column.key}"
+                    type="number"
+                    step="any"
+                    value="${escapeHtml(
+                      filter.max
+                    )}"
+                  >
+                </label>
+              </div>
+            `
+          : ''
+      }
+
+      <label class="dashboard-excel-select-all">
+        <input
+          class="dashboard-excel-select-all-input"
+          data-dashboard-select-all-table="${tableName}"
+          data-dashboard-select-all-column="${column.key}"
+          type="checkbox"
+          ${selected ? '' : 'checked'}
+        >
+        Seleccionar todo
+      </label>
+
+      <div class="dashboard-excel-values">
+        ${
+          values.length
+            ? values.map(value => `
+                <label
+                  class="dashboard-excel-value"
+                >
+                  <input
+                    class="dashboard-excel-value-input"
+                    data-dashboard-value-table="${tableName}"
+                    data-dashboard-value-column="${column.key}"
+                    value="${escapeHtml(value)}"
+                    type="checkbox"
+                    ${
+                      !selected ||
+                      selected.includes(value)
+                        ? 'checked'
+                        : ''
+                    }
+                  >
+
+                  <span>
+                    ${escapeHtml(
+                      dashboardFilterLabel(
+                        column,
+                        value
+                      )
+                    )}
+                  </span>
+                </label>
+              `).join('')
+            : `
+                <div class="dashboard-excel-no-values">
+                  Sin valores disponibles.
+                </div>
+              `
+        }
+      </div>
+
+      <div class="dashboard-excel-filter-actions">
+        <button
+          class="btn dashboard-excel-clear"
+          data-dashboard-clear-table="${tableName}"
+          data-dashboard-clear-column="${column.key}"
+          type="button"
+        >
+          Limpiar
+        </button>
+
+        <button
+          class="btn primary dashboard-excel-apply"
+          data-dashboard-apply-table="${tableName}"
+          data-dashboard-apply-column="${column.key}"
+          type="button"
+        >
+          Aplicar
+        </button>
+      </div>
+    </div>
+  `;
+}
+
+
+function clearDashboardColumnFilter(
+  tableName,
+  key
+) {
+  const config =
+    dashboardTableConfig(
+      tableName
+    );
+
+  config.state.filters[key] = {
+    selected: null,
+    search: '',
+    from: '',
+    to: '',
+    min: '',
+    max: '',
+    sort: ''
+  };
+}
+
+
+function closeDashboardFilterMenus() {
+  document
+    .querySelectorAll(
+      '.dashboard-excel-filter-menu-portal'
+    )
+    .forEach(menu => {
+      menu.remove();
+    });
+}
+
+
+function mountDashboardOpenFilterMenu(
+  tableName
+) {
+  const config =
+    dashboardTableConfig(
+      tableName
+    );
+
+  if (!config.state.openColumn) {
+    return;
+  }
+
+  const trigger =
+    document.querySelector(
+      `[data-dashboard-table="${tableName}"][data-dashboard-column="${config.state.openColumn}"]`
+    );
+
+  const menu =
+    document.querySelector(
+      `[data-dashboard-filter-menu="${tableName}:${config.state.openColumn}"]`
+    );
+
+  if (!trigger || !menu) {
+    return;
+  }
+
+  const rect =
+    trigger.getBoundingClientRect();
+
+  const padding = 12;
+  const gap = 7;
+  const width =
+    Math.min(
+      310,
+      window.innerWidth -
+      padding * 2
+    );
+
+  menu.classList.add(
+    'dashboard-excel-filter-menu-portal'
+  );
+
+  document.body.appendChild(
+    menu
+  );
+
+  menu.style.width =
+    `${width}px`;
+
+  menu.style.visibility =
+    'hidden';
+
+  const spaceBelow =
+    window.innerHeight -
+    rect.bottom -
+    padding -
+    gap;
+
+  const spaceAbove =
+    rect.top -
+    padding -
+    gap;
+
+  const openAbove =
+    spaceBelow < 300 &&
+    spaceAbove > spaceBelow;
+
+  const maxHeight =
+    Math.max(
+      230,
+      Math.min(
+        500,
+        openAbove
+          ? spaceAbove
+          : spaceBelow
+      )
+    );
+
+  menu.style.maxHeight =
+    `${maxHeight}px`;
+
+  const left =
+    Math.min(
+      Math.max(
+        padding,
+        rect.left
+      ),
+      Math.max(
+        padding,
+        window.innerWidth -
+        width -
+        padding
+      )
+    );
+
+  const top =
+    openAbove
+      ? Math.max(
+          padding,
+          rect.top -
+          maxHeight -
+          gap
+        )
+      : Math.min(
+          rect.bottom + gap,
+          window.innerHeight -
+          maxHeight -
+          padding
+        );
+
+  menu.style.left =
+    `${left}px`;
+
+  menu.style.top =
+    `${Math.max(
+      padding,
+      top
+    )}px`;
+
+  menu.style.visibility =
+    'visible';
+}
+
+
+function renderDashboardTable(
+  tableName
+) {
+  closeDashboardFilterMenus();
+
+  if (tableName === 'due') {
+    renderDueTable(
+      document
+    );
+  } else {
+    renderShipmentTable(
+      document
+    );
+  }
+
+  bindDashboardExcelFilters(
+    document
+  );
+
+  mountDashboardOpenFilterMenu(
+    tableName
+  );
+}
+
+
+function bindDashboardExcelFilters(
+  root
+) {
+  root
+    .querySelectorAll(
+      '.dashboard-excel-filter-trigger'
+    )
+    .forEach(button => {
+      button.onclick =
+        event => {
+          event.stopPropagation();
+
+          const tableName =
+            button.dataset.dashboardTable;
+
+          const key =
+            button.dataset.dashboardColumn;
+
+          const state =
+            dashboardTableConfig(
+              tableName
+            ).state;
+
+          state.openColumn =
+            state.openColumn === key
+              ? ''
+              : key;
+
+          renderDashboardTable(
+            tableName
+          );
+        };
+    });
+
+  root
+    .querySelectorAll(
+      '.dashboard-excel-filter-close'
+    )
+    .forEach(button => {
+      button.onclick =
+        () => {
+          ['shipment', 'due']
+            .forEach(tableName => {
+              dashboardTableConfig(
+                tableName
+              ).state.openColumn = '';
+            });
+
+          closeDashboardFilterMenus();
+          renderShipmentTable(
+            document
+          );
+          renderDueTable(
+            document
+          );
+          bindDashboardExcelFilters(
+            document
+          );
+        };
+    });
+
+  root
+    .querySelectorAll(
+      '.dashboard-excel-filter-menu'
+    )
+    .forEach(menu => {
+      menu.onclick =
+        event => {
+          event.stopPropagation();
+        };
+    });
+
+  root
+    .querySelectorAll(
+      '.dashboard-excel-filter-search'
+    )
+    .forEach(input => {
+      input.oninput =
+        () => {
+          const tableName =
+            input.dataset.dashboardSearchTable;
+
+          const key =
+            input.dataset.dashboardSearchColumn;
+
+          dashboardTableConfig(
+            tableName
+          ).state.filters[key].search =
+            input.value;
+
+          const search =
+            input.value
+              .trim()
+              .toLowerCase();
+
+          input
+            .closest(
+              '.dashboard-excel-filter-menu'
+            )
+            ?.querySelectorAll(
+              '.dashboard-excel-value'
+            )
+            .forEach(label => {
+              label.hidden =
+                Boolean(
+                  search &&
+                  !label.textContent
+                    .trim()
+                    .toLowerCase()
+                    .includes(search)
+                );
+            });
+        };
+    });
+
+  root
+    .querySelectorAll(
+      '.dashboard-excel-select-all-input'
+    )
+    .forEach(input => {
+      input.onchange =
+        () => {
+          const menu =
+            input.closest(
+              '.dashboard-excel-filter-menu'
+            );
+
+          menu
+            ?.querySelectorAll(
+              '.dashboard-excel-value'
+            )
+            .forEach(label => {
+              if (label.hidden) {
+                return;
+              }
+
+              const checkbox =
+                label.querySelector(
+                  '.dashboard-excel-value-input'
+                );
+
+              if (checkbox) {
+                checkbox.checked =
+                  input.checked;
+              }
+            });
+        };
+    });
+
+  root
+    .querySelectorAll(
+      '.dashboard-excel-sort'
+    )
+    .forEach(button => {
+      button.onclick =
+        () => {
+          const tableName =
+            button.dataset.dashboardSortTable;
+
+          const key =
+            button.dataset.dashboardSortColumn;
+
+          const direction =
+            button.dataset.dashboardSortDirection;
+
+          const config =
+            dashboardTableConfig(
+              tableName
+            );
+
+          config.columns.forEach(
+            column => {
+              config.state.filters[
+                column.key
+              ].sort = '';
+            }
+          );
+
+          config.state.filters[
+            key
+          ].sort =
+            direction;
+
+          config.state.openColumn = '';
+
+          renderDashboardTable(
+            tableName
+          );
+        };
+    });
+
+  root
+    .querySelectorAll(
+      '.dashboard-excel-clear'
+    )
+    .forEach(button => {
+      button.onclick =
+        () => {
+          const tableName =
+            button.dataset.dashboardClearTable;
+
+          const key =
+            button.dataset.dashboardClearColumn;
+
+          clearDashboardColumnFilter(
+            tableName,
+            key
+          );
+
+          dashboardTableConfig(
+            tableName
+          ).state.openColumn = '';
+
+          renderDashboardTable(
+            tableName
+          );
+        };
+    });
+
+  root
+    .querySelectorAll(
+      '.dashboard-excel-apply'
+    )
+    .forEach(button => {
+      button.onclick =
+        () => {
+          const tableName =
+            button.dataset.dashboardApplyTable;
+
+          const key =
+            button.dataset.dashboardApplyColumn;
+
+          const config =
+            dashboardTableConfig(
+              tableName
+            );
+
+          const menu =
+            button.closest(
+              '.dashboard-excel-filter-menu'
+            );
+
+          const allValues =
+            Array.from(
+              menu?.querySelectorAll(
+                '.dashboard-excel-value-input'
+              ) || []
+            );
+
+          const selected =
+            allValues
+              .filter(
+                input =>
+                  input.checked
+              )
+              .map(
+                input =>
+                  input.value
+              );
+
+          config.state.filters[
+            key
+          ].selected =
+            selected.length ===
+            allValues.length
+              ? null
+              : selected;
+
+          const from =
+            menu?.querySelector(
+              `[data-dashboard-from-table="${tableName}"][data-dashboard-from-column="${key}"]`
+            );
+
+          const to =
+            menu?.querySelector(
+              `[data-dashboard-to-table="${tableName}"][data-dashboard-to-column="${key}"]`
+            );
+
+          const min =
+            menu?.querySelector(
+              `[data-dashboard-min-table="${tableName}"][data-dashboard-min-column="${key}"]`
+            );
+
+          const max =
+            menu?.querySelector(
+              `[data-dashboard-max-table="${tableName}"][data-dashboard-max-column="${key}"]`
+            );
+
+          const search =
+            menu?.querySelector(
+              `[data-dashboard-search-table="${tableName}"][data-dashboard-search-column="${key}"]`
+            );
+
+          config.state.filters[
+            key
+          ].from =
+            from?.value || '';
+
+          config.state.filters[
+            key
+          ].to =
+            to?.value || '';
+
+          config.state.filters[
+            key
+          ].min =
+            min?.value || '';
+
+          config.state.filters[
+            key
+          ].max =
+            max?.value || '';
+
+          config.state.filters[
+            key
+          ].search =
+            search?.value || '';
+
+          config.state.openColumn = '';
+
+          renderDashboardTable(
+            tableName
+          );
+        };
+    });
 }
 
 
 /* =========================================================
    3. FILTROS GENERALES
+
    ========================================================= */
 
 function dashboardFilters() {
@@ -754,87 +1897,6 @@ function shipmentsBlock() {
         'dark'
       )}
 
-      <div class="dashboard-v2-local-filters">
-
-        <div class="field">
-          <label>
-            Estatus
-          </label>
-
-          <select
-            class="input"
-            id="shipmentStatusFilter"
-          >
-            ${statusFilterOptions(
-              shipmentTableState.status
-            )}
-          </select>
-        </div>
-
-        <div class="field">
-          <label>
-            Cliente
-          </label>
-
-          <select
-            class="input"
-            id="shipmentClientFilter"
-          >
-            ${clientFilterOptions(
-              shipmentTableState.client
-            )}
-          </select>
-        </div>
-
-        <div class="field dashboard-v2-search">
-          <label>
-            Buscar remisión
-          </label>
-
-          <input
-            class="input"
-            id="shipmentSearchFilter"
-            type="search"
-            value="${escapeHtml(
-              shipmentTableState.search
-            )}"
-            placeholder="Folio..."
-          >
-        </div>
-
-        <div class="field">
-          <label>
-            Ordenar por fecha
-          </label>
-
-          <select
-            class="input"
-            id="shipmentSortFilter"
-          >
-            <option
-              value="date_desc"
-              ${shipmentTableState.sort ===
-                'date_desc'
-                  ? 'selected'
-                  : ''}
-            >
-              Más reciente a más antigua
-            </option>
-
-            <option
-              value="date_asc"
-              ${shipmentTableState.sort ===
-                'date_asc'
-                  ? 'selected'
-                  : ''}
-            >
-              Más antigua a más reciente
-            </option>
-          </select>
-        </div>
-
-      </div>
-
       <div id="dashboardShipmentTable">
         ${shipmentTableHtml()}
       </div>
@@ -860,19 +1922,16 @@ function renderShipmentTable(
 
 
 function shipmentTableHtml() {
-  const rows =
-    sortShipmentRows(
-      filteredShipments(
-        true
-      ),
-      shipmentTableState.sort
+  const sourceRows =
+    filteredShipments(
+      false
     );
 
-  if (rows.length === 0) {
-    return emptyState(
-      'No se encontraron remisiones para los filtros seleccionados.'
+  const rows =
+    applyDashboardTableFilters(
+      sourceRows,
+      'shipment'
     );
-  }
 
   const totals =
     sumShipments(
@@ -880,25 +1939,58 @@ function shipmentTableHtml() {
     );
 
   return `
-    <div class="dashboard-v2-table-scroll">
+    <div class="dashboard-table-summary">
+      <span>
+        ${number(
+          rows.length,
+          0
+        )}
+        de
+        ${number(
+          sourceRows.length,
+          0
+        )}
+        remisiones
+      </span>
+    </div>
 
-      <table class="dashboard-v2-table">
+    <div class="dashboard-v2-table-scroll dashboard-excel-table-scroll">
+
+      <table class="dashboard-v2-table dashboard-excel-table">
 
         <thead>
           <tr>
-            <th>No. remisión</th>
-            <th>Fecha</th>
-            <th>Cliente</th>
-            <th>Monto MXN</th>
-            <th>Monto USD</th>
-            <th>Estatus</th>
+            ${SHIPMENT_TABLE_COLUMNS
+              .map(column =>
+                dashboardFilterHeaderHtml(
+                  'shipment',
+                  column,
+                  sourceRows
+                )
+              )
+              .join('')}
           </tr>
         </thead>
 
         <tbody>
-          ${rows
-            .map(shipmentRow)
-            .join('')}
+          ${
+            rows.length
+              ? rows
+                  .map(
+                    shipmentRow
+                  )
+                  .join('')
+              : `
+                  <tr>
+                    <td
+                      colspan="6"
+                      class="dashboard-table-empty-cell"
+                    >
+                      No se encontraron remisiones con los filtros seleccionados.
+                    </td>
+                  </tr>
+                `
+          }
         </tbody>
 
         <tfoot>
@@ -1016,91 +2108,6 @@ function dueBlock() {
         'red'
       )}
 
-      <div class="dashboard-v2-local-filters dashboard-v2-due-filters">
-
-        <div class="field">
-          <label>
-            Días próximos
-          </label>
-
-          <select
-            class="input"
-            id="dueDaysFilter"
-          >
-            ${dueDaysOptions(
-              dueTableState.days
-            )}
-          </select>
-        </div>
-
-        <div class="field">
-          <label>
-            Cliente
-          </label>
-
-          <select
-            class="input"
-            id="dueClientFilter"
-          >
-            ${clientFilterOptions(
-              dueTableState.client
-            )}
-          </select>
-        </div>
-
-        <div class="field">
-          <label>
-            Ordenar por
-          </label>
-
-          <select
-            class="input"
-            id="dueSortFilter"
-          >
-            <option
-              value="days_asc"
-              ${dueTableState.sort ===
-                'days_asc'
-                  ? 'selected'
-                  : ''}
-            >
-              Días restantes: menor a mayor
-            </option>
-
-            <option
-              value="days_desc"
-              ${dueTableState.sort ===
-                'days_desc'
-                  ? 'selected'
-                  : ''}
-            >
-              Días restantes: mayor a menor
-            </option>
-
-            <option
-              value="date_asc"
-              ${dueTableState.sort ===
-                'date_asc'
-                  ? 'selected'
-                  : ''}
-            >
-              Fecha: más antigua a más reciente
-            </option>
-
-            <option
-              value="date_desc"
-              ${dueTableState.sort ===
-                'date_desc'
-                  ? 'selected'
-                  : ''}
-            >
-              Fecha: más reciente a más antigua
-            </option>
-          </select>
-        </div>
-
-      </div>
-
       <div id="dashboardDueTable">
         ${dueTableHtml()}
       </div>
@@ -1129,12 +2136,7 @@ function dueTableHtml() {
   const today =
     startOfToday();
 
-  const limit =
-    Number(
-      dueTableState.days || 30
-    );
-
-  const rows =
+  const sourceRows =
     filteredShipments(
       false
     )
@@ -1151,16 +2153,6 @@ function dueTableHtml() {
           return false;
         }
 
-        if (
-          dueTableState.client &&
-          String(row.client_id) !==
-            String(
-              dueTableState.client
-            )
-        ) {
-          return false;
-        }
-
         const due =
           parseDate(
             row.due_date
@@ -1170,57 +2162,78 @@ function dueTableHtml() {
           return false;
         }
 
-        const days =
+        return (
           daysBetween(
             today,
             due
-          );
-
-        return (
-          days >= 0 &&
-          days <= limit
+          ) >= 0
         );
       });
 
-  const sortedRows =
-    sortDueRows(
-      rows,
-      dueTableState.sort,
-      today
+  const rows =
+    applyDashboardTableFilters(
+      sourceRows,
+      'due'
     );
-
-  if (sortedRows.length === 0) {
-    return emptyState(
-      'No hay remisiones próximas a vencer en el periodo seleccionado.'
-    );
-  }
 
   const totals =
     sumShipments(
-      sortedRows
+      rows
     );
 
   return `
-    <div class="dashboard-v2-table-scroll dashboard-v2-due-scroll">
+    <div class="dashboard-table-summary">
+      <span>
+        ${number(
+          rows.length,
+          0
+        )}
+        de
+        ${number(
+          sourceRows.length,
+          0
+        )}
+        remisiones pendientes
+      </span>
+    </div>
 
-      <table class="dashboard-v2-table">
+    <div class="dashboard-v2-table-scroll dashboard-v2-due-scroll dashboard-excel-table-scroll">
+
+      <table class="dashboard-v2-table dashboard-excel-table dashboard-due-excel-table">
 
         <thead>
           <tr>
-            <th>No. remisión</th>
-            <th>Fecha</th>
-            <th>Vencimiento</th>
-            <th>Cliente</th>
-            <th>Monto MXN</th>
-            <th>Monto USD</th>
-            <th>Días restantes</th>
+            ${DUE_TABLE_COLUMNS
+              .map(column =>
+                dashboardFilterHeaderHtml(
+                  'due',
+                  column,
+                  sourceRows
+                )
+              )
+              .join('')}
           </tr>
         </thead>
 
         <tbody>
-          ${sortedRows
-            .map(dueRow)
-            .join('')}
+          ${
+            rows.length
+              ? rows
+                  .map(
+                    dueRow
+                  )
+                  .join('')
+              : `
+                  <tr>
+                    <td
+                      colspan="7"
+                      class="dashboard-table-empty-cell"
+                    >
+                      No hay remisiones próximas a vencer con los filtros seleccionados.
+                    </td>
+                  </tr>
+                `
+          }
         </tbody>
 
         <tfoot>
@@ -1251,7 +2264,7 @@ function dueTableHtml() {
 
             <td>
               ${number(
-                sortedRows.length,
+                rows.length,
                 0
               )} remisiones
             </td>
@@ -1730,45 +2743,6 @@ function filteredShipments(
       return false;
     }
 
-    if (!includeLocalFilters) {
-      return true;
-    }
-
-    if (
-      shipmentTableState.status &&
-      shipmentFinancialStatus(
-        row
-      ) !==
-        shipmentTableState.status
-    ) {
-      return false;
-    }
-
-    if (
-      shipmentTableState.client &&
-      String(row.client_id) !==
-        String(
-          shipmentTableState.client
-        )
-    ) {
-      return false;
-    }
-
-    if (
-      shipmentTableState.search &&
-      !String(
-        row.folio || ''
-      )
-        .toLowerCase()
-        .includes(
-          shipmentTableState.search
-            .trim()
-            .toLowerCase()
-        )
-    ) {
-      return false;
-    }
-
     return true;
   });
 }
@@ -2050,98 +3024,8 @@ function sumShipments(
 
 
 
-function sortShipmentRows(
-  rows,
-  sort
-) {
-  const result =
-    rows.slice();
-
-  result.sort(
-    (a, b) => {
-      const aDate =
-        String(
-          a.shipment_date || ''
-        );
-
-      const bDate =
-        String(
-          b.shipment_date || ''
-        );
-
-      if (sort === 'date_asc') {
-        return aDate.localeCompare(
-          bDate
-        );
-      }
-
-      return bDate.localeCompare(
-        aDate
-      );
-    }
-  );
-
-  return result;
-}
 
 
-function sortDueRows(
-  rows,
-  sort,
-  today
-) {
-  const result =
-    rows.slice();
-
-  result.sort(
-    (a, b) => {
-      if (
-        sort === 'days_asc' ||
-        sort === 'days_desc'
-      ) {
-        const aDays =
-          daysBetween(
-            today,
-            parseDate(
-              a.due_date
-            )
-          );
-
-        const bDays =
-          daysBetween(
-            today,
-            parseDate(
-              b.due_date
-            )
-          );
-
-        return sort === 'days_asc'
-          ? aDays - bDays
-          : bDays - aDays;
-      }
-
-      const aDate =
-        String(
-          a.shipment_date || ''
-        );
-
-      const bDate =
-        String(
-          b.shipment_date || ''
-        );
-
-      return sort === 'date_asc'
-        ? aDate.localeCompare(
-            bDate
-          )
-        : bDate.localeCompare(
-            aDate
-          );
-    }
-  );
-
-  return result;
-}
 
 
 /* =========================================================
@@ -2220,89 +3104,10 @@ function productOptions(
 }
 
 
-function clientFilterOptions(
-  selected
-) {
-  return `
-    <option value="">
-      Todos
-    </option>
-
-    ${
-      (
-        dashboardData?.clients ||
-        []
-      )
-        .map(row => {
-          return `
-            <option
-              value="${row.id}"
-              ${String(row.id) ===
-                String(selected)
-                  ? 'selected'
-                  : ''}
-            >
-              ${escapeHtml(
-                row.name
-              )}
-            </option>
-          `;
-        })
-        .join('')
-    }
-  `;
-}
 
 
-function statusFilterOptions(
-  selected
-) {
-  return [
-    ['', 'Todos'],
-    ['Pendiente', 'Pendiente'],
-    ['Parcial', 'Parcial'],
-    ['Cobrada', 'Cobrada']
-  ]
-    .map(([value, label]) => {
-      return `
-        <option
-          value="${value}"
-          ${value === selected
-            ? 'selected'
-            : ''}
-        >
-          ${label}
-        </option>
-      `;
-    })
-    .join('');
-}
 
 
-function dueDaysOptions(
-  selected
-) {
-  return [
-    ['7', 'Próximos 7 días'],
-    ['15', 'Próximos 15 días'],
-    ['30', 'Próximos 30 días'],
-    ['60', 'Próximos 60 días'],
-    ['90', 'Próximos 90 días']
-  ]
-    .map(([value, label]) => {
-      return `
-        <option
-          value="${value}"
-          ${value === selected
-            ? 'selected'
-            : ''}
-        >
-          ${label}
-        </option>
-      `;
-    })
-    .join('');
-}
 
 
 /* =========================================================
