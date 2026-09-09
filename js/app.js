@@ -1,6 +1,9 @@
 import { state, setUser, restoreUser } from './core/state.js';
 import { shell, bindLayout } from './components/layout.js';
-import { dashboard } from './modules/dashboard.js';
+import {
+  dashboard,
+  bindDashboard
+} from './modules/dashboard.js';
 import { catalogs, bindCatalogs } from './modules/catalogs.js';
 import { plantings, bindPlantings } from './modules/plantings.js';
 import { shipments, bindShipments } from './modules/shipments.js';
@@ -121,9 +124,13 @@ async function navigate(
     content
   );
 
-  bindLayout(
+    bindLayout(
     navigate
   );
+
+  if (route === 'dashboard') {
+    bindDashboard();
+  }
 
   if (route === 'catalogs') {
     bindCatalogs(
