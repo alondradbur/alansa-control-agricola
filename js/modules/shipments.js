@@ -2394,15 +2394,15 @@ async function printShipmentPdf(id) {
             </strong>
           </div>
 
-          <div>
-            <span>Equivalente MXN</span>
-            <strong>
-              ${money(
-                totals.mxn,
-                'MXN'
-              )}
-            </strong>
-          </div>
+          <div class="pdf-total-secondary">
+  <span>Equivalente MXN</span>
+  <strong>
+    ${money(
+      totals.mxn,
+      'MXN'
+    )}
+  </strong>
+</div>
 
           </section>
 
