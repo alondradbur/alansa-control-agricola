@@ -1005,6 +1005,44 @@ function shipmentModalHtml() {
               >
             </div>
 
+<div class="field">
+  <label>
+    Firma en remisión
+  </label>
+
+  <select
+    class="input"
+    id="shipmentSignatureUser"
+  >
+    <option
+      value=""
+      ${!current.signature_user
+        ? 'selected'
+        : ''}
+    >
+      Sin firma
+    </option>
+
+    <option
+      value="A"
+      ${current.signature_user === 'A'
+        ? 'selected'
+        : ''}
+    >
+      Usuario A
+    </option>
+
+    <option
+      value="R"
+      ${current.signature_user === 'R'
+        ? 'selected'
+        : ''}
+    >
+      Usuario R
+    </option>
+  </select>
+</div>
+
           </div>
 
           <div class="shipment-lines-head">
@@ -1905,6 +1943,13 @@ function collectShipmentPayload() {
       )
       ?.value || '';
 
+  const signatureUser =
+  document
+    .getElementById(
+      'shipmentSignatureUser'
+    )
+    ?.value || '';
+
   const lines =
     Array.from(
       document.querySelectorAll(
@@ -1981,16 +2026,18 @@ function collectShipmentPayload() {
   }
 
   return {
-    planting_id:
-      plantingId,
-    shipment_date:
-      shipmentDate,
-    currency,
-    exchange_rate:
-      exchangeRate,
-    notes,
-    lines
-  };
+  planting_id:
+    plantingId,
+  shipment_date:
+    shipmentDate,
+  currency,
+  exchange_rate:
+    exchangeRate,
+  signature_user:
+    signatureUser || null,
+  notes,
+  lines
+};
 }
 
 
