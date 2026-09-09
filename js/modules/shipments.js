@@ -2250,12 +2250,20 @@ async function printShipmentPdf(id) {
           }
 
           .total-main {
-            font-size: 16px;
-            font-weight: 800;
-            color: #174f38;
-          }
+  font-size: 16px;
+  font-weight: 800;
+  color: #174f38;
+}
 
-          .notes {
+.pdf-total-secondary {
+  color: #777;
+}
+
+.pdf-total-secondary strong {
+  color: #777;
+}
+
+.notes {
             margin-top: 24px;
             padding: 12px;
             background: #f6f8f7;
@@ -2485,8 +2493,7 @@ async function printShipmentPdf(id) {
   </strong>
 </div>
 
-          </section>
-</section>
+        </section>
 
 ${
   shipment.signature_user
@@ -2530,20 +2537,6 @@ ${
       `
     : ''
 }
-
-        ${
-          shipment.notes
-            ? `
-                <div class="notes">
-                  <strong>Notas:</strong>
-                  ${escapeHtml(
-                    shipment.notes
-                  )}
-                </div>
-              `
-            : ''
-        }
-
         <script>
           window.onload = () => {
             window.print();
