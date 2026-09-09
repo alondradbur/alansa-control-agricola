@@ -104,7 +104,7 @@ async function onGet({ env, request }) {
       s.id,
       s.folio,
       s.sequence,
-      planting_sequence,
+      s.planting_sequence,
       s.shipment_date,
       s.planting_id,
       s.client_id,
@@ -233,6 +233,7 @@ const folio =
         INSERT INTO shipments (
   folio,
   sequence,
+  planting_sequence,
   shipment_date,
   planting_id,
   client_id,
