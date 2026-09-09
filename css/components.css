@@ -2494,3 +2494,187 @@ textarea.input {
   }
 }
 
+/* =========================================================
+   ALANSA - REMISIONES
+   Ajuste de filtros, ancho de tabla y scroll vertical
+   Agregar AL FINAL de css/components.css
+   ========================================================= */
+
+/* La tabla ocupa el ancho disponible y evita scroll horizontal. */
+.shipments-v2-scroll {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  max-height: calc(100vh - 260px);
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.shipments-v2-table {
+  width: 100%;
+  min-width: 0 !important;
+  table-layout: fixed;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.shipments-v2-table th,
+.shipments-v2-table td {
+  min-width: 0 !important;
+  padding: 8px 6px;
+  font-size: 11px;
+  line-height: 1.25;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: normal;
+  vertical-align: middle;
+}
+
+/* Distribución de columnas para mantener todo visible. */
+.shipments-v2-table th:nth-child(1),
+.shipments-v2-table td:nth-child(1) {
+  width: 15%;
+}
+
+.shipments-v2-table th:nth-child(2),
+.shipments-v2-table td:nth-child(2) {
+  width: 7%;
+}
+
+.shipments-v2-table th:nth-child(3),
+.shipments-v2-table td:nth-child(3) {
+  width: 7%;
+}
+
+.shipments-v2-table th:nth-child(4),
+.shipments-v2-table td:nth-child(4) {
+  width: 9%;
+}
+
+.shipments-v2-table th:nth-child(5),
+.shipments-v2-table td:nth-child(5) {
+  width: 9%;
+}
+
+.shipments-v2-table th:nth-child(6),
+.shipments-v2-table td:nth-child(6) {
+  width: 5%;
+}
+
+.shipments-v2-table th:nth-child(7),
+.shipments-v2-table td:nth-child(7) {
+  width: 6%;
+}
+
+.shipments-v2-table th:nth-child(8),
+.shipments-v2-table td:nth-child(8),
+.shipments-v2-table th:nth-child(9),
+.shipments-v2-table td:nth-child(9) {
+  width: 8%;
+}
+
+.shipments-v2-table th:nth-child(10),
+.shipments-v2-table td:nth-child(10) {
+  width: 8%;
+}
+
+.shipments-v2-table th:nth-child(11),
+.shipments-v2-table td:nth-child(11) {
+  width: 7%;
+}
+
+.shipments-v2-table th:nth-child(12),
+.shipments-v2-table td:nth-child(12) {
+  width: 11%;
+}
+
+/* Encabezado y totales permanecen visibles durante scroll vertical. */
+.shipments-v2-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+.shipments-v2-table tfoot td {
+  position: sticky;
+  bottom: 0;
+  z-index: 18;
+}
+
+/* Acciones compactas para que no obliguen a ensanchar la tabla. */
+.shipment-row-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.shipment-row-actions .btn {
+  min-width: 0;
+  padding: 6px 7px;
+  font-size: 10px;
+  line-height: 1;
+}
+
+/* El menú del filtro nunca puede salirse de la pantalla. */
+.shipment-filter-menu {
+  display: flex;
+  flex-direction: column;
+  width: 290px;
+  max-width: min(290px, calc(100vw - 32px));
+  max-height: min(520px, calc(100vh - 130px));
+  overflow: hidden;
+}
+
+/* La lista de valores es la zona que hace scroll. */
+.shipment-filter-values {
+  flex: 1 1 auto;
+  min-height: 90px;
+  max-height: none !important;
+  overflow-y: auto !important;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  padding-right: 3px;
+}
+
+/* Encabezado y botones del filtro siempre quedan visibles. */
+.shipment-filter-menu-head,
+.shipment-filter-actions {
+  flex: 0 0 auto;
+}
+
+/* En pantallas angostas el filtro se muestra como panel dentro de la ventana. */
+@media (max-width: 760px) {
+  .shipments-v2-scroll {
+    max-height: calc(100vh - 220px);
+    overflow-x: hidden;
+  }
+
+  .shipment-filter-menu {
+    position: fixed;
+    top: 70px;
+    right: 12px !important;
+    bottom: 12px;
+    left: 12px !important;
+    width: auto;
+    max-width: none;
+    max-height: none;
+  }
+
+  .shipment-filter-values {
+    min-height: 0;
+  }
+
+  .shipments-v2-table th,
+  .shipments-v2-table td {
+    padding: 6px 4px;
+    font-size: 9px;
+  }
+
+  .shipment-row-actions .btn {
+    padding: 5px 4px;
+    font-size: 9px;
+  }
+}
