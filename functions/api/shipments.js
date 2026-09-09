@@ -1,1670 +1,919 @@
-/* =========================================================
-   SISTEMA DE CONTROL AGRÍCOLA
-   API: SIEMBRAS / CONTRATOS
-
-   Funciones:
-   - Consultar siembras.
-   - Crear nuevas siembras.
-   - Editar registros existentes.
-   - Eliminar siembras sin movimientos relacionados.
-   - Guardar costos proyectados por concepto y unidad.
-   - Calcular cantidades proyectadas en el backend.
-   ========================================================= */
+import { json } from './_util.js';
 
 
 /* =========================================================
-   1. IMPORTACIONES
+   ALANSA - API REMISIONES
+   Encabezado: shipments
+   Detalle: shipment_lines
    ========================================================= */
 
-import {
-  json,
-  error
-} from './_util.js';
+export async function onRequest(context) {
+  switch (context.request.method) {
+    case 'GET':
+      return onGet(context);
+
+    case 'POST':
+      return onPost(context);
+
+    case 'PUT':
+      return onPut(context);
+
+    case 'DELETE':
+      return onDelete(context);
+
+    default:
+      return json(
+        { error: 'Método no permitido.' },
+        405
+      );
+  }
+}
 
 
 /* =========================================================
-   2. CONSULTAR SIEMBRAS
+   1. CONSULTAR REMISIONES / CATÁLOGOS
    ========================================================= */
 
-export async function onRequestGet({
-  env
-}) {
-  try {
+async function onGet({ env, request }) {
+  const db = env.DB;
+  const url = new URL(request.url);
+  const mode = url.searchParams.get('mode');
+
+  if (mode === 'form') {
     const [
-      plantingsResult,
-      costsResult
+      plantings,
+      clients,
+      products
     ] = await Promise.all([
-      env.DB
-        .prepare(`
-          SELECT
-            pl.*,
-            p.name AS product_name,
-            c.name AS client_name
+      db.prepare(`
+        SELECT
+          p.id,
+          p.contract_number,
+          p.client_id,
+          p.product_id,
+          p.standard_box_lbs,
+          p.price_per_box,
+          p.price_currency,
+          p.projection_exchange_rate,
+          c.name AS client_name,
+          c.credit_days,
+          pr.name AS product_name
+        FROM plantings p
+        JOIN clients c
+          ON c.id = p.client_id
+        JOIN products pr
+          ON pr.id = p.product_id
+        ORDER BY p.contract_number
+      `).all(),
 
-          FROM plantings pl
+      db.prepare(`
+        SELECT
+          id,
+          name,
+          credit_days
+        FROM clients
+        ORDER BY name
+      `).all(),
 
-          JOIN products p
-            ON p.id = pl.product_id
-
-          JOIN clients c
-            ON c.id = pl.client_id
-
-          ORDER BY
-            pl.harvest_start DESC,
-            pl.id DESC
-        `)
-        .all(),
-
-      env.DB
-        .prepare(`
-          SELECT
-            pec.id,
-            pec.planting_id,
-            pec.category_id,
-            pec.expense_unit_id,
-            pec.concept,
-            pec.unit_amount,
-            pec.quantity,
-            pec.amount,
-            pec.currency,
-            ec.name AS category_name,
-            eu.name AS unit_name,
-            eu.quantity_source
-
-          FROM planting_estimated_costs pec
-
-          LEFT JOIN expense_categories ec
-            ON ec.id = pec.category_id
-
-          LEFT JOIN expense_units eu
-            ON eu.id = pec.expense_unit_id
-
-          ORDER BY
-            pec.planting_id,
-            pec.id
-        `)
-        .all()
+      db.prepare(`
+        SELECT
+          id,
+          name
+        FROM products
+        ORDER BY name
+      `).all()
     ]);
 
-    const plantings =
-      plantingsResult.results || [];
-
-    const costs =
-      costsResult.results || [];
-
-    const costsByPlanting = {};
-
-    costs.forEach(cost => {
-      const key =
-        Number(cost.planting_id);
-
-      if (!costsByPlanting[key]) {
-        costsByPlanting[key] = [];
-      }
-
-      costsByPlanting[key].push({
-        id: Number(cost.id),
-        category_id:
-          cost.category_id === null
-            ? null
-            : Number(cost.category_id),
-        expense_unit_id:
-          cost.expense_unit_id === null
-            ? null
-            : Number(cost.expense_unit_id),
-        concept:
-          cost.category_name ||
-          cost.concept ||
-          '',
-        category_name:
-          cost.category_name ||
-          cost.concept ||
-          '',
-        unit_name:
-          cost.unit_name || '',
-        quantity_source:
-          cost.quantity_source || 'MANUAL',
-        unit_amount:
-          Number(
-            cost.unit_amount ??
-            cost.amount ??
-            0
-          ),
-        quantity:
-          Number(
-            cost.quantity ??
-            1
-          ),
-        amount:
-          Number(
-            cost.amount || 0
-          ),
-        currency:
-          cost.currency || 'MXN'
-      });
+    return json({
+      plantings: plantings.results || [],
+      clients: clients.results || [],
+      products: products.results || []
     });
+  }
 
+  const id = Number(
+    url.searchParams.get('id') || 0
+  );
+
+  if (id > 0) {
+    return getOne(db, id);
+  }
+
+  const result = await db.prepare(`
+    SELECT
+      s.id,
+      s.folio,
+      s.sequence,
+      s.shipment_date,
+      s.planting_id,
+      s.client_id,
+      s.currency,
+      s.exchange_rate,
+      s.due_date,
+      s.status,
+      s.notes,
+      s.credit_days,
+      s.total_boxes,
+      s.total_pounds,
+      s.total_amount,
+      s.mxn_equivalent,
+      pl.contract_number,
+      c.name AS client_name,
+      GROUP_CONCAT(
+        DISTINCT pr.name
+      ) AS product_names
+    FROM shipments s
+    JOIN plantings pl
+      ON pl.id = s.planting_id
+    JOIN clients c
+      ON c.id = s.client_id
+    LEFT JOIN shipment_lines sl
+      ON sl.shipment_id = s.id
+    LEFT JOIN products pr
+      ON pr.id = sl.product_id
+    GROUP BY s.id
+    ORDER BY s.sequence DESC
+  `).all();
+
+  return json(
+    result.results || []
+  );
+}
+
+
+async function getOne(db, id) {
+  const shipment = await db.prepare(`
+    SELECT
+      s.*,
+      pl.contract_number,
+      c.name AS client_name
+    FROM shipments s
+    JOIN plantings pl
+      ON pl.id = s.planting_id
+    JOIN clients c
+      ON c.id = s.client_id
+    WHERE s.id = ?
+  `).bind(id).first();
+
+  if (!shipment) {
     return json(
-      plantings.map(planting => {
-        const hectares =
-          Number(planting.hectares || 0);
-
-        const expectedYield =
-          Number(
-            planting.expected_yield_boxes_ha || 0
-          );
-
-        const standardBoxLbs =
-          Number(
-            planting.standard_box_lbs || 0
-          );
-
-        const pricePerBox =
-          Number(
-            planting.price_per_box || 0
-          );
-
-        const density =
-          Number(
-            planting.density_per_ha || 0
-          );
-
-        const projectedBoxes =
-          hectares * expectedYield;
-
-        const projectedPounds =
-          projectedBoxes * standardBoxLbs;
-
-        const projectedPlants =
-          hectares * density;
-
-        const projectedRevenue =
-          projectedBoxes * pricePerBox;
-
-        return {
-          ...planting,
-
-          hectares,
-          expected_yield_boxes_ha:
-            expectedYield,
-          standard_box_lbs:
-            standardBoxLbs,
-          price_per_box:
-            pricePerBox,
-          density_per_ha:
-            density,
-
-          projected_boxes:
-            projectedBoxes,
-
-          projected_pounds:
-            projectedPounds,
-
-          projected_plants:
-            projectedPlants,
-
-          projected_revenue:
-            projectedRevenue,
-
-          projected_revenue_per_ha:
-            hectares > 0
-              ? projectedRevenue / hectares
-              : 0,
-
-          estimated_costs:
-            costsByPlanting[
-              Number(planting.id)
-            ] || []
-        };
-      })
-    );
-
-  } catch (exception) {
-    console.error(
-      'Error al consultar siembras:',
-      exception
-    );
-
-    return error(
-      'No fue posible consultar las siembras.'
+      { error: 'Remisión no encontrada.' },
+      404
     );
   }
+
+  const lines = await db.prepare(`
+    SELECT
+      sl.*,
+      p.name AS product_name
+    FROM shipment_lines sl
+    JOIN products p
+      ON p.id = sl.product_id
+    WHERE sl.shipment_id = ?
+    ORDER BY sl.id
+  `).bind(id).all();
+
+  return json({
+    ...shipment,
+    lines: lines.results || []
+  });
 }
 
 
 /* =========================================================
-   3. CREAR NUEVA SIEMBRA
+   2. CREAR
    ========================================================= */
 
-export async function onRequestPost({
-  env,
-  request
-}) {
-  const data =
-    await request.json();
+async function onPost({ env, request }) {
+  const db = env.DB;
+  const body = await request.json();
 
   const validation =
-    validatePlanting(
-      data
+    await validatePayload(
+      db,
+      body
     );
 
   if (validation.error) {
-    return error(
-      validation.error
+    return json(
+      { error: validation.error },
+      400
     );
   }
 
-  const values =
-    validation.values;
-
-  const estimatedCosts =
-    await validateProjectedCosts(
-      env.DB,
-      data.estimated_costs,
-      values
-    );
-
-  if (estimatedCosts.error) {
-    return error(
-      estimatedCosts.error
-    );
-  }
-
-  const exchangeValidation =
-    validateProjectionExchangeRate(
-      values,
-      estimatedCosts.values
-    );
-
-  if (exchangeValidation) {
-    return error(
-      exchangeValidation
-    );
-  }
+  const data = validation.data;
 
   try {
-    const result = await env.DB
-      .prepare(`
-        INSERT INTO plantings (
-          contract_number,
-          product_id,
+    const next =
+      await nextSequence(db);
+
+    const folio =
+      `REM-${String(next).padStart(6, '0')}`;
+
+    const first =
+      data.lines[0];
+
+    const insert =
+      await db.prepare(`
+        INSERT INTO shipments (
+          folio,
+          sequence,
+          shipment_date,
+          planting_id,
           client_id,
-          hectares,
-          expected_yield_boxes_ha,
-          density_per_ha,
-          seed_cost_per_thousand,
-          estimated_seed_cost,
-          seed_currency,
-          harvest_start,
-          harvest_end,
-          price_per_box,
-          price_currency,
+          product_id,
+          boxes,
+          pounds,
           standard_box_lbs,
-          trailers_per_week,
+          price_per_box,
+          currency,
+          exchange_rate,
+          due_date,
           status,
-          projection_exchange_rate,
-          notes
+          notes,
+          credit_days,
+          total_boxes,
+          total_pounds,
+          total_amount,
+          mxn_equivalent,
+          updated_at
         )
-
         VALUES (
-          ?, ?, ?, ?, ?, ?, ?, ?, ?,
-          ?, ?, ?, ?, ?, ?, ?, ?, ?
+          ?, ?, ?, ?, ?, ?,
+          ?, ?, ?, ?, ?, ?,
+          ?, ?, ?, ?, ?, ?,
+          ?, ?, CURRENT_TIMESTAMP
         )
-      `)
-      .bind(
-        values.contractNumber,
-        values.productId,
-        values.clientId,
-        values.hectares,
-        values.expectedYield,
-        values.density,
-        values.seedCost,
-        values.estimatedSeedCost,
-        values.seedCurrency,
-        values.harvestStart,
-        values.harvestEnd,
-        values.pricePerBox,
-        values.priceCurrency,
-        values.standardBoxLbs,
-        values.trailersPerWeek,
-        values.status,
-        values.projectionExchangeRate,
-        values.notes
-      )
-      .run();
+      `).bind(
+        folio,
+        next,
+        data.shipmentDate,
+        data.plantingId,
+        data.clientId,
+        first.productId,
+        first.boxes,
+        first.pounds,
+        first.lbsPerBox,
+        first.pricePerBox,
+        data.currency,
+        data.exchangeRate || null,
+        data.dueDate,
+        'Emitida',
+        data.notes || null,
+        data.creditDays,
+        data.totalBoxes,
+        data.totalPounds,
+        data.totalAmount,
+        data.mxnEquivalent
+      ).run();
 
-    const plantingId =
+    const shipmentId =
       Number(
-        result.meta?.last_row_id
+        insert.meta?.last_row_id || 0
       );
 
-    await replaceProjectedCosts(
-      env.DB,
-      plantingId,
-      estimatedCosts.values
-    );
+    if (!shipmentId) {
+      throw new Error(
+        'No fue posible obtener el ID de la remisión.'
+      );
+    }
+
+    try {
+      await insertLines(
+        db,
+        shipmentId,
+        data.lines,
+        data.currency
+      );
+    } catch (error) {
+      await db.prepare(`
+        DELETE FROM shipments
+        WHERE id = ?
+      `).bind(
+        shipmentId
+      ).run();
+
+      throw error;
+    }
 
     return json({
       ok: true,
-      id: plantingId,
-      projection:
-        buildProjectionSummary(
-          values,
-          estimatedCosts.values
-        )
+      id: shipmentId,
+      folio
     });
 
-  } catch (exception) {
-    return plantingError(
-      exception,
-      'guardar'
+  } catch (error) {
+    return json(
+      {
+        error:
+          error?.message ||
+          'No fue posible guardar la remisión.'
+      },
+      500
     );
   }
 }
 
 
 /* =========================================================
-   4. ACTUALIZAR SIEMBRA
+   3. EDITAR
    ========================================================= */
 
-export async function onRequestPut({
-  env,
-  request
-}) {
-  const data =
-    await request.json();
+async function onPut({ env, request }) {
+  const db = env.DB;
+  const body = await request.json();
 
   const id =
-    Number(data.id);
+    Number(body.id || 0);
 
   if (!id) {
-    return error(
-      'Falta el identificador de la siembra.'
+    return json(
+      { error: 'Remisión inválida.' },
+      400
+    );
+  }
+
+  const current =
+    await db.prepare(`
+      SELECT id
+      FROM shipments
+      WHERE id = ?
+    `).bind(id).first();
+
+  if (!current) {
+    return json(
+      { error: 'Remisión no encontrada.' },
+      404
     );
   }
 
   const validation =
-    validatePlanting(
-      data
+    await validatePayload(
+      db,
+      body
     );
 
   if (validation.error) {
-    return error(
-      validation.error
+    return json(
+      { error: validation.error },
+      400
     );
   }
 
-  const values =
-    validation.values;
+  const data =
+    validation.data;
 
-  const estimatedCosts =
-    await validateProjectedCosts(
-      env.DB,
-      data.estimated_costs,
-      values
-    );
-
-  if (estimatedCosts.error) {
-    return error(
-      estimatedCosts.error
-    );
-  }
-
-  const exchangeValidation =
-    validateProjectionExchangeRate(
-      values,
-      estimatedCosts.values
-    );
-
-  if (exchangeValidation) {
-    return error(
-      exchangeValidation
-    );
-  }
+  const first =
+    data.lines[0];
 
   try {
-    const result = await env.DB
-      .prepare(`
-        UPDATE plantings
+    await db.prepare(`
+      UPDATE shipments
+      SET
+        shipment_date = ?,
+        planting_id = ?,
+        client_id = ?,
+        product_id = ?,
+        boxes = ?,
+        pounds = ?,
+        standard_box_lbs = ?,
+        price_per_box = ?,
+        currency = ?,
+        exchange_rate = ?,
+        due_date = ?,
+        notes = ?,
+        credit_days = ?,
+        total_boxes = ?,
+        total_pounds = ?,
+        total_amount = ?,
+        mxn_equivalent = ?,
+        updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `).bind(
+      data.shipmentDate,
+      data.plantingId,
+      data.clientId,
+      first.productId,
+      first.boxes,
+      first.pounds,
+      first.lbsPerBox,
+      first.pricePerBox,
+      data.currency,
+      data.exchangeRate || null,
+      data.dueDate,
+      data.notes || null,
+      data.creditDays,
+      data.totalBoxes,
+      data.totalPounds,
+      data.totalAmount,
+      data.mxnEquivalent,
+      id
+    ).run();
 
-        SET
-          contract_number = ?,
-          product_id = ?,
-          client_id = ?,
-          hectares = ?,
-          expected_yield_boxes_ha = ?,
-          density_per_ha = ?,
-          seed_cost_per_thousand = ?,
-          estimated_seed_cost = ?,
-          seed_currency = ?,
-          harvest_start = ?,
-          harvest_end = ?,
-          price_per_box = ?,
-          price_currency = ?,
-          standard_box_lbs = ?,
-          trailers_per_week = ?,
-          status = ?,
-          projection_exchange_rate = ?,
-          notes = ?,
-          updated_at = CURRENT_TIMESTAMP
+    await db.prepare(`
+      DELETE FROM shipment_lines
+      WHERE shipment_id = ?
+    `).bind(id).run();
 
-        WHERE id = ?
-      `)
-      .bind(
-        values.contractNumber,
-        values.productId,
-        values.clientId,
-        values.hectares,
-        values.expectedYield,
-        values.density,
-        values.seedCost,
-        values.estimatedSeedCost,
-        values.seedCurrency,
-        values.harvestStart,
-        values.harvestEnd,
-        values.pricePerBox,
-        values.priceCurrency,
-        values.standardBoxLbs,
-        values.trailersPerWeek,
-        values.status,
-        values.projectionExchangeRate,
-        values.notes,
-        id
-      )
-      .run();
-
-    if (
-      Number(
-        result.meta?.changes || 0
-      ) === 0
-    ) {
-      return error(
-        'No se encontró la siembra que intentas actualizar.'
+    try {
+      await insertLines(
+        db,
+        id,
+        data.lines,
+        data.currency
       );
+    } catch (error) {
+      throw error;
     }
-
-    await replaceProjectedCosts(
-      env.DB,
-      id,
-      estimatedCosts.values
-    );
 
     return json({
       ok: true,
-      id,
-      projection:
-        buildProjectionSummary(
-          values,
-          estimatedCosts.values
-        )
+      id
     });
 
-  } catch (exception) {
-    return plantingError(
-      exception,
-      'actualizar'
+  } catch (error) {
+    return json(
+      {
+        error:
+          error?.message ||
+          'No fue posible actualizar la remisión.'
+      },
+      500
     );
   }
 }
 
 
 /* =========================================================
-   5. ELIMINAR SIEMBRA
+   4. ELIMINAR
    ========================================================= */
 
-export async function onRequestDelete({
-  env,
-  request
-}) {
-  const body =
-    await request.json();
+async function onDelete({ env, request }) {
+  const db = env.DB;
+  const url = new URL(request.url);
 
-  const id =
-    Number(body.id);
+  let id =
+    Number(
+      url.searchParams.get('id') || 0
+    );
 
   if (!id) {
-    return error(
-      'Falta el identificador de la siembra.'
+    try {
+      const body =
+        await request.json();
+
+      id =
+        Number(
+          body.id || 0
+        );
+    } catch {}
+  }
+
+  if (!id) {
+    return json(
+      { error: 'Remisión inválida.' },
+      400
+    );
+  }
+
+  const applications =
+    await db.prepare(`
+      SELECT COUNT(*) AS total
+      FROM payment_applications
+      WHERE shipment_id = ?
+    `).bind(id).first();
+
+  if (
+    Number(
+      applications?.total || 0
+    ) > 0
+  ) {
+    return json(
+      {
+        error:
+          'La remisión tiene cobranza aplicada. Elimina primero sus aplicaciones de cobro.'
+      },
+      409
     );
   }
 
   try {
-    const dependencies =
-      await hasRelatedMovements(
-        env.DB,
-        id
-      );
+    await db.prepare(`
+      DELETE FROM shipment_lines
+      WHERE shipment_id = ?
+    `).bind(id).run();
 
-    if (dependencies) {
-      return error(
-        'Esta siembra ya tiene movimientos relacionados y no puede eliminarse. Puedes conservarla y cambiar su estado.'
-      );
-    }
-
-    await env.DB.batch([
-      env.DB
-        .prepare(`
-          DELETE FROM planting_estimated_costs
-          WHERE planting_id = ?
-        `)
-        .bind(id),
-
-      env.DB
-        .prepare(`
-          DELETE FROM plantings
-          WHERE id = ?
-        `)
-        .bind(id)
-    ]);
+    await db.prepare(`
+      DELETE FROM shipments
+      WHERE id = ?
+    `).bind(id).run();
 
     return json({
       ok: true
     });
 
-  } catch (exception) {
-    console.error(
-      'Error al eliminar siembra:',
-      exception
-    );
-
-    return error(
-      'No fue posible eliminar la siembra.'
+  } catch (error) {
+    return json(
+      {
+        error:
+          error?.message ||
+          'No fue posible eliminar la remisión.'
+      },
+      500
     );
   }
 }
 
 
 /* =========================================================
-   6. VALIDAR Y NORMALIZAR SIEMBRA
+   5. VALIDACIÓN Y CÁLCULOS
    ========================================================= */
 
-function validatePlanting(
-  data
+async function validatePayload(
+  db,
+  body
 ) {
-  const contractNumber =
-    String(
-      data.contract_number || ''
-    ).trim();
-
-  const productId =
-    Number(data.product_id);
-
-  const clientId =
-    Number(data.client_id);
-
-  const hectares =
-    positiveNumber(
-      data.hectares
+  const plantingId =
+    Number(
+      body.planting_id || 0
     );
 
-  const expectedYield =
-    positiveNumber(
-      data.expected_yield_boxes_ha
+  const shipmentDate =
+    cleanText(
+      body.shipment_date
     );
 
-  const density =
-    positiveNumber(
-      data.density_per_ha
-    );
+  const currency =
+    body.currency === 'MXN'
+      ? 'MXN'
+      : body.currency === 'USD'
+        ? 'USD'
+        : '';
 
-  const seedCost =
-    parseMoney(
-      data.seed_cost_per_thousand
-    ) ?? 0;
-
-  const seedCurrency =
-    validCurrency(
-      data.seed_currency,
-      'USD'
-    );
-
-  const harvestStart =
-    String(
-      data.harvest_start || ''
-    ).trim();
-
-  const harvestEnd =
-    String(
-      data.harvest_end || ''
-    ).trim();
-
-  const pricePerBox =
-    parseMoney(
-      data.price_per_box
-    ) ?? 0;
-
-  const priceCurrency =
-    validCurrency(
-      data.price_currency,
-      'USD'
-    );
-
-  const standardBoxLbs =
-    positiveNumber(
-      data.standard_box_lbs
-    ) ?? 12;
-
-  const trailersPerWeek =
-    positiveNumber(
-      data.trailers_per_week
-    ) ?? 1;
-
-  const status =
-    validStatus(
-      data.status
-    );
-
-  const projectionExchangeRate =
-    parseMoney(
-      data.projection_exchange_rate
+  const exchangeRate =
+    numeric(
+      body.exchange_rate
     );
 
   const notes =
-    optionalText(
-      data.notes
+    cleanText(
+      body.notes
     );
 
-  if (!contractNumber) {
+  const rawLines =
+    Array.isArray(
+      body.lines
+    )
+      ? body.lines
+      : [];
+
+  if (!plantingId) {
     return {
       error:
-        'El número de contrato es obligatorio.'
+        'Selecciona una siembra.'
     };
   }
 
-  if (!productId) {
+  if (!shipmentDate) {
     return {
       error:
-        'Debes seleccionar un producto.'
+        'Captura la fecha de la remisión.'
     };
   }
 
-  if (!clientId) {
+  if (!currency) {
     return {
       error:
-        'Debes seleccionar un cliente.'
+        'Selecciona la moneda de la remisión.'
     };
   }
 
-  if (
-    hectares === null ||
-    hectares <= 0
+  if (exchangeRate <= 0) {
+    return {
+      error:
+        'Captura un tipo de cambio mayor a cero.'
+    };
+  }
+
+  if (rawLines.length === 0) {
+    return {
+      error:
+        'Agrega al menos una línea a la remisión.'
+    };
+  }
+
+  const planting =
+    await db.prepare(`
+      SELECT
+        p.id,
+        p.client_id,
+        c.credit_days
+      FROM plantings p
+      JOIN clients c
+        ON c.id = p.client_id
+      WHERE p.id = ?
+    `).bind(
+      plantingId
+    ).first();
+
+  if (!planting) {
+    return {
+      error:
+        'La siembra seleccionada no existe.'
+    };
+  }
+
+  const lines = [];
+
+  for (
+    let index = 0;
+    index < rawLines.length;
+    index += 1
   ) {
-    return {
-      error:
-        'Las hectáreas deben ser mayores a cero.'
-    };
-  }
+    const raw =
+      rawLines[index];
 
-  if (
-    expectedYield === null ||
-    expectedYield < 0
-  ) {
-    return {
-      error:
-        'El rendimiento esperado por hectárea no puede ser negativo.'
-    };
-  }
+    const productId =
+      Number(
+        raw.product_id || 0
+      );
 
-  if (
-    density === null ||
-    density <= 0
-  ) {
-    return {
-      error:
-        'La densidad de siembra debe ser mayor a cero.'
-    };
-  }
+    const boxes =
+      numeric(
+        raw.boxes
+      );
 
-  if (
-    seedCost < 0 ||
-    pricePerBox < 0
-  ) {
-    return {
-      error:
-        'Los importes no pueden ser negativos.'
-    };
-  }
+    const lbsPerBox =
+      numeric(
+        raw.lbs_per_box
+      );
 
-  if (
-    projectionExchangeRate !== null &&
-    projectionExchangeRate <= 0
-  ) {
-    return {
-      error:
-        'El tipo de cambio debe ser mayor a cero.'
-    };
-  }
+    const pricePerBox =
+      numeric(
+        raw.price_per_box
+      );
 
-  if (
-    !harvestStart ||
-    !harvestEnd
-  ) {
-    return {
-      error:
-        'Debes indicar el periodo de cosecha.'
-    };
-  }
+    if (!productId) {
+      return {
+        error:
+          `Selecciona el producto de la línea ${index + 1}.`
+      };
+    }
 
-  if (
-    harvestEnd < harvestStart
-  ) {
-    return {
-      error:
-        'La fecha final de cosecha no puede ser anterior a la fecha inicial.'
-    };
-  }
+    if (boxes <= 0) {
+      return {
+        error:
+          `Las cajas de la línea ${index + 1} deben ser mayores a cero.`
+      };
+    }
 
-  if (
-    standardBoxLbs === null ||
-    standardBoxLbs <= 0
-  ) {
-    return {
-      error:
-        'El peso estándar por caja debe ser mayor a cero.'
-    };
-  }
+    if (lbsPerBox <= 0) {
+      return {
+        error:
+          `Las libras por caja de la línea ${index + 1} deben ser mayores a cero.`
+      };
+    }
 
-  if (!status) {
-    return {
-      error:
-        'El estado de la siembra no es válido.'
-    };
-  }
+    if (pricePerBox < 0) {
+      return {
+        error:
+          `El precio de la línea ${index + 1} no puede ser negativo.`
+      };
+    }
 
-  /*
-   * Compatibilidad con la estructura anterior.
-   * La semilla dejará de sumarse por separado en el nuevo
-   * formulario de proyección; el costo real de la proyección
-   * vivirá en planting_estimated_costs.
-   */
-  const estimatedSeedCost =
-    seedCost > 0
-      ? (
-          hectares *
-          density /
-          1000
-        ) * seedCost
-      : 0;
+    const product =
+      await db.prepare(`
+        SELECT id
+        FROM products
+        WHERE id = ?
+      `).bind(
+        productId
+      ).first();
 
-  return {
-    values: {
-      contractNumber,
+    if (!product) {
+      return {
+        error:
+          `El producto de la línea ${index + 1} no existe.`
+      };
+    }
+
+    const pounds =
+      boxes *
+      lbsPerBox;
+
+    const lineAmount =
+      boxes *
+      pricePerBox;
+
+    lines.push({
       productId,
-      clientId,
-      hectares,
-      expectedYield,
-      density,
-      seedCost,
-      estimatedSeedCost,
-      seedCurrency,
-      harvestStart,
-      harvestEnd,
+      boxes,
+      lbsPerBox,
+      pounds,
       pricePerBox,
-      priceCurrency,
-      standardBoxLbs,
-      trailersPerWeek,
-      status,
-      projectionExchangeRate,
-      notes
-    }
-  };
-}
-
-
-/* =========================================================
-   7. VALIDAR COSTOS PROYECTADOS
-   ========================================================= */
-
-async function validateProjectedCosts(
-  db,
-  costs,
-  planting
-) {
-  if (
-    costs === undefined ||
-    costs === null
-  ) {
-    return {
-      values: []
-    };
-  }
-
-  if (!Array.isArray(costs)) {
-    return {
-      error:
-        'Los costos proyectados no tienen un formato válido.'
-    };
-  }
-
-  const normalized = [];
-
-  for (const rawCost of costs) {
-    const categoryId =
-      Number(
-        rawCost?.category_id
-      ) || null;
-
-    const unitId =
-      Number(
-        rawCost?.expense_unit_id
-      ) || null;
-
-    /*
-     * Compatibilidad temporal con el formulario anterior:
-     * concept + amount + currency.
-     */
-    if (
-      !categoryId &&
-      !unitId
-    ) {
-      const legacyConcept =
-        String(
-          rawCost?.concept || ''
-        ).trim();
-
-      const legacyAmount =
-        parseMoney(
-          rawCost?.amount
-        );
-
-      if (
-        !legacyConcept &&
-        (
-          legacyAmount === null ||
-          legacyAmount === 0
-        )
-      ) {
-        continue;
-      }
-
-      if (!legacyConcept) {
-        return {
-          error:
-            'Cada costo proyectado debe tener un concepto.'
-        };
-      }
-
-      if (
-        legacyAmount === null ||
-        legacyAmount < 0
-      ) {
-        return {
-          error:
-            `El costo proyectado de "${legacyConcept}" no es válido.`
-        };
-      }
-
-      normalized.push({
-        categoryId: null,
-        expenseUnitId: null,
-        concept: legacyConcept,
-        unitAmount: legacyAmount,
-        quantity: 1,
-        amount: legacyAmount,
-        currency:
-          validCurrency(
-            rawCost?.currency,
-            'MXN'
-          ),
-        quantitySource: 'ONE'
-      });
-
-      continue;
-    }
-
-    if (!categoryId) {
-      return {
-        error:
-          'Selecciona un concepto para cada costo proyectado.'
-      };
-    }
-
-    if (!unitId) {
-      return {
-        error:
-          'Selecciona una unidad para cada costo proyectado.'
-      };
-    }
-
-    const [
-      category,
-      unit
-    ] = await Promise.all([
-      db
-        .prepare(`
-          SELECT
-            id,
-            name
-          FROM expense_categories
-          WHERE id = ?
-          LIMIT 1
-        `)
-        .bind(
-          categoryId
-        )
-        .first(),
-
-      db
-        .prepare(`
-          SELECT
-            id,
-            name,
-            quantity_source
-          FROM expense_units
-          WHERE id = ?
-          LIMIT 1
-        `)
-        .bind(
-          unitId
-        )
-        .first()
-    ]);
-
-    if (!category) {
-      return {
-        error:
-          'Uno de los conceptos de gasto seleccionados ya no existe.'
-      };
-    }
-
-    if (!unit) {
-      return {
-        error:
-          'Una de las unidades seleccionadas ya no existe.'
-      };
-    }
-
-    const unitAmount =
-      parseMoney(
-        rawCost?.unit_amount
-      );
-
-    if (
-      unitAmount === null ||
-      unitAmount < 0
-    ) {
-      return {
-        error:
-          `El costo unitario de "${category.name}" no es válido.`
-      };
-    }
-
-    const quantityResult =
-      resolveProjectedQuantity(
-        unit.quantity_source,
-        rawCost?.quantity,
-        planting
-      );
-
-    if (quantityResult.error) {
-      return {
-        error:
-          `${category.name}: ${quantityResult.error}`
-      };
-    }
-
-    const quantity =
-      quantityResult.value;
-
-    const amount =
-      roundMoney(
-        unitAmount *
-        quantity
-      );
-
-    normalized.push({
-      categoryId:
-        Number(category.id),
-      expenseUnitId:
-        Number(unit.id),
-      concept:
-        String(category.name),
-      unitAmount,
-      quantity,
-      amount,
-      currency:
-        validCurrency(
-          rawCost?.currency,
-          'MXN'
-        ),
-      quantitySource:
-        unit.quantity_source
+      lineAmount
     });
   }
 
+  const totalBoxes =
+    lines.reduce(
+      (sum, line) =>
+        sum + line.boxes,
+      0
+    );
+
+  const totalPounds =
+    lines.reduce(
+      (sum, line) =>
+        sum + line.pounds,
+      0
+    );
+
+  const totalAmount =
+    lines.reduce(
+      (sum, line) =>
+        sum + line.lineAmount,
+      0
+    );
+
+  const creditDays =
+    Math.max(
+      0,
+      Number(
+        planting.credit_days || 0
+      )
+    );
+
+  const dueDate =
+    addDays(
+      shipmentDate,
+      creditDays
+    );
+
+  const mxnEquivalent =
+    currency === 'USD'
+      ? totalAmount * exchangeRate
+      : totalAmount;
+
   return {
-    values:
-      normalized
+    data: {
+      plantingId,
+      clientId:
+        Number(
+          planting.client_id
+        ),
+      shipmentDate,
+      currency,
+      exchangeRate,
+      notes,
+      creditDays,
+      dueDate,
+      totalBoxes,
+      totalPounds,
+      totalAmount,
+      mxnEquivalent,
+      lines
+    }
   };
 }
 
 
 /* =========================================================
-   8. RESOLVER CANTIDAD SEGÚN UNIDAD
+   6. CONSECUTIVO
    ========================================================= */
 
-function resolveProjectedQuantity(
-  source,
-  manualQuantity,
-  planting
-) {
-  const projectedBoxes =
-    planting.hectares *
-    planting.expectedYield;
+async function nextSequence(db) {
+  const row =
+    await db.prepare(`
+      SELECT
+        COALESCE(
+          MAX(sequence),
+          0
+        ) + 1 AS next_sequence
+      FROM shipments
+    `).first();
 
-  const projectedPounds =
-    projectedBoxes *
-    planting.standardBoxLbs;
-
-  const projectedPlants =
-    planting.hectares *
-    planting.density;
-
-  switch (source) {
-    case 'ONE':
-      return {
-        value: 1
-      };
-
-    case 'HECTARES':
-      return {
-        value:
-          planting.hectares
-      };
-
-    case 'PROJECTED_BOXES':
-      return {
-        value:
-          projectedBoxes
-      };
-
-    case 'PROJECTED_POUNDS':
-      return {
-        value:
-          projectedPounds
-      };
-
-    case 'THOUSAND_PLANTS':
-      return {
-        value:
-          projectedPlants / 1000
-      };
-
-    case 'MANUAL': {
-      const quantity =
-        positiveNumber(
-          manualQuantity
-        );
-
-      if (
-        quantity === null ||
-        quantity <= 0
-      ) {
-        return {
-          error:
-            'la cantidad debe ser mayor a cero.'
-        };
-      }
-
-      return {
-        value:
-          quantity
-      };
-    }
-
-    default:
-      return {
-        error:
-          'la regla de cálculo de la unidad no es válida.'
-      };
-  }
-}
-
-
-/* =========================================================
-   9. GUARDAR COSTOS PROYECTADOS
-   ========================================================= */
-
-async function replaceProjectedCosts(
-  db,
-  plantingId,
-  costs
-) {
-  const statements = [
-    db
-      .prepare(`
-        DELETE FROM planting_estimated_costs
-        WHERE planting_id = ?
-      `)
-      .bind(
-        plantingId
-      )
-  ];
-
-  costs.forEach(cost => {
-    statements.push(
-      db
-        .prepare(`
-          INSERT INTO planting_estimated_costs (
-            planting_id,
-            category_id,
-            expense_unit_id,
-            concept,
-            unit_amount,
-            quantity,
-            amount,
-            currency
-          )
-
-          VALUES (
-            ?, ?, ?, ?, ?, ?, ?, ?
-          )
-        `)
-        .bind(
-          plantingId,
-          cost.categoryId,
-          cost.expenseUnitId,
-          cost.concept,
-          cost.unitAmount,
-          cost.quantity,
-          cost.amount,
-          cost.currency
-        )
-    );
-  });
-
-  await db.batch(
-    statements
+  return Math.max(
+    1,
+    Number(
+      row?.next_sequence || 1
+    )
   );
 }
 
 
 /* =========================================================
-   10. VALIDAR TIPO DE CAMBIO DE LA PROYECCIÓN
+   7. INSERTAR LÍNEAS
    ========================================================= */
 
-function validateProjectionExchangeRate(
-  planting,
-  costs
-) {
-  const hasMxnCosts =
-    costs.some(cost => {
-      return (
-        cost.currency === 'MXN' &&
-        Number(cost.amount || 0) > 0
-      );
-    });
-
-  const revenueInMxn =
-    planting.priceCurrency === 'MXN' &&
-    (
-      planting.expectedYield *
-      planting.hectares *
-      planting.pricePerBox
-    ) > 0;
-
-  if (
-    (hasMxnCosts || revenueInMxn) &&
-    (
-      !planting.projectionExchangeRate ||
-      planting.projectionExchangeRate <= 0
-    )
-  ) {
-    return (
-      'Captura el tipo de cambio MXN por USD ' +
-      'para consolidar la proyección.'
-    );
-  }
-
-  return null;
-}
-
-
-/* =========================================================
-   11. RESUMEN DE PROYECCIÓN
-   ========================================================= */
-
-function buildProjectionSummary(
-  planting,
-  costs
-) {
-  const projectedBoxes =
-    planting.hectares *
-    planting.expectedYield;
-
-  const projectedPounds =
-    projectedBoxes *
-    planting.standardBoxLbs;
-
-  const projectedPlants =
-    planting.hectares *
-    planting.density;
-
-  const projectedRevenue =
-    projectedBoxes *
-    planting.pricePerBox;
-
-  const exchangeRate =
-    Number(
-      planting.projectionExchangeRate || 0
-    );
-
-  const costTotals =
-    costs.reduce(
-      (accumulator, cost) => {
-        const currency =
-          cost.currency || 'MXN';
-
-        accumulator[currency] =
-          (
-            accumulator[currency] ||
-            0
-          ) + Number(
-            cost.amount || 0
-          );
-
-        return accumulator;
-      },
-      {
-        MXN: 0,
-        USD: 0
-      }
-    );
-
-  const mxnCostsInUsd =
-    exchangeRate > 0
-      ? costTotals.MXN /
-        exchangeRate
-      : 0;
-
-  const consolidatedCostsUsd =
-    costTotals.USD +
-    mxnCostsInUsd;
-
-  const revenueUsd =
-    planting.priceCurrency === 'MXN'
-      ? (
-          exchangeRate > 0
-            ? projectedRevenue /
-              exchangeRate
-            : 0
-        )
-      : projectedRevenue;
-
-  const projectedProfitUsd =
-    revenueUsd -
-    consolidatedCostsUsd;
-
-  const revenueMxn =
-    exchangeRate > 0
-      ? revenueUsd *
-        exchangeRate
-      : (
-          planting.priceCurrency === 'MXN'
-            ? projectedRevenue
-            : 0
-        );
-
-  const consolidatedCostsMxn =
-    exchangeRate > 0
-      ? consolidatedCostsUsd *
-        exchangeRate
-      : costTotals.MXN;
-
-  const projectedProfitMxn =
-    revenueMxn -
-    consolidatedCostsMxn;
-
-  const costPerBoxUsd =
-    projectedBoxes > 0
-      ? consolidatedCostsUsd /
-        projectedBoxes
-      : 0;
-
-  const marginPercent =
-    revenueUsd > 0
-      ? (
-          projectedProfitUsd /
-          revenueUsd
-        ) * 100
-      : 0;
-
-  return {
-    hectares:
-      planting.hectares,
-
-    projected_boxes:
-      projectedBoxes,
-
-    projected_boxes_per_ha:
-      planting.expectedYield,
-
-    projected_pounds:
-      projectedPounds,
-
-    projected_pounds_per_ha:
-      planting.expectedYield *
-      planting.standardBoxLbs,
-
-    projected_plants:
-      projectedPlants,
-
-    projected_plants_per_ha:
-      planting.density,
-
-    projected_revenue:
-      projectedRevenue,
-
-    projected_revenue_per_ha:
-      planting.hectares > 0
-        ? projectedRevenue /
-          planting.hectares
-        : 0,
-
-    revenue_currency:
-      planting.priceCurrency,
-
-    projection_exchange_rate:
-      exchangeRate || null,
-
-    projected_costs_original:
-      {
-        MXN:
-          roundMoney(
-            costTotals.MXN
-          ),
-
-        USD:
-          roundMoney(
-            costTotals.USD
-          )
-      },
-
-    mxn_costs_in_usd:
-      roundMoney(
-        mxnCostsInUsd
-      ),
-
-    consolidated_costs_usd:
-      roundMoney(
-        consolidatedCostsUsd
-      ),
-
-    consolidated_costs_usd_per_ha:
-      planting.hectares > 0
-        ? roundMoney(
-            consolidatedCostsUsd /
-            planting.hectares
-          )
-        : 0,
-
-    revenue_usd:
-      roundMoney(
-        revenueUsd
-      ),
-
-    revenue_usd_per_ha:
-      planting.hectares > 0
-        ? roundMoney(
-            revenueUsd /
-            planting.hectares
-          )
-        : 0,
-
-    revenue_mxn:
-      roundMoney(
-        revenueMxn
-      ),
-
-    revenue_mxn_per_ha:
-      planting.hectares > 0
-        ? roundMoney(
-            revenueMxn /
-            planting.hectares
-          )
-        : 0,
-
-    consolidated_costs_mxn:
-      roundMoney(
-        consolidatedCostsMxn
-      ),
-
-    consolidated_costs_mxn_per_ha:
-      planting.hectares > 0
-        ? roundMoney(
-            consolidatedCostsMxn /
-            planting.hectares
-          )
-        : 0,
-
-    projected_profit_usd:
-      roundMoney(
-        projectedProfitUsd
-      ),
-
-    projected_profit_mxn:
-      roundMoney(
-        projectedProfitMxn
-      ),
-
-    projected_profit_mxn_per_ha:
-      planting.hectares > 0
-        ? roundMoney(
-            projectedProfitMxn /
-            planting.hectares
-          )
-        : 0,
-
-    projected_profit_usd_per_ha:
-      planting.hectares > 0
-        ? roundMoney(
-            projectedProfitUsd /
-            planting.hectares
-          )
-        : 0,
-
-    projected_cost_per_box_usd:
-      roundMoney(
-        costPerBoxUsd
-      ),
-
-    projected_margin_percent:
-      roundMoney(
-        marginPercent
-      )
-  };
-}
-
-
-/* =========================================================
-   12. PROTEGER REGISTROS CON MOVIMIENTOS
-   ========================================================= */
-
-async function hasRelatedMovements(
+async function insertLines(
   db,
-  plantingId
+  shipmentId,
+  lines,
+  currency
 ) {
-  const checks = [
-    'production_records',
-    'shipments',
-    'expenses'
-  ];
-
-  for (const table of checks) {
-    const result = await db
-      .prepare(`
-        SELECT id
-        FROM ${table}
-        WHERE planting_id = ?
-        LIMIT 1
-      `)
-      .bind(
-        plantingId
+  for (const line of lines) {
+    await db.prepare(`
+      INSERT INTO shipment_lines (
+        shipment_id,
+        product_id,
+        boxes,
+        lbs_per_box,
+        pounds,
+        price_per_box,
+        currency,
+        line_amount,
+        updated_at
       )
-      .first();
-
-    if (result) {
-      return true;
-    }
+      VALUES (
+        ?, ?, ?, ?, ?, ?, ?, ?,
+        CURRENT_TIMESTAMP
+      )
+    `).bind(
+      shipmentId,
+      line.productId,
+      line.boxes,
+      line.lbsPerBox,
+      line.pounds,
+      line.pricePerBox,
+      currency,
+      line.lineAmount
+    ).run();
   }
-
-  return false;
 }
 
 
 /* =========================================================
-   13. UTILIDADES
+   8. UTILIDADES
    ========================================================= */
 
-function parseMoney(
-  value
-) {
-  if (
-    value === null ||
-    value === undefined ||
-    value === ''
-  ) {
-    return null;
-  }
-
-  const normalized =
-    String(value)
-      .replaceAll(',', '')
-      .replace(/[^\d.-]/g, '');
-
-  const amount =
-    Number(normalized);
-
-  return Number.isFinite(amount)
-    ? amount
-    : null;
-}
-
-
-function positiveNumber(
-  value
-) {
-  if (
-    value === null ||
-    value === undefined ||
-    value === ''
-  ) {
-    return null;
-  }
-
+function numeric(value) {
   const result =
     Number(
-      String(value)
-        .replaceAll(',', '')
+      String(
+        value ?? 0
+      ).replace(
+        /,/g,
+        ''
+      )
     );
 
   return Number.isFinite(result)
     ? result
-    : null;
+    : 0;
 }
 
 
-function roundMoney(
-  value
-) {
-  const number =
-    Number(value);
+function cleanText(value) {
+  return String(
+    value ?? ''
+  ).trim();
+}
 
-  if (!Number.isFinite(number)) {
-    return 0;
+
+function addDays(
+  isoDate,
+  days
+) {
+  const parts =
+    String(
+      isoDate
+    )
+      .slice(0, 10)
+      .split('-')
+      .map(Number);
+
+  if (
+    parts.length !== 3 ||
+    parts.some(
+      value =>
+        !Number.isFinite(value)
+    )
+  ) {
+    return null;
   }
 
-  return Math.round(
-    (
-      number +
-      Number.EPSILON
-    ) * 100
-  ) / 100;
-}
-
-
-function validCurrency(
-  value,
-  fallback = 'USD'
-) {
-  return [
-    'MXN',
-    'USD'
-  ].includes(value)
-    ? value
-    : fallback;
-}
-
-
-function validStatus(
-  value
-) {
-  const status =
-    String(
-      value || 'Activa'
-    ).trim();
-
-  return [
-    'Activa',
-    'Finalizada',
-    'Cancelada'
-  ].includes(status)
-    ? status
-    : null;
-}
-
-
-function optionalText(
-  value
-) {
   const result =
-    String(
-      value || ''
-    ).trim();
-
-  return result || null;
-}
-
-
-function plantingError(
-  exception,
-  action
-) {
-  const message =
-    String(
-      exception?.message || ''
+    new Date(
+      Date.UTC(
+        parts[0],
+        parts[1] - 1,
+        parts[2]
+      )
     );
 
-  console.error(
-    `Error al ${action} siembra:`,
-    exception
+  result.setUTCDate(
+    result.getUTCDate() +
+    Number(days || 0)
   );
 
-  if (
-    message.includes('UNIQUE')
-  ) {
-    return error(
-      'Ya existe una siembra con ese número de contrato.'
-    );
-  }
-
-  if (
-    message.includes('FOREIGN KEY')
-  ) {
-    return error(
-      'Alguno de los registros relacionados ya no existe.'
-    );
-  }
-
-  if (
-    message.includes('CHECK')
-  ) {
-    return error(
-      'Uno de los datos de la siembra no cumple con las reglas permitidas.'
-    );
-  }
-
-  return error(
-    `No fue posible ${action} la siembra.`
-  );
+  return [
+    result.getUTCFullYear(),
+    String(
+      result.getUTCMonth() + 1
+    ).padStart(2, '0'),
+    String(
+      result.getUTCDate()
+    ).padStart(2, '0')
+  ].join('-');
 }
