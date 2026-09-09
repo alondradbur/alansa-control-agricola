@@ -2404,16 +2404,7 @@ async function printShipmentPdf(id) {
             </strong>
           </div>
 
-          <div>
-            <span>Equivalente USD</span>
-            <strong>
-              ${money(
-                totals.usd,
-                'USD'
-              )}
-            </strong>
-          </div>
-        </section>
+          </section>
 
         ${
           shipment.notes
