@@ -475,85 +475,394 @@ function filterMenu(column) {
 }
 
 function bindTableEvents() {
-  document.querySelectorAll('[data-column]').forEach(button => {
-    button.addEventListener('click', event => {
-      event.stopPropagation();
-      tableState.openColumn = tableState.openColumn === button.dataset.column ? '' : button.dataset.column;
-      renderTableOnly();
-      mountFilterMenu();
+
+  document
+    .querySelectorAll(
+      '[data-column]'
+    )
+    .forEach(button => {
+      button.addEventListener(
+        'click',
+        event => {
+          event.preventDefault();
+          event.stopPropagation();
+
+          const column =
+            button.dataset.column;
+
+          const isSame =
+            tableState.openColumn ===
+            column;
+
+          closeFilterMenu();
+
+          tableState.openColumn =
+            isSame
+              ? ''
+              : column;
+
+          renderTableOnly();
+
+          if (
+            tableState.openColumn
+          ) {
+            mountFilterMenu();
+          }
+        }
+      );
     });
-  });
 
-  document.querySelectorAll('[data-sort-column]').forEach(button => {
-    button.addEventListener('click', () => {
-      tableState.sortKey = button.dataset.sortColumn;
-      tableState.sortDirection = button.dataset.sort;
-      tableState.openColumn = '';
-      renderTableOnly();
+
+  document
+    .querySelectorAll(
+      '[data-sort-column]'
+    )
+    .forEach(button => {
+      button.addEventListener(
+        'click',
+        event => {
+          event.preventDefault();
+          event.stopPropagation();
+
+          tableState.sortKey =
+            button.dataset.sortColumn;
+
+          tableState.sortDirection =
+            button.dataset.sort;
+
+          tableState.openColumn = '';
+
+          closeFilterMenu();
+          renderTableOnly();
+        }
+      );
     });
-  });
 
-  document.querySelectorAll('[data-filter-apply]').forEach(button => {
-    button.addEventListener('click', () => {
-      const key = button.dataset.filterApply;
-      const search = document.querySelector(`[data-filter-search="${key}"]`);
-      tableState.search[key] = search?.value || '';
-      tableState.selected[key] = [...document.querySelectorAll(`[data-filter-value="${key}"]:checked`)].map(input => input.value);
-      tableState.openColumn = '';
-      renderTableOnly();
+
+  document
+    .querySelectorAll(
+      '[data-filter-apply]'
+    )
+    .forEach(button => {
+      button.addEventListener(
+        'click',
+        event => {
+          event.preventDefault();
+          event.stopPropagation();
+
+          const key =
+            button.dataset.filterApply;
+
+          const search =
+            document.querySelector(
+              `[data-filter-search="${key}"]`
+            );
+
+          tableState.search[key] =
+            search?.value.trim() || '';
+
+          tableState.selected[key] =
+            [
+              ...document.querySelectorAll(
+                `[data-filter-value="${key}"]:checked`
+              )
+            ].map(
+              input => input.value
+            );
+
+          tableState.openColumn = '';
+
+          closeFilterMenu();
+          renderTableOnly();
+        }
+      );
     });
-  });
 
-  document.querySelectorAll('[data-filter-clear]').forEach(button => {
-    button.addEventListener('click', () => {
-      const key = button.dataset.filterClear;
-      delete tableState.search[key];
-      delete tableState.selected[key];
-      tableState.openColumn = '';
-      renderTableOnly();
+
+  document
+    .querySelectorAll(
+      '[data-filter-clear]'
+    )
+    .forEach(button => {
+      button.addEventListener(
+        'click',
+        event => {
+          event.preventDefault();
+          event.stopPropagation();
+
+          const key =
+            button.dataset.filterClear;
+
+          delete tableState.search[key];
+          delete tableState.selected[key];
+
+          tableState.openColumn = '';
+
+          closeFilterMenu();
+          renderTableOnly();
+        }
+      );
     });
-  });
 
-  document.querySelectorAll('[data-pay]').forEach(button => {
-    button.addEventListener('click', () => openPaymentModal(Number(button.dataset.pay)));
-  });
 
-  document.querySelectorAll('[data-detail]').forEach(button => {
-    button.addEventListener('click', () => openDetailModal(Number(button.dataset.detail)));
-  });
+  document
+    .querySelectorAll(
+      '[data-filter-menu]'
+    )
+    .forEach(menu => {
+      menu.addEventListener(
+        'click',
+        event => {
+          event.stopPropagation();
+        }
+      );
+    });
+
+
+  document
+    .querySelectorAll(
+      '[data-pay]'
+    )
+    .forEach(button => {
+      button.addEventListener(
+        'click',
+        () => {
+          closeFilterMenu();
+
+          openPaymentModal(
+            Number(
+              button.dataset.pay
+            )
+          );
+        }
+      );
+    });
+
+
+  document
+    .querySelectorAll(
+      '[data-detail]'
+    )
+    .forEach(button => {
+      button.addEventListener(
+        'click',
+        () => {
+          closeFilterMenu();
+
+          openDetailModal(
+            Number(
+              button.dataset.detail
+            )
+          );
+        }
+      );
+    });
 }
+
+function closeFilterMenu() {
+  document
+    .querySelectorAll(
+      '.collections-filter-menu-portal'
+    )
+    .forEach(menu => {
+      menu.remove();
+    });
+}
+
 
 function mountFilterMenu() {
-  if (!tableState.openColumn) return;
 
-  const trigger = document.querySelector(`[data-column="${tableState.openColumn}"]`);
-  const menu = document.querySelector(`[data-filter-menu="${tableState.openColumn}"]`);
-  if (!trigger || !menu) return;
+  closeFilterMenu();
 
-  const rect = trigger.getBoundingClientRect();
+  if (!tableState.openColumn) {
+    return;
+  }
+
+
+  const column =
+    tableState.openColumn;
+
+  const trigger =
+    document.querySelector(
+      `[data-column="${column}"]`
+    );
+
+  const menu =
+    document.querySelector(
+      `[data-filter-menu="${column}"]`
+    );
+
+  if (!trigger || !menu) {
+    return;
+  }
+
+
+  /*
+   * El menú se posiciona tomando como
+   * referencia la columna real, no únicamente
+   * el pequeño botón del filtro.
+   */
+  const header =
+    trigger.closest('th');
+
+  const rect =
+    (
+      header ||
+      trigger
+    ).getBoundingClientRect();
+
+
   const padding = 12;
-  const width = Math.min(310, window.innerWidth - padding * 2);
+  const gap = 7;
 
-  document.body.appendChild(menu);
-  menu.classList.add('collections-filter-menu-portal');
-  menu.style.width = `${width}px`;
-  menu.style.visibility = 'hidden';
+  const width =
+    Math.min(
+      300,
+      window.innerWidth -
+      padding * 2
+    );
 
-  const maxHeight = Math.max(220, Math.min(470, window.innerHeight - 24));
-  menu.style.maxHeight = `${maxHeight}px`;
-  const height = Math.min(menu.getBoundingClientRect().height, maxHeight);
 
-  const left = Math.min(Math.max(padding, rect.left), Math.max(padding, window.innerWidth - width - padding));
-  const below = window.innerHeight - rect.bottom - 10;
-  const above = rect.top - 10;
-  let top = below >= height || below >= above ? rect.bottom + 7 : rect.top - height - 7;
-  top = Math.min(Math.max(padding, top), Math.max(padding, window.innerHeight - height - padding));
+  /*
+   * El filtro se mueve al body para evitar
+   * que el overflow de la tabla lo recorte.
+   */
+  document.body.appendChild(
+    menu
+  );
 
-  menu.style.left = `${left}px`;
-  menu.style.top = `${top}px`;
-  menu.style.visibility = 'visible';
+  menu.classList.add(
+    'collections-filter-menu-portal'
+  );
+
+  menu.style.width =
+    `${width}px`;
+
+  menu.style.visibility =
+    'hidden';
+
+
+  const availableHeight =
+    window.innerHeight -
+    padding * 2;
+
+  const maxHeight =
+    Math.min(
+      440,
+      availableHeight
+    );
+
+  menu.style.maxHeight =
+    `${maxHeight}px`;
+
+
+  const measuredHeight =
+    menu.getBoundingClientRect()
+      .height;
+
+  const height =
+    Math.min(
+      measuredHeight,
+      maxHeight
+    );
+
+
+  /*
+   * Alineación horizontal:
+   * intenta iniciar exactamente donde
+   * comienza la columna.
+   */
+  let left =
+    rect.left;
+
+  if (
+    left + width >
+    window.innerWidth - padding
+  ) {
+    left =
+      rect.right -
+      width;
+  }
+
+  left =
+    Math.max(
+      padding,
+      Math.min(
+        left,
+        window.innerWidth -
+        width -
+        padding
+      )
+    );
+
+
+  /*
+   * Alineación vertical:
+   * abre debajo del encabezado siempre
+   * que haya espacio suficiente.
+   */
+  const spaceBelow =
+    window.innerHeight -
+    rect.bottom -
+    padding -
+    gap;
+
+  const spaceAbove =
+    rect.top -
+    padding -
+    gap;
+
+
+  let top;
+
+  if (
+    height <= spaceBelow ||
+    spaceBelow >= spaceAbove
+  ) {
+    top =
+      rect.bottom +
+      gap;
+  } else {
+    top =
+      rect.top -
+      height -
+      gap;
+  }
+
+
+  top =
+    Math.max(
+      padding,
+      Math.min(
+        top,
+        window.innerHeight -
+        height -
+        padding
+      )
+    );
+
+
+  menu.style.left =
+    `${left}px`;
+
+  menu.style.top =
+    `${top}px`;
+
+  menu.style.visibility =
+    'visible';
+
+
+  /*
+   * Impide que un clic dentro del menú
+   * sea interpretado como clic exterior.
+   */
+  menu.addEventListener(
+    'click',
+    event => {
+      event.stopPropagation();
+    }
+  );
 }
-
 
 /* =========================================================
    7. REGISTRAR / EDITAR PAGO
