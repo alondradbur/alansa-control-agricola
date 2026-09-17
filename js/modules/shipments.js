@@ -3462,6 +3462,39 @@ function printShipmentsReport() {
             font-size: 7.5pt;
           }
 
+          .preview-toolbar {
+            display: flex;
+            justify-content: flex-end;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            padding: 12px 16px;
+            background: #ffffff;
+            border-bottom: 1px solid #dce5e0;
+          }
+
+          .preview-toolbar button {
+            padding: 10px 16px;
+            border: 1px solid #245d39;
+            border-radius: 8px;
+            background: #245d39;
+            color: #ffffff;
+            font: inherit;
+            font-weight: 700;
+            cursor: pointer;
+          }
+
+          @media screen and (max-width: 600px) {
+            .preview-toolbar {
+              justify-content: stretch;
+              padding: 10px;
+            }
+
+            .preview-toolbar button {
+              width: 100%;
+            }
+          }
+
           @media print {
 
             body {
@@ -3474,6 +3507,10 @@ function printShipmentsReport() {
               break-inside: avoid;
             }
 
+            .preview-toolbar {
+              display: none !important;
+            }
+
           }
 
         </style>
@@ -3481,6 +3518,12 @@ function printShipmentsReport() {
       </head>
 
       <body>
+
+        <div class="preview-toolbar">
+          <button type="button" onclick="window.print()">
+            Imprimir / Guardar como PDF
+          </button>
+        </div>
 
         <main class="report">
 
@@ -3750,18 +3793,8 @@ function printShipmentsReport() {
         </main>
 
         <script>
-
-          window.onload = () => {
-
-            setTimeout(
-              () => {
-                window.print();
-              },
-              250
-            );
-
-          };
-
+          // Vista previa persistente: la impresión solo se abre cuando
+          // el usuario pulsa el botón de la barra superior.
         <\/script>
 
       </body>
@@ -3972,15 +4005,63 @@ async function printShipmentPdf(id) {
   font-weight: 700;
 }
 
+          .preview-toolbar {
+            display: flex;
+            justify-content: flex-end;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            margin: -34px -34px 24px;
+            padding: 12px 16px;
+            background: #ffffff;
+            border-bottom: 1px solid #dce5e0;
+          }
+
+          .preview-toolbar button {
+            padding: 10px 16px;
+            border: 1px solid #245d39;
+            border-radius: 8px;
+            background: #245d39;
+            color: #ffffff;
+            font: inherit;
+            font-weight: 700;
+            cursor: pointer;
+          }
+
+          @media screen and (max-width: 600px) {
+            body {
+              padding: 18px;
+            }
+
+            .preview-toolbar {
+              margin: -18px -18px 20px;
+              padding: 10px;
+            }
+
+            .preview-toolbar button {
+              width: 100%;
+            }
+          }
+
           @media print {
             body {
               padding: 18px;
+            }
+
+            .preview-toolbar {
+              display: none !important;
             }
           }
         </style>
       </head>
 
       <body>
+
+        <div class="preview-toolbar">
+          <button type="button" onclick="window.print()">
+            Imprimir / Guardar como PDF
+          </button>
+        </div>
 
         <header class="head">
           <div class="pdf-brand">
@@ -4213,9 +4294,8 @@ ${
     : ''
 }
         <script>
-          window.onload = () => {
-            window.print();
-          };
+          // Vista previa persistente: la impresión solo se abre cuando
+          // el usuario pulsa el botón de la barra superior.
         <\/script>
 
       </body>
