@@ -257,23 +257,54 @@ export function shell(content) {
       class="nav-item ${state.route === id ? 'active' : ''}"
       type="button"
     >
-      <span class="nav-icon">
-        ${icons[id]}
-      </span>
-
-      <span class="nav-label">
-        ${label}
-      </span>
+      <span class="nav-icon">${icons[id]}</span>
+      <span class="nav-label">${label}</span>
     </button>
   `).join('');
 
   return `
     <div class="app-shell">
 
-      <aside class="sidebar">
+      <header class="mobile-app-header">
+        <button
+          class="mobile-menu-button"
+          id="mobileMenuBtn"
+          type="button"
+          aria-label="Abrir menú"
+          aria-controls="mobileDrawer"
+          aria-expanded="false"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 7h16"></path>
+            <path d="M4 12h16"></path>
+            <path d="M4 17h16"></path>
+          </svg>
+        </button>
 
+        <div class="mobile-app-title">
+          <strong>Sistema de Control</strong>
+          <span>Agrícola</span>
+        </div>
+
+        <div class="mobile-user-badge" aria-label="Usuario actual">
+          ${state.user?.display_name || '—'}
+        </div>
+      </header>
+
+      <button
+        class="mobile-drawer-backdrop"
+        id="mobileDrawerBackdrop"
+        type="button"
+        aria-label="Cerrar menú"
+        tabindex="-1"
+      ></button>
+
+      <aside
+        class="sidebar"
+        id="mobileDrawer"
+        aria-label="Navegación principal"
+      >
         <div class="sidebar-brand">
-
           <img
             src="/assets/icon-512.png"
             alt="Sistema Agrícola"
@@ -281,15 +312,21 @@ export function shell(content) {
           >
 
           <div class="sidebar-brand-text">
-            <strong>
-              Sistema de Control
-            </strong>
-
-            <span>
-              Agrícola
-            </span>
+            <strong>Sistema de Control</strong>
+            <span>Agrícola</span>
           </div>
 
+          <button
+            class="mobile-drawer-close"
+            id="mobileDrawerClose"
+            type="button"
+            aria-label="Cerrar menú"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M6 6l12 12"></path>
+              <path d="M18 6 6 18"></path>
+            </svg>
+          </button>
         </div>
 
         <nav class="nav">
@@ -297,23 +334,15 @@ export function shell(content) {
         </nav>
 
         <div class="sidebar-foot">
-
           <div class="sidebar-user">
-
             <div class="sidebar-user-avatar">
               ${state.user?.display_name || '—'}
             </div>
 
             <div class="sidebar-user-info">
-              <strong>
-                Usuario ${state.user?.display_name || '—'}
-              </strong>
-
-              <span>
-                ${state.user?.role || '—'}
-              </span>
+              <strong>Usuario ${state.user?.display_name || '—'}</strong>
+              <span>${state.user?.role || '—'}</span>
             </div>
-
           </div>
 
           <button
@@ -321,65 +350,19 @@ export function shell(content) {
             id="logoutBtn"
             type="button"
           >
-            <svg
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-            >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M10 4H5v16h5"></path>
               <path d="M14 8l4 4-4 4"></path>
               <path d="M18 12H9"></path>
             </svg>
-
-            <span>
-              Salir
-            </span>
+            <span>Salir</span>
           </button>
-
         </div>
-
       </aside>
 
       <main class="main">
         ${content}
       </main>
-
-      <nav class="mobile-bar">
-
-        <button
-          data-route="dashboard"
-          class="${state.route === 'dashboard' ? 'active' : ''}"
-        >
-          ⌂
-          <span>Inicio</span>
-        </button>
-
-        <button
-          data-route="shipments"
-          class="${state.route === 'shipments' ? 'active' : ''}"
-        >
-          ▤
-          <span>Remisiones</span>
-        </button>
-
-        <button id="quickAdd">
-          <span class="plus">＋</span>
-          <span>Nuevo</span>
-        </button>
-
-        <button
-          data-route="collections"
-          class="${state.route === 'collections' ? 'active' : ''}"
-        >
-          $
-          <span>Cobranza</span>
-        </button>
-
-        <button data-route="more">
-          ☰
-          <span>Más</span>
-        </button>
-
-      </nav>
 
     </div>
   `;
@@ -392,30 +375,60 @@ export function shell(content) {
 
 export function bindLayout(navigate) {
 
+  const sidebar = document.querySelector('#mobileDrawer');
+  const backdrop = document.querySelector('#mobileDrawerBackdrop');
+  const menuButton = document.querySelector('#mobileMenuBtn');
+
+  const setDrawer = open => {
+    sidebar?.classList.toggle('mobile-open', open);
+    backdrop?.classList.toggle('visible', open);
+    document.body.classList.toggle('mobile-menu-open', open);
+    menuButton?.setAttribute('aria-expanded', String(open));
+  };
+
   document
     .querySelectorAll('[data-route]')
     .forEach(btn => {
-
       btn.addEventListener('click', () => {
+        setDrawer(false);
         navigate(btn.dataset.route);
       });
-
     });
+
+  menuButton
+    ?.addEventListener('click', () => {
+      setDrawer(!sidebar?.classList.contains('mobile-open'));
+    });
+
+  document
+    .querySelector('#mobileDrawerClose')
+    ?.addEventListener('click', () => setDrawer(false));
+
+  backdrop
+    ?.addEventListener('click', () => setDrawer(false));
+
+  if (window.__alansaLayoutKeydown) {
+    document.removeEventListener(
+      'keydown',
+      window.__alansaLayoutKeydown
+    );
+  }
+
+  window.__alansaLayoutKeydown = event => {
+    if (event.key === 'Escape') {
+      setDrawer(false);
+    }
+  };
+
+  document.addEventListener(
+    'keydown',
+    window.__alansaLayoutKeydown
+  );
 
   document
     .querySelector('#logoutBtn')
     ?.addEventListener('click', () => {
-
       logout();
       location.reload();
-
-    });
-
-  document
-    .querySelector('#quickAdd')
-    ?.addEventListener('click', () => {
-
-      navigate('shipments');
-
     });
 }
