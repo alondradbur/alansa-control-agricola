@@ -413,9 +413,49 @@ function portfolioTable() {
       </table>
     </div>
 
+    <div class="collections-mobile-list">
+      ${rows.map(collectionMobileCard).join('')}
+    </div>
+
     <div class="collections-table-meta">
       Mostrando ${number(rows.length)} de ${number(globalRows().length)} remisiones
     </div>
+  `;
+}
+
+function collectionMobileCard(row) {
+  return `
+    <article class="collection-mobile-card">
+      <div class="collection-mobile-head">
+        <button class="collections-folio collection-mobile-folio" data-detail="${row.id}" type="button">${escapeHtml(row.folio)}</button>
+        ${statusBadge(row.financial_status)}
+      </div>
+
+      <div class="collection-mobile-client">
+        <strong>${escapeHtml(row.client_name || '—')}</strong>
+        <span>Contrato ${escapeHtml(row.contract_number || '—')}</span>
+      </div>
+
+      <div class="collection-mobile-dates">
+        <div><span>Fecha</span><strong>${date(row.shipment_date)}</strong></div>
+        <div><span>Vencimiento</span><strong>${date(row.due_date)}</strong></div>
+        <div><span>Días</span><strong>${daysLabel(row)}</strong></div>
+      </div>
+
+      <div class="collection-mobile-money">
+        <div><span>Total MXN</span><strong>${money(row.total_mxn, 'MXN')}</strong></div>
+        <div><span>Total USD</span><strong>${money(row.total_usd, 'USD')}</strong></div>
+        <div><span>Cobrado MXN</span><strong>${money(row.collected_mxn, 'MXN')}</strong></div>
+        <div><span>Cobrado USD</span><strong>${money(row.collected_usd, 'USD')}</strong></div>
+        <div class="collection-mobile-balance"><span>Saldo MXN</span><strong>${money(row.balance_mxn, 'MXN')}</strong></div>
+        <div class="collection-mobile-balance"><span>Saldo USD</span><strong>${money(row.balance_usd, 'USD')}</strong></div>
+      </div>
+
+      <div class="collection-mobile-actions">
+        <button class="btn" data-detail="${row.id}" type="button">Ver detalle</button>
+        ${row.balance_original > 0 ? `<button class="btn primary collections-pay-btn" data-pay="${row.id}" type="button">Registrar pago</button>` : ''}
+      </div>
+    </article>
   `;
 }
 
