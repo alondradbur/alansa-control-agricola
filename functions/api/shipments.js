@@ -218,9 +218,7 @@ const folio =
   buildShipmentFolio({
     productName:
       data.plantingProductName,
-    contractNumber:
-      data.contractNumber,
-    plantingSequence,
+    sequence: next,
     shipmentDate:
       data.shipmentDate
   });
@@ -882,8 +880,7 @@ async function nextPlantingSequence(
 
 function buildShipmentFolio({
   productName,
-  contractNumber,
-  plantingSequence,
+  sequence,
   shipmentDate
 }) {
   const product =
@@ -906,14 +903,9 @@ function buildShipmentFolio({
         ''
       );
 
-  const contract =
-    String(
-      contractNumber || ''
-    ).trim();
-
   const consecutive =
     String(
-      plantingSequence
+      sequence
     ).padStart(
       2,
       '0'
@@ -929,7 +921,6 @@ function buildShipmentFolio({
 
   return (
     `REM-${product}-` +
-    `${contract}-` +
     `${consecutive}-` +
     `${year}`
   );
