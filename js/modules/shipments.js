@@ -1071,6 +1071,57 @@ function tableAreaHtml() {
       </table>
 
     </div>
+
+    <div class="shipments-mobile-list">
+      ${rows.length
+        ? rows.map(shipmentMobileCardHtml).join('')
+        : `<div class="shipments-mobile-empty">No se encontraron remisiones con los filtros seleccionados.</div>`
+      }
+    </div>
+  `;
+}
+
+
+function shipmentMobileCardHtml(row) {
+  const totals = bothCurrencies(row);
+  const status = financialStatus(row);
+
+  return `
+    <article class="shipment-mobile-card">
+      <div class="shipment-mobile-card-head">
+        <div>
+          <span class="shipment-mobile-label">Folio</span>
+          <strong class="shipment-mobile-folio">${escapeHtml(row.folio)}</strong>
+        </div>
+        ${statusBadge(status)}
+      </div>
+
+      <div class="shipment-mobile-primary">
+        <div>
+          <span class="shipment-mobile-label">Cliente</span>
+          <strong>${escapeHtml(row.client_name || '—')}</strong>
+        </div>
+        <div>
+          <span class="shipment-mobile-label">Contrato</span>
+          <strong>${escapeHtml(row.contract_number || '—')}</strong>
+        </div>
+      </div>
+
+      <div class="shipment-mobile-grid">
+        <div><span>Fecha</span><strong>${safeDate(row.shipment_date)}</strong></div>
+        <div><span>Vencimiento</span><strong>${safeDate(row.due_date)}</strong></div>
+        <div><span>Producto(s)</span><strong>${escapeHtml(row.product_names || '—')}</strong></div>
+        <div><span>Cajas / Libras</span><strong>${number(row.total_boxes, 0)} / ${number(row.total_pounds, 2)}</strong></div>
+        <div><span>Total MXN</span><strong>${money(totals.mxn, 'MXN')}</strong></div>
+        <div><span>Total USD</span><strong>${money(totals.usd, 'USD')}</strong></div>
+      </div>
+
+      <div class="shipment-mobile-actions">
+        <button class="btn shipment-pdf" data-id="${row.id}" type="button">PDF</button>
+        <button class="btn shipment-edit" data-id="${row.id}" type="button">Editar</button>
+        <button class="btn danger shipment-delete" data-id="${row.id}" data-folio="${escapeHtml(row.folio)}" type="button">Eliminar</button>
+      </div>
+    </article>
   `;
 }
 
