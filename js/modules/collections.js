@@ -1198,7 +1198,6 @@ function printReport() {
     <table><thead><tr><th>Folio</th><th>Fecha</th><th>Vencimiento</th><th>Contrato</th><th>Cliente</th><th>Total MXN</th><th>Total USD</th><th>Cobrado MXN</th><th>Cobrado USD</th><th>Saldo MXN</th><th>Saldo USD</th><th>Estatus</th></tr></thead><tbody>
       ${rows.map(row => `<tr><td>${escapeHtml(row.folio)}</td><td>${date(row.shipment_date)}</td><td>${date(row.due_date)}</td><td>${escapeHtml(row.contract_number||'—')}</td><td>${escapeHtml(row.client_name||'—')}</td><td class="num">${money(row.total_mxn,'MXN')}</td><td class="num">${money(row.total_usd,'USD')}</td><td class="num">${money(row.collected_mxn,'MXN')}</td><td class="num">${money(row.collected_usd,'USD')}</td><td class="num">${money(row.balance_mxn,'MXN')}</td><td class="num">${money(row.balance_usd,'USD')}</td><td>${row.financial_status}</td></tr>`).join('')}
     </tbody><tfoot><tr><td colspan="5">TOTAL</td><td class="num">${money(totals.totalMxn,'MXN')}</td><td class="num">${money(totals.totalUsd,'USD')}</td><td class="num">${money(totals.collectedMxn,'MXN')}</td><td class="num">${money(totals.collectedUsd,'USD')}</td><td class="num">${money(totals.balanceMxn,'MXN')}</td><td class="num">${money(totals.balanceUsd,'USD')}</td><td></td></tr></tfoot></table>
-    <script>window.addEventListener('load',()=>setTimeout(()=>window.print(),250));<\/script>
   </body></html>`);
   popup.document.close();
 }
