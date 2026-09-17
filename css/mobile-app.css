@@ -596,3 +596,466 @@
     transition: none;
   }
 }
+
+/* =========================================================
+   ALANSA · MODO MÓVIL REAL
+   En teléfono las tablas operativas se convierten en tarjetas.
+   Escritorio conserva las tablas originales.
+   ========================================================= */
+@media (max-width: 760px) {
+  /* Dashboard: la proyección deja de ser una matriz comprimida. */
+  .dashboard-v2-table-wrap {
+    overflow: visible !important;
+  }
+
+  .projection-dashboard-table,
+  .projection-dashboard-table tbody,
+  .projection-dashboard-table tr,
+  .projection-dashboard-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .projection-dashboard-table thead {
+    display: none;
+  }
+
+  .projection-dashboard-table {
+    min-width: 0 !important;
+    border: 0 !important;
+    background: transparent;
+  }
+
+  .projection-dashboard-table tbody {
+    display: grid;
+    gap: 10px;
+  }
+
+  .projection-dashboard-table tbody tr {
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: 13px;
+    background: #fff;
+  }
+
+  .projection-dashboard-table tbody td {
+    min-width: 0 !important;
+    padding: 10px 12px !important;
+    border: 0 !important;
+    border-bottom: 1px solid var(--border) !important;
+    text-align: right !important;
+  }
+
+  .projection-dashboard-table tbody td:first-child {
+    background: #f7faf7;
+    text-align: left !important;
+  }
+
+  .projection-dashboard-table tbody td:last-child {
+    border-bottom: 0 !important;
+  }
+
+  .projection-dashboard-table tbody td:nth-child(2)::before { content: 'Por ha · MXN'; }
+  .projection-dashboard-table tbody td:nth-child(3)::before { content: 'Por ha · USD'; }
+  .projection-dashboard-table tbody td:nth-child(4)::before { content: 'Siembra · MXN'; }
+  .projection-dashboard-table tbody td:nth-child(5)::before { content: 'Siembra · USD'; }
+
+  .projection-dashboard-table tbody td:not(:first-child)::before {
+    float: left;
+    margin-right: 12px;
+    color: var(--muted);
+    font-size: .69rem;
+    font-weight: 750;
+    text-transform: uppercase;
+  }
+
+  /* Dashboard: Remisiones y vencimientos como tarjetas. */
+  .dashboard-excel-table-scroll,
+  .dashboard-v2-due-scroll {
+    overflow: visible !important;
+    max-height: none !important;
+  }
+
+  .dashboard-excel-table,
+  .dashboard-excel-table tbody,
+  .dashboard-excel-table tr,
+  .dashboard-excel-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .dashboard-excel-table {
+    min-width: 0 !important;
+    border: 0 !important;
+    background: transparent;
+  }
+
+  .dashboard-excel-table thead {
+    display: none;
+  }
+
+  .dashboard-excel-table tbody {
+    display: grid;
+    gap: 10px;
+  }
+
+  .dashboard-excel-table tbody tr {
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: 13px;
+    background: #fff;
+  }
+
+  .dashboard-excel-table tbody td {
+    min-width: 0 !important;
+    display: grid;
+    grid-template-columns: minmax(100px, .8fr) minmax(0, 1.2fr);
+    gap: 12px;
+    align-items: center;
+    padding: 9px 12px !important;
+    border: 0 !important;
+    border-bottom: 1px solid var(--border) !important;
+    text-align: right !important;
+    overflow-wrap: anywhere;
+  }
+
+  .dashboard-excel-table tbody td:last-child {
+    border-bottom: 0 !important;
+  }
+
+  .dashboard-excel-table tbody td::before {
+    color: var(--muted);
+    font-size: .68rem;
+    font-weight: 750;
+    text-align: left;
+    text-transform: uppercase;
+  }
+
+  .dashboard-excel-table:not(.dashboard-due-excel-table) tbody td:nth-child(1)::before { content: 'Remisión'; }
+  .dashboard-excel-table:not(.dashboard-due-excel-table) tbody td:nth-child(2)::before { content: 'Fecha'; }
+  .dashboard-excel-table:not(.dashboard-due-excel-table) tbody td:nth-child(3)::before { content: 'Cliente'; }
+  .dashboard-excel-table:not(.dashboard-due-excel-table) tbody td:nth-child(4)::before { content: 'Monto MXN'; }
+  .dashboard-excel-table:not(.dashboard-due-excel-table) tbody td:nth-child(5)::before { content: 'Monto USD'; }
+  .dashboard-excel-table:not(.dashboard-due-excel-table) tbody td:nth-child(6)::before { content: 'Estatus'; }
+
+  .dashboard-due-excel-table tbody td:nth-child(1)::before { content: 'Remisión'; }
+  .dashboard-due-excel-table tbody td:nth-child(2)::before { content: 'Fecha'; }
+  .dashboard-due-excel-table tbody td:nth-child(3)::before { content: 'Vencimiento'; }
+  .dashboard-due-excel-table tbody td:nth-child(4)::before { content: 'Cliente'; }
+  .dashboard-due-excel-table tbody td:nth-child(5)::before { content: 'Monto MXN'; }
+  .dashboard-due-excel-table tbody td:nth-child(6)::before { content: 'Monto USD'; }
+  .dashboard-due-excel-table tbody td:nth-child(7)::before { content: 'Días'; }
+
+  .dashboard-excel-table tfoot {
+    display: block;
+    margin-top: 10px;
+  }
+
+  .dashboard-excel-table tfoot tr {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 6px;
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: 13px;
+    background: #f7faf7;
+  }
+
+  .dashboard-excel-table tfoot td {
+    display: block;
+    width: 100%;
+    padding: 0 !important;
+    border: 0 !important;
+    text-align: left !important;
+  }
+
+  /* Remisiones: una remisión = una tarjeta completa. */
+  .shipments-v2-scroll {
+    overflow: visible !important;
+    max-height: none !important;
+  }
+
+  .shipments-v2-table,
+  .shipments-v2-table tbody,
+  .shipments-v2-table tr,
+  .shipments-v2-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .shipments-v2-table {
+    min-width: 0 !important;
+    border: 0 !important;
+    background: transparent;
+  }
+
+  .shipments-v2-table thead {
+    display: none;
+  }
+
+  .shipments-v2-table tbody {
+    display: grid;
+    gap: 12px;
+  }
+
+  .shipments-v2-table tbody tr {
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: 15px;
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(16, 42, 19, .04);
+  }
+
+  .shipments-v2-table tbody td {
+    min-width: 0 !important;
+    max-width: none !important;
+    display: grid;
+    grid-template-columns: minmax(105px, .8fr) minmax(0, 1.2fr);
+    gap: 12px;
+    align-items: center;
+    padding: 9px 12px !important;
+    border: 0 !important;
+    border-bottom: 1px solid var(--border) !important;
+    text-align: right !important;
+    white-space: normal !important;
+    overflow-wrap: anywhere;
+  }
+
+  .shipments-v2-table tbody td:last-child {
+    border-bottom: 0 !important;
+  }
+
+  .shipments-v2-table tbody td::before {
+    color: var(--muted);
+    font-size: .68rem;
+    font-weight: 750;
+    text-align: left;
+    text-transform: uppercase;
+  }
+
+  .shipments-v2-table tbody td:nth-child(1)::before { content: 'Folio'; }
+  .shipments-v2-table tbody td:nth-child(2)::before { content: 'Fecha'; }
+  .shipments-v2-table tbody td:nth-child(3)::before { content: 'Contrato'; }
+  .shipments-v2-table tbody td:nth-child(4)::before { content: 'Cliente'; }
+  .shipments-v2-table tbody td:nth-child(5)::before { content: 'Producto'; }
+  .shipments-v2-table tbody td:nth-child(6)::before { content: 'Cajas'; }
+  .shipments-v2-table tbody td:nth-child(7)::before { content: 'Libras'; }
+  .shipments-v2-table tbody td:nth-child(8)::before { content: 'Total MXN'; }
+  .shipments-v2-table tbody td:nth-child(9)::before { content: 'Total USD'; }
+  .shipments-v2-table tbody td:nth-child(10)::before { content: 'Vencimiento'; }
+  .shipments-v2-table tbody td:nth-child(11)::before { content: 'Estado'; }
+  .shipments-v2-table tbody td:nth-child(12)::before { content: 'Acciones'; }
+
+  .shipments-v2-table .shipment-cell-folio {
+    font-weight: 800;
+    color: var(--alansa-900);
+  }
+
+  .shipments-v2-table tbody td:nth-child(12) > * {
+    justify-self: end;
+  }
+
+  .shipments-v2-table tfoot {
+    display: none;
+  }
+
+  /* Cobranza: cartera en tarjetas, sin perder ningún dato. */
+  .collections-table-scroll {
+    overflow: visible !important;
+    max-height: none !important;
+  }
+
+  .collections-table,
+  .collections-table tbody,
+  .collections-table tr,
+  .collections-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .collections-table {
+    min-width: 0 !important;
+    border: 0 !important;
+    background: transparent;
+  }
+
+  .collections-table thead {
+    display: none;
+  }
+
+  .collections-table tbody {
+    display: grid;
+    gap: 12px;
+  }
+
+  .collections-table tbody tr {
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: 15px;
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(16, 42, 19, .04);
+  }
+
+  .collections-table tbody td {
+    min-width: 0 !important;
+    max-width: none !important;
+    display: grid;
+    grid-template-columns: minmax(110px, .82fr) minmax(0, 1.18fr);
+    gap: 12px;
+    align-items: center;
+    padding: 9px 12px !important;
+    border: 0 !important;
+    border-bottom: 1px solid var(--border) !important;
+    text-align: right !important;
+    white-space: normal !important;
+    overflow-wrap: anywhere;
+  }
+
+  .collections-table tbody td:last-child {
+    border-bottom: 0 !important;
+  }
+
+  .collections-table tbody td::before {
+    color: var(--muted);
+    font-size: .68rem;
+    font-weight: 750;
+    text-align: left;
+    text-transform: uppercase;
+  }
+
+  .collections-table tbody td:nth-child(1)::before { content: 'Folio'; }
+  .collections-table tbody td:nth-child(2)::before { content: 'Fecha'; }
+  .collections-table tbody td:nth-child(3)::before { content: 'Vencimiento'; }
+  .collections-table tbody td:nth-child(4)::before { content: 'Contrato'; }
+  .collections-table tbody td:nth-child(5)::before { content: 'Cliente'; }
+  .collections-table tbody td:nth-child(6)::before { content: 'Total MXN'; }
+  .collections-table tbody td:nth-child(7)::before { content: 'Total USD'; }
+  .collections-table tbody td:nth-child(8)::before { content: 'Cobrado MXN'; }
+  .collections-table tbody td:nth-child(9)::before { content: 'Cobrado USD'; }
+  .collections-table tbody td:nth-child(10)::before { content: 'Saldo MXN'; }
+  .collections-table tbody td:nth-child(11)::before { content: 'Saldo USD'; }
+  .collections-table tbody td:nth-child(12)::before { content: 'Días'; }
+  .collections-table tbody td:nth-child(13)::before { content: 'Estatus'; }
+  .collections-table tbody td:nth-child(14)::before { content: 'Acciones'; }
+
+  .collections-row-actions {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 8px !important;
+  }
+
+  .collections-row-actions .btn,
+  .collections-row-actions .icon-btn {
+    width: 100%;
+    min-height: 44px;
+  }
+
+  .collections-table tfoot {
+    display: none;
+  }
+
+  /* Siembras y Gastos: tablas generales a tarjetas. */
+  .content > .table-card .table-scroll:not(.shipments-v2-scroll),
+  .desktop-table {
+    overflow: visible !important;
+  }
+
+  .content > .table-card .table-scroll:not(.shipments-v2-scroll) > table,
+  .content > .table-card .table-scroll:not(.shipments-v2-scroll) > table tbody,
+  .content > .table-card .table-scroll:not(.shipments-v2-scroll) > table tr,
+  .content > .table-card .table-scroll:not(.shipments-v2-scroll) > table td,
+  .desktop-table > table,
+  .desktop-table > table tbody,
+  .desktop-table > table tr,
+  .desktop-table > table td {
+    display: block;
+    width: 100%;
+  }
+
+  .content > .table-card .table-scroll:not(.shipments-v2-scroll) > table,
+  .desktop-table > table {
+    min-width: 0 !important;
+    border: 0 !important;
+    background: transparent;
+  }
+
+  .content > .table-card .table-scroll:not(.shipments-v2-scroll) > table thead,
+  .desktop-table > table thead {
+    display: none;
+  }
+
+  .content > .table-card .table-scroll:not(.shipments-v2-scroll) > table tbody,
+  .desktop-table > table tbody {
+    display: grid;
+    gap: 12px;
+  }
+
+  .content > .table-card .table-scroll:not(.shipments-v2-scroll) > table tbody tr,
+  .desktop-table > table tbody tr {
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: 15px;
+    background: #fff;
+  }
+
+  .content > .table-card .table-scroll:not(.shipments-v2-scroll) > table tbody td,
+  .desktop-table > table tbody td {
+    min-width: 0 !important;
+    display: grid;
+    grid-template-columns: minmax(110px, .85fr) minmax(0, 1.15fr);
+    gap: 12px;
+    align-items: center;
+    padding: 9px 12px !important;
+    border: 0 !important;
+    border-bottom: 1px solid var(--border) !important;
+    text-align: right !important;
+    white-space: normal !important;
+    overflow-wrap: anywhere;
+  }
+
+  .content > .table-card .table-scroll:not(.shipments-v2-scroll) > table tbody td:last-child,
+  .desktop-table > table tbody td:last-child {
+    border-bottom: 0 !important;
+  }
+
+  .content > .table-card .table-scroll:not(.shipments-v2-scroll) > table tbody td::before,
+  .desktop-table > table tbody td::before {
+    color: var(--muted);
+    font-size: .68rem;
+    font-weight: 750;
+    text-align: left;
+    text-transform: uppercase;
+  }
+
+  /* Siembras */
+  .content > .table-card .table-scroll:not(.shipments-v2-scroll) > table tbody td:nth-child(1)::before { content: 'Contrato'; }
+  .content > .table-card .table-scroll:not(.shipments-v2-scroll) > table tbody td:nth-child(2)::before { content: 'Cliente'; }
+  .content > .table-card .table-scroll:not(.shipments-v2-scroll) > table tbody td:nth-child(3)::before { content: 'Producto'; }
+  .content > .table-card .table-scroll:not(.shipments-v2-scroll) > table tbody td:nth-child(4)::before { content: 'Hectáreas'; }
+  .content > .table-card .table-scroll:not(.shipments-v2-scroll) > table tbody td:nth-child(5)::before { content: 'Rendimiento / ha'; }
+  .content > .table-card .table-scroll:not(.shipments-v2-scroll) > table tbody td:nth-child(6)::before { content: 'Cajas proyectadas'; }
+  .content > .table-card .table-scroll:not(.shipments-v2-scroll) > table tbody td:nth-child(7)::before { content: 'Ingreso proyectado'; }
+  .content > .table-card .table-scroll:not(.shipments-v2-scroll) > table tbody td:nth-child(8)::before { content: 'Costos proyectados'; }
+  .content > .table-card .table-scroll:not(.shipments-v2-scroll) > table tbody td:nth-child(9)::before { content: 'Estado'; }
+  .content > .table-card .table-scroll:not(.shipments-v2-scroll) > table tbody td:nth-child(10)::before { content: 'Acciones'; }
+
+  /* Gastos */
+  .desktop-table > table tbody td:nth-child(1)::before { content: 'Fecha'; }
+  .desktop-table > table tbody td:nth-child(2)::before { content: 'Siembra'; }
+  .desktop-table > table tbody td:nth-child(3)::before { content: 'Categoría'; }
+  .desktop-table > table tbody td:nth-child(4)::before { content: 'Proveedor'; }
+  .desktop-table > table tbody td:nth-child(5)::before { content: 'Concepto'; }
+  .desktop-table > table tbody td:nth-child(6)::before { content: 'Importe'; }
+  .desktop-table > table tbody td:nth-child(7)::before { content: 'Tipo de cambio'; }
+  .desktop-table > table tbody td:nth-child(8)::before { content: 'Equivalente MXN'; }
+  .desktop-table > table tbody td:nth-child(9)::before { content: 'Método de pago'; }
+  .desktop-table > table tbody td:nth-child(10)::before { content: 'Acciones'; }
+
+  /* En móvil las tarjetas ocupan el ancho útil completo. */
+  .table-card,
+  .shipments-table-card,
+  .collections-panel,
+  .dashboard-v2-section {
+    overflow: visible !important;
+  }
+}
