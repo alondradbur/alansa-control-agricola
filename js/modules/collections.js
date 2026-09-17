@@ -89,6 +89,12 @@ export async function collections() {
         <div id="collectionsTable">
           ${portfolioTable()}
         </div>
+        
+        <div
+  id="modalRoot"
+  class="collections-modal-root"
+></div>
+
       </section>
     </div>
   `;
