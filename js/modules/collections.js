@@ -1168,16 +1168,45 @@ async function reloadCollections() {
 }
 
 function renderDynamic() {
-  const summary = document.getElementById('collectionsSummary');
-  const table = document.getElementById('collectionsTable');
-  if (summary) summary.innerHTML = summaryCards();
-  if (table) table.innerHTML = portfolioTable();
+  closeFilterMenu();
+
+  const summary =
+    document.getElementById(
+      'collectionsSummary'
+    );
+
+  const table =
+    document.getElementById(
+      'collectionsTable'
+    );
+
+  if (summary) {
+    summary.innerHTML =
+      summaryCards();
+  }
+
+  if (table) {
+    table.innerHTML =
+      portfolioTable();
+  }
+
   bindTableEvents();
 }
 
+
 function renderTableOnly() {
-  const table = document.getElementById('collectionsTable');
-  if (table) table.innerHTML = portfolioTable();
+  closeFilterMenu();
+
+  const table =
+    document.getElementById(
+      'collectionsTable'
+    );
+
+  if (table) {
+    table.innerHTML =
+      portfolioTable();
+  }
+
   bindTableEvents();
 }
 
