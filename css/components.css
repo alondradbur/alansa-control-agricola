@@ -3820,3 +3820,28 @@ textarea.input {
 .shipments-v2-table thead th:nth-child(9) .shipment-filter-header {
   justify-content: flex-end;
 }
+
+/* =========================================================
+   REMISIONES · VISTA MÓVIL POR TARJETAS
+   La tabla de escritorio se conserva sin cambios.
+   ========================================================= */
+.shipments-mobile-list { display: none; }
+
+@media (max-width: 760px) {
+  .shipments-v2-scroll { display: none !important; }
+  .shipments-mobile-list { display: grid; gap: 12px; padding: 12px; }
+  .shipment-mobile-card { overflow: hidden; border: 1px solid #dfe7e2; border-radius: 14px; background: #fff; box-shadow: 0 2px 8px rgba(20,55,35,.05); }
+  .shipment-mobile-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 14px; border-bottom: 1px solid #e8eeea; }
+  .shipment-mobile-card-head > div { min-width: 0; }
+  .shipment-mobile-label, .shipment-mobile-grid span { display: block; margin-bottom: 4px; color: #6b776f; font-size: .68rem; font-weight: 700; }
+  .shipment-mobile-folio { display: block; color: #145f3a; font-size: .9rem; line-height: 1.3; overflow-wrap: anywhere; word-break: normal; }
+  .shipment-mobile-primary { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 14px; padding: 13px 14px; background: #f8faf9; }
+  .shipment-mobile-primary strong { display: block; font-size: .82rem; overflow-wrap: anywhere; }
+  .shipment-mobile-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); padding: 4px 14px; }
+  .shipment-mobile-grid > div { min-width: 0; padding: 11px 8px 11px 0; border-bottom: 1px solid #edf1ee; }
+  .shipment-mobile-grid > div:nth-child(even) { padding-right: 0; padding-left: 8px; border-left: 1px solid #edf1ee; }
+  .shipment-mobile-grid strong { display: block; font-size: .78rem; line-height: 1.35; overflow-wrap: anywhere; }
+  .shipment-mobile-actions { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; padding: 13px 14px 14px; }
+  .shipment-mobile-actions .btn { width: 100%; min-width: 0; padding-inline: 7px; }
+  .shipments-mobile-empty { padding: 32px 16px; color: var(--muted); text-align: center; }
+}
