@@ -646,3 +646,38 @@
   overflow-wrap: anywhere;
   word-break: normal;
 }
+
+/* =========================================================
+   COBRANZA · VISTA MÓVIL POR TARJETAS
+   La tabla completa permanece disponible en escritorio.
+   ========================================================= */
+.collections-mobile-list { display: none; }
+
+@media (max-width: 760px) {
+  .collections-table-scroll { display: none !important; }
+  .collections-mobile-list { display: grid; gap: 12px; padding: 12px; }
+  .collection-mobile-card { overflow: hidden; border: 1px solid #dfe7e2; border-radius: 14px; background: #fff; box-shadow: 0 2px 8px rgba(20,55,35,.05); }
+  .collection-mobile-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 14px; border-bottom: 1px solid #e8eeea; }
+  .collection-mobile-folio { min-width: 0; max-width: calc(100% - 105px); font-size: .88rem; line-height: 1.3; text-align: left; white-space: normal; overflow-wrap: anywhere; word-break: normal; }
+  .collection-mobile-client { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 12px 14px; background: #f8faf9; }
+  .collection-mobile-client strong { min-width: 0; font-size: .84rem; overflow-wrap: anywhere; }
+  .collection-mobile-client span { flex: 0 0 auto; color: var(--muted); font-size: .7rem; }
+  .collection-mobile-dates { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); border-bottom: 1px solid #e8eeea; }
+  .collection-mobile-dates > div { min-width: 0; padding: 11px 8px; text-align: center; border-right: 1px solid #edf1ee; }
+  .collection-mobile-dates > div:last-child { border-right: 0; }
+  .collection-mobile-dates span, .collection-mobile-money span { display: block; margin-bottom: 4px; color: #6b776f; font-size: .64rem; font-weight: 700; }
+  .collection-mobile-dates strong { display: block; font-size: .72rem; line-height: 1.3; }
+  .collection-mobile-money { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); padding: 4px 14px; }
+  .collection-mobile-money > div { min-width: 0; padding: 10px 8px 10px 0; border-bottom: 1px solid #edf1ee; }
+  .collection-mobile-money > div:nth-child(even) { padding-right: 0; padding-left: 8px; border-left: 1px solid #edf1ee; }
+  .collection-mobile-money strong { display: block; font-size: .77rem; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+  .collection-mobile-money .collection-mobile-balance { background: #f3f8f5; }
+  .collection-mobile-money .collection-mobile-balance strong { color: #124f30; font-size: .82rem; }
+  .collection-mobile-actions { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; padding: 13px 14px 14px; }
+  .collection-mobile-actions .btn { width: 100%; min-width: 0; }
+  .collections-table-meta { padding: 8px 14px 13px; text-align: center; }
+}
+
+@media (max-width: 430px) {
+  .collection-mobile-actions:has(.btn:only-child) { grid-template-columns: 1fr; }
+}
