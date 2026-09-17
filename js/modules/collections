@@ -1,0 +1,18 @@
+-- =========================================================
+-- ALANSA · COBRANZA
+-- Ejecutar una sola vez en la base D1 de producción.
+-- =========================================================
+
+ALTER TABLE payments ADD COLUMN account TEXT CHECK(account IN ('MXN','USD'));
+ALTER TABLE payments ADD COLUMN receipt_url TEXT;
+ALTER TABLE payments ADD COLUMN updated_by INTEGER;
+ALTER TABLE payments ADD COLUMN updated_at TEXT;
+
+CREATE INDEX IF NOT EXISTS idx_payments_client
+  ON payments(client_id);
+
+CREATE INDEX IF NOT EXISTS idx_payment_applications_shipment
+  ON payment_applications(shipment_id);
+
+CREATE INDEX IF NOT EXISTS idx_payment_applications_payment
+  ON payment_applications(payment_id);
