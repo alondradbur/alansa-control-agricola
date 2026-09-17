@@ -7,6 +7,7 @@ import {
 import { catalogs, bindCatalogs } from './modules/catalogs.js';
 import { plantings, bindPlantings } from './modules/plantings.js';
 import { shipments, bindShipments } from './modules/shipments.js';
+import { collections, bindCollections } from './modules/collections.js';
 import { expenses, bindExpenses } from './modules/expenses.js';
 import { placeholder } from './modules/placeholder.js';
 
@@ -231,10 +232,13 @@ async function navigate(
     content = await plantings();
 
   } else if (route === 'shipments') {
-    content = await shipments();
+  content = await shipments();
 
-  } else if (route === 'expenses') {
-    content = await expenses();
+} else if (route === 'collections') {
+  content = await collections();
+
+} else if (route === 'expenses') {
+  content = await expenses();
 
   } else {
     content = await placeholder(
@@ -270,11 +274,15 @@ async function navigate(
     );
   }
 
-  if (route === 'shipments') {
-    bindShipments();
-  }
+if (route === 'shipments') {
+  bindShipments();
+}
 
-  if (route === 'expenses') {
+if (route === 'collections') {
+  bindCollections();
+}
+
+if (route === 'expenses') {
     bindExpenses(
       () => navigate(
         'expenses'
