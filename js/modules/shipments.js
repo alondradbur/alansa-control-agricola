@@ -3465,6 +3465,7 @@ function printShipmentsReport() {
           .preview-toolbar {
             display: flex;
             justify-content: flex-end;
+            gap: 8px;
             position: sticky;
             top: 0;
             z-index: 100;
@@ -3482,6 +3483,11 @@ function printShipmentsReport() {
             font: inherit;
             font-weight: 700;
             cursor: pointer;
+          }
+
+          .preview-toolbar .back-button {
+            background: #ffffff;
+            color: #245d39;
           }
 
           @media screen and (max-width: 600px) {
@@ -3520,6 +3526,9 @@ function printShipmentsReport() {
       <body>
 
         <div class="preview-toolbar">
+          <button type="button" class="back-button" onclick="if(window.opener){try{window.opener.focus();}catch(e){}} window.close(); setTimeout(()=>{window.location.href='/'},200);">
+            ← Regresar a ALANSA
+          </button>
           <button type="button" onclick="window.print()">
             Imprimir / Guardar como PDF
           </button>
@@ -4008,6 +4017,7 @@ async function printShipmentPdf(id) {
           .preview-toolbar {
             display: flex;
             justify-content: flex-end;
+            gap: 8px;
             position: sticky;
             top: 0;
             z-index: 100;
@@ -4026,6 +4036,11 @@ async function printShipmentPdf(id) {
             font: inherit;
             font-weight: 700;
             cursor: pointer;
+          }
+
+          .preview-toolbar .back-button {
+            background: #ffffff;
+            color: #245d39;
           }
 
           @media screen and (max-width: 600px) {
@@ -4058,6 +4073,9 @@ async function printShipmentPdf(id) {
       <body>
 
         <div class="preview-toolbar">
+          <button type="button" class="back-button" onclick="if(window.opener){try{window.opener.focus();}catch(e){}} window.close(); setTimeout(()=>{window.location.href='/'},200);">
+            ← Regresar a ALANSA
+          </button>
           <button type="button" onclick="window.print()">
             Imprimir / Guardar como PDF
           </button>
@@ -4774,3 +4792,4 @@ function safeDate(value) {
     return String(value);
   }
 }
+
