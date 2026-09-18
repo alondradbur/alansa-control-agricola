@@ -1,0 +1,4707 @@
+/* =========================================================
+   1. TARJETAS
+   ========================================================= */
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+
+/* =========================================================
+   2. FILTROS Y CAMPOS
+   ========================================================= */
+
+.filters {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(150px, 1fr)) auto;
+  gap: 10px;
+  align-items: end;
+  padding: 12px;
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+}
+
+.field label {
+  font-size: .72rem;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.input,
+select.input,
+textarea.input {
+  width: 100%;
+  min-height: 40px;
+  border: 1px solid var(--border);
+  background: #fff;
+  border-radius: 10px;
+  padding: 9px 11px;
+  color: var(--text);
+  outline: none;
+}
+
+.input:focus {
+  border-color: var(--alansa-600);
+  box-shadow: 0 0 0 3px rgba(47, 107, 58, .10);
+}
+
+
+/* =========================================================
+   3. BOTONES
+   ========================================================= */
+
+.btn {
+  min-height: 40px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 9px 14px;
+  background: #fff;
+  color: var(--text);
+  font-weight: 700;
+}
+
+.btn.primary {
+  background: var(--alansa-900);
+  color: #fff;
+  border-color: var(--alansa-900);
+}
+
+.btn.soft {
+  background: var(--alansa-100);
+  color: var(--alansa-900);
+  border-color: transparent;
+}
+
+.btn.danger {
+  color: var(--danger);
+}
+
+
+/* =========================================================
+   4. INDICADORES KPI
+   ========================================================= */
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 14px;
+}
+
+.kpi {
+  min-height: 118px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 16px;
+  text-align: center;
+}
+
+.kpi .label {
+  color: var(--muted);
+  font-size: .74rem;
+  font-weight: 700;
+}
+
+.kpi .value {
+  margin-top: 8px;
+  font-size: 1.32rem;
+  font-weight: 800;
+}
+
+.kpi .meta {
+  margin-top: 7px;
+  color: var(--muted);
+  font-size: .72rem;
+}
+
+
+/* =========================================================
+   5. PANELES Y GRÁFICAS
+   ========================================================= */
+
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.panel {
+  padding: 16px;
+}
+
+.panel h2 {
+  margin-bottom: 14px;
+  font-size: .98rem;
+}
+
+.chart-placeholder {
+  min-height: 220px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  background: linear-gradient(
+    180deg,
+    #fff,
+    var(--surface-2)
+  );
+  color: var(--muted);
+  text-align: center;
+  padding: 20px;
+}
+
+
+/* =========================================================
+   6. FILTROS ACTIVOS
+   ========================================================= */
+
+.active-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 9px;
+}
+
+.chip {
+  padding: 6px 9px;
+  background: var(--alansa-100);
+  color: var(--alansa-900);
+  border-radius: 999px;
+  font-size: .72rem;
+}
+
+
+/* =========================================================
+   7. ESTADOS
+   ========================================================= */
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: #eef1ee;
+  font-size: .68rem;
+  font-weight: 800;
+}
+
+.status.Pagada,
+.status.Activa {
+  background: #e7f4e9;
+  color: var(--success);
+}
+
+.status.Vencida,
+.status.Cancelada {
+  background: #fbeaea;
+  color: var(--danger);
+}
+
+.status.Pendiente,
+.status.Emitida {
+  background: #fff2db;
+  color: var(--warning);
+}
+
+
+/* =========================================================
+   8. NOTIFICACIONES
+   ========================================================= */
+
+.toast-root {
+  position: fixed;
+  right: 18px;
+  bottom: 82px;
+  z-index: 100;
+  display: grid;
+  gap: 8px;
+}
+
+.toast {
+  padding: 12px 14px;
+  background: #172019;
+  color: #fff;
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+}
+
+
+/* =========================================================
+   9. PANTALLA DE INICIO
+   ========================================================= */
+
+.login {
+  min-height: 100vh;
+}
+
+
+/* =========================================================
+   LOGIN · DISEÑO PRINCIPAL
+   ========================================================= */
+
+.login-premium {
+  position: relative;
+  display: grid;
+  grid-template-columns:
+    minmax(0, 1.65fr)
+    minmax(430px, .9fr);
+  min-height: 100vh;
+  overflow: hidden;
+  background: #0c351c;
+}
+
+
+/* ---------------------------------------------------------
+   ÁREA VISUAL
+   --------------------------------------------------------- */
+
+.login-visual {
+  position: relative;
+  min-width: 0;
+  min-height: 100vh;
+  background:
+    linear-gradient(
+      90deg,
+      rgba(5, 23, 12, .05) 0%,
+      rgba(5, 23, 12, .02) 58%,
+      rgba(5, 23, 12, .35) 100%
+    ),
+    url('/assets/login-field.png')
+    center center / cover no-repeat;
+}
+
+.login-visual::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(4, 20, 10, .04) 0%,
+      rgba(4, 20, 10, 0) 52%,
+      rgba(4, 20, 10, .22) 100%
+    );
+  pointer-events: none;
+}
+
+
+/* ---------------------------------------------------------
+   IDENTIDAD
+   --------------------------------------------------------- */
+
+.login-brand {
+  position: absolute;
+  z-index: 2;
+  top: clamp(48px, 8vh, 90px);
+  left: clamp(42px, 7vw, 120px);
+}
+
+.login-brand h1 {
+  margin: 0;
+  color: #21342a;
+  font-size: clamp(
+    2.35rem,
+    3.4vw,
+    4.1rem
+  );
+  font-weight: 800;
+  line-height: .98;
+  letter-spacing: -.045em;
+  text-shadow:
+    0 1px 1px
+    rgba(255, 255, 255, .18);
+}
+
+.login-brand h1 span {
+  display: inline-block;
+  margin-top: 7px;
+  color: #2f8a4a;
+}
+
+
+/* ---------------------------------------------------------
+   PANEL DERECHO
+   --------------------------------------------------------- */
+
+.login-access {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  padding: 50px 42px;
+  overflow: hidden;
+  background:
+    radial-gradient(
+      circle at 10% 15%,
+      rgba(70, 143, 84, .16),
+      transparent 34%
+    ),
+    linear-gradient(
+      145deg,
+      #164a29 0%,
+      #0c351c 48%,
+      #082713 100%
+    );
+}
+
+.login-access::before {
+  content: '';
+  position: absolute;
+  top: -15%;
+  left: -76px;
+  width: 145px;
+  height: 135%;
+  transform: rotate(9deg);
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, .10),
+      rgba(255, 255, 255, .015)
+    );
+}
+
+
+/* ---------------------------------------------------------
+   HOJA DECORATIVA
+   --------------------------------------------------------- */
+
+.login-leaf {
+  position: absolute;
+  right: -40px;
+  bottom: -35px;
+  width: min(290px, 62%);
+  opacity: .12;
+  pointer-events: none;
+}
+
+.login-leaf svg {
+  display: block;
+  width: 100%;
+}
+
+.login-leaf path {
+  stroke: #c9e2cf;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+
+/* ---------------------------------------------------------
+   TARJETA
+   --------------------------------------------------------- */
+
+.login-access-card {
+  position: relative;
+  z-index: 2;
+  width: min(460px, 100%);
+  padding: 42px 42px 38px;
+  border: 1px solid
+    rgba(255, 255, 255, .7);
+  border-radius: 22px;
+  background:
+    rgba(255, 255, 255, .97);
+  box-shadow:
+    0 30px 80px
+    rgba(0, 0, 0, .22);
+}
+
+.login-access-heading {
+  display: flex;
+  align-items: center;
+  gap: 17px;
+  margin-bottom: 6px;
+}
+
+.login-access-heading > div {
+  min-width: 0;
+}
+
+.login-access-icon {
+  width: 72px;
+  height: 72px;
+  flex: 0 0 72px;
+  display: block;
+  object-fit: contain;
+  border-radius: 14px;
+}
+
+.login-access-accent {
+  width: 42px;
+  height: 3px;
+  margin-bottom: 11px;
+  border-radius: 999px;
+  background: #2e8b4b;
+}
+
+.login-access-card h2 {
+  margin: 0;
+  color: #152b20;
+  font-size: 1.75rem;
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -.025em;
+}
+
+.login-access-subtitle {
+  margin: 10px 0 28px;
+  color: #68766e;
+  font-size: .9rem;
+}
+
+
+/* ---------------------------------------------------------
+   USUARIOS
+   --------------------------------------------------------- */
+
+.login-user-list {
+  display: grid;
+  gap: 14px;
+}
+
+.login-user-button {
+  width: 100%;
+  min-height: 82px;
+  display: grid;
+  grid-template-columns:
+    52px
+    minmax(0, 1fr)
+    24px;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 18px;
+  border: 1px solid #dfe6e1;
+  border-radius: 14px;
+  background: #fff;
+  color: #17291f;
+  text-align: left;
+  cursor: pointer;
+  box-shadow:
+    0 5px 14px
+    rgba(20, 51, 32, .055);
+  transition:
+    transform 150ms ease,
+    border-color 150ms ease,
+    box-shadow 150ms ease,
+    background-color 150ms ease;
+}
+
+.login-user-button:hover {
+  transform: translateY(-2px);
+  border-color: #b9d3c1;
+  background: #fbfdfb;
+  box-shadow:
+    0 10px 24px
+    rgba(20, 51, 32, .10);
+}
+
+.login-user-button:active {
+  transform: translateY(0);
+}
+
+.login-user-button:focus-visible {
+  outline: 3px solid
+    rgba(47, 139, 75, .22);
+  outline-offset: 2px;
+}
+
+.login-user-avatar {
+  width: 50px;
+  height: 50px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background:
+    linear-gradient(
+      145deg,
+      #3d9956,
+      #226e3b
+    );
+  color: #fff;
+  box-shadow:
+    0 5px 12px
+    rgba(35, 111, 59, .18);
+}
+
+.login-user-avatar svg {
+  width: 25px;
+  height: 25px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.55;
+  stroke-linecap: round;
+}
+
+.login-user-name {
+  min-width: 0;
+  font-size: .98rem;
+  font-weight: 800;
+}
+
+.login-user-arrow {
+  color: #234a34;
+  font-size: 1.7rem;
+  font-weight: 400;
+  line-height: 1;
+  text-align: right;
+  transition: transform 150ms ease;
+}
+
+.login-user-button:hover
+.login-user-arrow {
+  transform: translateX(3px);
+}
+
+
+/* ---------------------------------------------------------
+   NOTA DE ROL
+   --------------------------------------------------------- */
+
+.login-role-note {
+  display: grid;
+  grid-template-columns:
+    minmax(20px, 1fr)
+    22px
+    minmax(20px, 1fr);
+  align-items: center;
+  gap: 11px;
+  margin: 31px 0 14px;
+}
+
+.login-role-line {
+  height: 1px;
+  background: #e0e6e2;
+}
+
+.login-role-note svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: #9db0a4;
+  stroke-width: 1.35;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.login-role-text {
+  max-width: 320px;
+  margin: 0 auto;
+  color: #718078;
+  font-size: .76rem;
+  line-height: 1.45;
+  text-align: center;
+}
+
+/* =========================================================
+   LOGIN · RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 980px) {
+
+  .login-premium {
+    grid-template-columns:
+      minmax(0, 1.15fr)
+      minmax(390px, .85fr);
+  }
+
+  .login-brand {
+    left: 44px;
+  }
+
+  .login-access {
+    padding:
+      36px
+      28px;
+  }
+
+  .login-access-card {
+    padding:
+      36px
+      32px
+      32px;
+  }
+}
+
+
+@media (max-width: 760px) {
+
+  .login-premium {
+    display: block;
+    position: relative;
+    min-height: 100svh;
+    background: #0b311a;
+  }
+
+  .login-visual {
+    position: absolute;
+    inset: 0;
+    min-height: 100%;
+    background-position:
+      42% center;
+  }
+
+  .login-visual::after {
+    background:
+      linear-gradient(
+        180deg,
+        rgba(5, 25, 13, .16) 0%,
+        rgba(5, 25, 13, .32) 32%,
+        rgba(5, 25, 13, .84) 100%
+      );
+  }
+
+  .login-brand {
+    top: 34px;
+    right: 24px;
+    left: 24px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .login-brand h1 {
+    color: #fff;
+    font-size: 1.55rem;
+    line-height: 1.02;
+    text-shadow:
+      0 2px 12px
+      rgba(0, 0, 0, .25);
+  }
+
+  .login-brand h1 span {
+    margin-top: 3px;
+    color: #d9f0df;
+  }
+
+  .login-access {
+    position: relative;
+    z-index: 3;
+    display: flex;
+    align-items: flex-end;
+    min-height: 100svh;
+    padding:
+      150px
+      16px
+      18px;
+    background: transparent;
+  }
+
+  .login-access::before,
+  .login-leaf {
+    display: none;
+  }
+
+  .login-access-card {
+    width: 100%;
+    padding:
+      25px
+      20px
+      22px;
+    border-radius: 20px;
+    box-shadow:
+      0 20px 55px
+      rgba(0, 0, 0, .26);
+  }
+
+  .login-access-heading {
+  gap: 13px;
+}
+
+.login-access-icon {
+  width: 58px;
+  height: 58px;
+  flex-basis: 58px;
+  border-radius: 12px;
+}
+
+.login-access-accent {
+  width: 34px;
+  margin-bottom: 8px;
+}
+
+  .login-access-card h2 {
+    font-size: 1.4rem;
+  }
+
+  .login-access-subtitle {
+    margin:
+      7px
+      0
+      20px;
+    font-size: .82rem;
+  }
+
+  .login-user-list {
+    gap: 10px;
+  }
+
+  .login-user-button {
+    min-height: 68px;
+    grid-template-columns:
+      44px
+      minmax(0, 1fr)
+      20px;
+    gap: 12px;
+    padding:
+      11px
+      14px;
+  }
+
+  .login-user-avatar {
+    width: 44px;
+    height: 44px;
+  }
+
+  .login-user-avatar svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  .login-role-note {
+    margin:
+      22px
+      0
+      11px;
+  }
+
+  .login-role-text {
+    font-size: .7rem;
+  }
+}
+
+
+@media (max-width: 390px) {
+
+  .login-brand {
+    top: 25px;
+    right: 18px;
+    left: 18px;
+  }
+
+  .login-brand-icon {
+    width: 58px;
+    height: 58px;
+    flex-basis: 58px;
+  }
+
+  .login-brand h1 {
+    font-size: 1.35rem;
+  }
+
+  .login-access {
+    padding:
+      125px
+      10px
+      10px;
+  }
+
+  .login-access-card {
+    padding:
+      21px
+      16px
+      18px;
+    border-radius: 18px;
+  }
+}
+
+/* =========================================================
+   10. MODALES
+   ========================================================= */
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(11, 31, 14, .45);
+}
+
+.modal {
+  width: min(760px, 100%);
+  max-height: 92vh;
+  overflow: auto;
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, .22);
+}
+
+.modal-head {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 18px;
+  background: #fff;
+  border-bottom: 1px solid var(--border);
+}
+
+.modal-head h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.modal-body {
+  padding: 18px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 13px;
+}
+
+.span-2 {
+  grid-column: 1 / -1;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 18px;
+}
+
+
+/* =========================================================
+   11. RESPONSIVE DE COMPONENTES
+   ========================================================= */
+
+@media (max-width: 620px) {
+
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .span-2 {
+    grid-column: auto;
+  }
+
+  .modal-backdrop {
+    align-items: end;
+    padding: 6px;
+  }
+
+  .modal {
+    border-radius: 18px 18px 0 0;
+  }
+}
+
+/* =========================================================
+   12. DASHBOARD
+   ========================================================= */
+
+.dashboard-content {
+  gap: 16px;
+}
+
+.dashboard-filters {
+  padding: 14px;
+}
+
+.dashboard-filter-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(150px, 1fr));
+  gap: 10px;
+}
+
+.dashboard-filter-actions {
+  display: flex;
+  justify-content: flex-end;
+
+  margin-top: 12px;
+}
+
+.dashboard-clear {
+  min-width: 130px;
+}
+
+.dashboard-kpis {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+}
+
+.dashboard-kpi {
+  min-height: 112px;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+
+  padding: 16px;
+
+  border-color: rgba(16, 42, 19, .08);
+
+  box-shadow:
+    0 2px 8px rgba(16, 42, 19, .04);
+}
+
+.dashboard-kpi-label {
+  color: var(--muted);
+
+  font-size: .7rem;
+  font-weight: 700;
+
+  letter-spacing: .01em;
+}
+
+.dashboard-kpi-value {
+  margin-top: 7px;
+
+  color: var(--text);
+
+  font-size: 1.26rem;
+  font-weight: 800;
+
+  line-height: 1.15;
+}
+
+.dashboard-kpi-meta {
+  margin-top: 7px;
+
+  color: var(--muted);
+
+  font-size: .68rem;
+}
+
+.dashboard-kpi-primary {
+  border-top: 3px solid var(--alansa-900);
+}
+
+.dashboard-kpi-success {
+  border-top: 3px solid var(--success);
+}
+
+.dashboard-kpi-warning {
+  border-top: 3px solid var(--warning);
+}
+
+.dashboard-kpi-neutral {
+  border-top: 3px solid var(--border);
+}
+
+.dashboard-charts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.dashboard-panel {
+  padding: 16px;
+}
+
+.dashboard-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  margin-bottom: 12px;
+}
+
+.dashboard-eyebrow {
+  display: block;
+
+  margin-bottom: 4px;
+
+  color: var(--alansa-700);
+
+  font-size: .64rem;
+  font-weight: 800;
+
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+
+.dashboard-panel h2 {
+  margin: 0;
+
+  font-size: .92rem;
+  font-weight: 800;
+}
+
+
+/* =========================================================
+   13. DASHBOARD MÓVIL
+   ========================================================= */
+
+@media (max-width: 760px) {
+
+  .dashboard-content {
+    gap: 12px;
+  }
+
+  .dashboard-filters {
+    padding: 12px;
+  }
+
+  .dashboard-filter-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 9px;
+  }
+
+  .dashboard-filter-actions {
+    margin-top: 10px;
+  }
+
+  .dashboard-clear {
+    width: 100%;
+  }
+
+  .dashboard-kpis {
+    grid-template-columns: 1fr 1fr;
+    gap: 9px;
+  }
+
+  .dashboard-kpi {
+    min-height: 98px;
+
+    padding: 12px;
+
+    border-radius: 13px;
+  }
+
+  .dashboard-kpi-label {
+    font-size: .66rem;
+  }
+
+  .dashboard-kpi-value {
+    margin-top: 6px;
+
+    font-size: 1rem;
+  }
+
+  .dashboard-kpi-meta {
+    margin-top: 5px;
+
+    font-size: .62rem;
+  }
+
+  .dashboard-charts {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .dashboard-panel {
+    padding: 14px;
+  }
+
+  .dashboard-panel h2 {
+    font-size: .88rem;
+  }
+
+  .chart-placeholder {
+    min-height: 190px;
+
+    border-radius: 11px;
+
+    font-size: .75rem;
+  }
+}
+
+
+/* =========================================================
+   14. CELULARES PEQUEÑOS
+   ========================================================= */
+
+@media (max-width: 430px) {
+
+  .dashboard-filter-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-kpis {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .dashboard-kpi {
+    min-height: 94px;
+  }
+
+  .dashboard-kpi-value {
+    font-size: .96rem;
+  }
+}
+
+/* =========================================================
+   GASTOS
+   ========================================================= */
+
+.row-actions {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  white-space: nowrap;
+}
+
+.expense-mobile-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 12px;
+  margin-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.expense-calculation {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 14px;
+  padding: 13px 14px;
+  border-radius: 12px;
+  background: var(--alansa-50);
+}
+
+.expense-calculation span {
+  color: var(--muted);
+  font-size: .72rem;
+}
+
+.expense-calculation strong {
+  color: var(--text);
+  font-size: .9rem;
+}
+
+.form-grid-full {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 760px) {
+
+  .expense-mobile-actions .row-actions {
+    width: 100%;
+  }
+
+  .expense-mobile-actions .btn {
+    flex: 1;
+    min-height: 42px;
+  }
+
+  .expense-calculation {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+}
+/* =========================================================
+   SIEMBRAS - COSTOS APROXIMADOS PARA PROYECCIÓN
+   ========================================================= */
+
+
+.planting-costs-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.planting-costs-head h3 {
+  margin: 0 0 4px;
+}
+
+.planting-costs-head p {
+  margin: 0;
+}
+
+.planting-costs-list {
+  display: grid;
+  gap: 10px;
+}
+
+.planting-cost-row {
+  display: grid;
+  grid-template-columns: minmax(180px, 1.5fr) minmax(140px, 1fr) 110px auto;
+  align-items: end;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 12px;
+  background: var(--surface, #fff);
+}
+
+.planting-cost-remove {
+  padding-bottom: 1px;
+}
+
+
+@media (max-width: 760px) {
+  .planting-costs-head {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .planting-cost-row {
+    grid-template-columns: 1fr;
+  }
+
+  .planting-cost-remove .btn {
+    width: 100%;
+  }
+}
+
+/* =========================================================
+   SIEMBRAS - REDISEÑO VISUAL DEL CUESTIONARIO
+   ========================================================= */
+
+/* Modal más amplio y limpio */
+.planting-modal {
+  width: min(1180px, 96vw);
+  max-height: 94vh;
+  border-radius: 18px;
+  overflow: auto;
+  background: #f8fbf9;
+}
+
+.planting-modal .modal-head {
+  padding: 18px 22px;
+  background: #ffffff;
+  border-bottom: 1px solid #dfe9e2;
+}
+
+.planting-modal .modal-head h2 {
+  color: var(--alansa-950);
+  font-size: 1.22rem;
+  font-weight: 800;
+}
+
+.planting-modal .modal-head .muted {
+  margin-top: 4px;
+  font-size: .78rem;
+}
+
+.planting-form {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+}
+
+
+/* =========================================================
+   SECCIONES
+   ========================================================= */
+
+.planting-form-section {
+  overflow: hidden;
+  border: 1px solid #dbe7df;
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(20, 62, 32, .035);
+}
+
+.planting-section-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 58px;
+  padding: 10px 14px;
+  background: linear-gradient(
+    90deg,
+    #eef8f1 0%,
+    #f7fbf8 100%
+  );
+  border-bottom: 1px solid #dfe9e2;
+}
+
+.planting-section-number {
+  flex: 0 0 auto;
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--alansa-900);
+  color: #fff;
+  font-size: .78rem;
+  font-weight: 800;
+  box-shadow: 0 3px 8px rgba(20, 72, 33, .16);
+}
+
+.planting-section-head h3 {
+  margin: 0 0 2px;
+  color: var(--alansa-950);
+  font-size: .92rem;
+  line-height: 1.2;
+}
+
+.planting-section-head p {
+  margin: 0;
+  font-size: .72rem;
+  line-height: 1.35;
+}
+
+.planting-section-body {
+  padding: 14px;
+}
+
+
+/* =========================================================
+   CAMPOS
+   ========================================================= */
+
+.planting-form .form-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.planting-form .field {
+  min-width: 0;
+}
+
+.planting-form .field label {
+  margin-bottom: 1px;
+  color: #34443a;
+  font-size: .7rem;
+  font-weight: 750;
+}
+
+.planting-form .input,
+.planting-form select.input,
+.planting-form textarea.input {
+  min-height: 38px;
+  border-radius: 8px;
+  border-color: #d7e1da;
+  background: #fff;
+  font-size: .78rem;
+}
+
+.planting-form textarea.input {
+  min-height: 82px;
+}
+
+.planting-readonly {
+  display: flex;
+  align-items: center;
+  background: #f3f6f4 !important;
+  color: #35443a;
+  font-weight: 700;
+}
+
+.planting-form .input:focus {
+  border-color: var(--alansa-700);
+  box-shadow: 0 0 0 3px rgba(47, 107, 58, .08);
+}
+
+
+/* =========================================================
+   COSTOS PROYECTADOS - TABLA VISUAL
+   ========================================================= */
+
+.planting-costs-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  margin: 0 0 12px;
+}
+
+.planting-costs-list {
+  display: grid;
+  gap: 8px;
+}
+
+.planting-cost-row {
+  display: grid;
+  grid-template-columns:
+    minmax(170px, 1.45fr)
+    minmax(145px, 1.15fr)
+    minmax(125px, .95fr)
+    minmax(105px, .8fr)
+    92px
+    minmax(125px, .95fr)
+    auto;
+  align-items: end;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid #dce5df;
+  border-radius: 10px;
+  background: #fbfdfb;
+}
+
+.planting-cost-row .field label {
+  white-space: nowrap;
+}
+
+.planting-cost-row .input {
+  min-height: 36px;
+}
+
+.planting-cost-row .estimated-cost-total {
+  justify-content: flex-end;
+  text-align: right;
+}
+
+
+.planting-cost-remove {
+  display: flex;
+  align-items: flex-end;
+  padding-bottom: 0;
+}
+
+.planting-cost-remove .btn {
+  min-width: 82px;
+  min-height: 36px;
+  padding: 7px 10px;
+}
+
+.planting-costs-empty {
+  display: grid;
+  place-items: center;
+  min-height: 76px;
+  padding: 16px;
+  border: 1px dashed #cfdcd3;
+  border-radius: 10px;
+  background: #fafcfb;
+  color: var(--muted);
+  font-size: .76rem;
+  text-align: center;
+}
+
+.planting-form-notice {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border: 1px solid #d8e7dc;
+  border-radius: 9px;
+  background: #f2f8f4;
+  color: #496051;
+  font-size: .72rem;
+}
+
+
+/* =========================================================
+   RESULTADO DE LA PROYECCIÓN - TABLA
+   ========================================================= */
+
+.planting-projection-table {
+  overflow: hidden;
+  border: 1px solid #d7e2da;
+  border-radius: 11px;
+  background: #fff;
+}
+
+.projection-table-head,
+.projection-table-row {
+  display: grid;
+  grid-template-columns:
+    minmax(230px, 1.4fr)
+    minmax(180px, 1fr)
+    minmax(180px, 1fr);
+  align-items: center;
+}
+
+.projection-table-head {
+  min-height: 42px;
+  background: #edf4ef;
+  color: #183b24;
+  font-size: .75rem;
+  font-weight: 800;
+}
+
+.projection-table-head span,
+.projection-table-row > * {
+  padding: 10px 14px;
+}
+
+.projection-table-head span:not(:last-child),
+.projection-table-row > *:not(:last-child) {
+  border-right: 1px solid #dfe7e1;
+}
+
+.projection-table-row {
+  min-height: 42px;
+  border-top: 1px solid #e3eae5;
+  font-size: .76rem;
+}
+
+.projection-table-row > span:first-child {
+  color: #26362b;
+  font-weight: 700;
+}
+
+.projection-table-row strong {
+  color: #16281c;
+  font-weight: 800;
+}
+
+.projection-table-row:nth-child(even) {
+  background: #fbfdfb;
+}
+
+.planting-projection-note {
+  position: relative;
+  margin: 10px 0 0 !important;
+  padding: 10px 12px 10px 40px;
+  border: 1px solid #bcd6f4;
+  border-radius: 9px;
+  background: #eef6ff;
+  color: #245b91 !important;
+  font-size: .7rem !important;
+  line-height: 1.4;
+}
+
+.planting-projection-note::before {
+  content: "i";
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  width: 18px;
+  height: 18px;
+  display: grid;
+  place-items: center;
+  transform: translateY(-50%);
+  border-radius: 50%;
+  background: #1d6fb8;
+  color: #fff;
+  font-size: .7rem;
+  font-weight: 800;
+}
+
+
+/* =========================================================
+   BOTONES DEL FORMULARIO
+   ========================================================= */
+
+.planting-form .modal-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 3;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin: 0 -16px -16px;
+  padding: 12px 16px;
+  border-top: 1px solid #dfe8e2;
+  background: rgba(255, 255, 255, .96);
+  backdrop-filter: blur(8px);
+}
+
+.planting-form .modal-actions .btn {
+  min-width: 128px;
+}
+
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 1040px) {
+
+  .planting-form .form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .planting-cost-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .planting-cost-remove {
+    grid-column: 1 / -1;
+  }
+
+  .planting-cost-remove .btn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 700px) {
+
+  .planting-modal {
+    width: 100%;
+    max-height: 96vh;
+    border-radius: 16px 16px 0 0;
+  }
+
+  .planting-form {
+    padding: 10px;
+  }
+
+  .planting-form .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .planting-section-head {
+    align-items: flex-start;
+  }
+
+  .planting-section-body {
+    padding: 11px;
+  }
+
+  .planting-costs-head {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .planting-cost-row {
+    grid-template-columns: 1fr;
+  }
+
+  .projection-table-head,
+  .projection-table-row {
+    grid-template-columns:
+      minmax(145px, 1.3fr)
+      minmax(120px, 1fr)
+      minmax(130px, 1fr);
+  }
+
+  .planting-projection-table {
+    overflow-x: auto;
+  }
+
+  .projection-table-head,
+  .projection-table-row {
+    min-width: 520px;
+  }
+
+  .planting-form .modal-actions {
+    margin: 0 -10px -10px;
+  }
+
+  .planting-form .modal-actions .btn {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+.planting-modal-close {
+  min-width: 38px;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border: 0;
+  background: transparent;
+  color: #526158;
+  font-size: 1.25rem;
+  font-weight: 500;
+}
+
+.planting-modal-close:hover {
+  background: #f0f5f1;
+}
+
+/* =========================================================
+   SIEMBRAS - GRUPOS DE LA TABLA DE PROYECCIÓN
+   ========================================================= */
+
+.projection-table-group {
+  grid-column: 1 / -1;
+  padding: 9px 14px;
+  border-top: 1px solid #d8e4dc;
+  border-bottom: 1px solid #d8e4dc;
+  background: #eef8f1;
+  color: #1f542d;
+  font-size: .72rem;
+  font-weight: 800;
+  letter-spacing: .025em;
+  text-transform: uppercase;
+}
+
+.projection-table-head + .projection-table-group {
+  border-top: 0;
+}
+
+.projection-table-group strong {
+  color: inherit;
+}
+/* =========================================================
+   SIEMBRAS - DETALLE SIMPLE DE GASTOS EN PROYECCIÓN
+   ========================================================= */
+
+.projection-cost-detail {
+  display: contents;
+}
+
+.projection-cost-line span:first-child {
+  font-weight: 600;
+}
+
+.projection-cost-empty {
+  color: #6b7280;
+  font-style: italic;
+}
+
+/* =========================================================
+   ALANSA - DASHBOARD V2
+   ========================================================= */
+
+.dashboard-v2-content {
+  display: grid;
+  gap: 18px;
+}
+
+.dashboard-v2-filters {
+  padding: 18px;
+}
+
+.dashboard-v2-filter-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  align-items: end;
+}
+
+.dashboard-v2-filter-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  margin-top: 14px;
+}
+
+.dashboard-v2-filter-note {
+  color: var(--muted);
+  font-size: .82rem;
+  line-height: 1.4;
+}
+
+.dashboard-v2-section {
+  padding: 0;
+  overflow: hidden;
+}
+
+.dashboard-v2-section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 18px;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.dashboard-v2-section-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.dashboard-v2-section-title h2 {
+  margin: 0 0 3px;
+  font-size: 1.05rem;
+}
+
+.dashboard-v2-section-title p {
+  margin: 0;
+  color: var(--muted);
+  font-size: .82rem;
+}
+
+.dashboard-v2-number {
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: #fff;
+  font-weight: 800;
+}
+
+.dashboard-v2-number-green {
+  background: #1d9b58;
+}
+
+.dashboard-v2-number-blue {
+  background: #287fd1;
+}
+
+.dashboard-v2-number-dark {
+  background: #2f3c4c;
+}
+
+.dashboard-v2-number-red {
+  background: #d93a46;
+}
+
+.dashboard-v2-meta {
+  color: var(--muted);
+  font-size: .82rem;
+  text-align: right;
+}
+
+.dashboard-v2-projection {
+  background:
+    linear-gradient(
+      180deg,
+      rgba(233, 248, 238, .8),
+      #fff 55%
+    );
+}
+
+.dashboard-v2-real {
+  background:
+    linear-gradient(
+      180deg,
+      rgba(235, 246, 255, .85),
+      #fff 70%
+    );
+}
+
+.dashboard-v2-due {
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 244, 244, .7),
+      #fff 60%
+    );
+}
+
+.dashboard-v2-table-wrap,
+.dashboard-v2-table-scroll {
+  overflow: auto;
+}
+
+.dashboard-v2-table-scroll {
+  max-height: 390px;
+}
+
+.dashboard-v2-due-scroll {
+  max-height: 330px;
+}
+
+.dashboard-v2-table {
+  width: 100%;
+  min-width: 760px;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.dashboard-v2-table th,
+.dashboard-v2-table td {
+  padding: 11px 13px;
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  text-align: right;
+  vertical-align: middle;
+  background: rgba(255,255,255,.94);
+}
+
+.dashboard-v2-table th:first-child,
+.dashboard-v2-table td:first-child,
+.dashboard-v2-table th:nth-child(2),
+.dashboard-v2-table td:nth-child(2),
+.dashboard-v2-table th:nth-child(3),
+.dashboard-v2-table td:nth-child(3) {
+  text-align: left;
+}
+
+.dashboard-v2-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  background: #eef3f6;
+  color: #213347;
+  font-size: .78rem;
+  font-weight: 800;
+}
+
+.projection-dashboard-table thead tr:first-child th {
+  background: #dff2e5;
+}
+
+.projection-dashboard-table thead tr:nth-child(2) th {
+  top: 41px;
+  background: #edf8f0;
+}
+
+.projection-dashboard-table td:first-child {
+  width: 30%;
+}
+
+.dashboard-v2-profit-row td {
+  background: #f0faf3;
+  color: #157640;
+}
+
+.dashboard-v2-table tfoot td {
+  position: sticky;
+  bottom: 0;
+  z-index: 3;
+  background: #edf5fb;
+}
+
+.dashboard-v2-kpis {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+  padding: 18px 20px 20px;
+}
+
+.dashboard-v2-kpi {
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #fff;
+}
+
+.dashboard-v2-kpi > span {
+  display: block;
+  margin-bottom: 8px;
+  font-size: .78rem;
+  font-weight: 800;
+}
+
+.dashboard-v2-kpi strong {
+  display: block;
+  font-size: 1.02rem;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.dashboard-v2-kpi small {
+  display: block;
+  margin-top: 6px;
+  font-size: .78rem;
+}
+
+.dashboard-v2-kpi-success {
+  background: #f0fbf4;
+  border-color: #cbead6;
+}
+
+.dashboard-v2-kpi-primary {
+  background: #f0f7ff;
+  border-color: #c9dff5;
+}
+
+.dashboard-v2-kpi-warning {
+  background: #fff9eb;
+  border-color: #f0dda7;
+}
+
+.dashboard-v2-kpi-danger {
+  background: #fff2f3;
+  border-color: #efc8cd;
+}
+
+.dashboard-v2-kpi-profit {
+  background: #f5f2ff;
+  border-color: #d9cff7;
+}
+
+.dashboard-v2-local-filters {
+  display: grid;
+  grid-template-columns: 180px 220px minmax(220px, 1fr);
+  gap: 12px;
+  align-items: end;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.dashboard-v2-due-filters {
+  grid-template-columns: 200px 240px;
+  justify-content: end;
+}
+
+.dashboard-v2-empty {
+  margin: 18px 20px 20px;
+  padding: 22px;
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  color: var(--muted);
+  text-align: center;
+  background: rgba(255,255,255,.7);
+}
+
+.dashboard-v2-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 82px;
+  padding: 5px 9px;
+  border-radius: 999px;
+  font-size: .72rem;
+  font-weight: 800;
+}
+
+.dashboard-v2-status.paid {
+  color: #14723d;
+  background: #dff5e7;
+}
+
+.dashboard-v2-status.partial {
+  color: #1f5f9c;
+  background: #e1effd;
+}
+
+.dashboard-v2-status.pending {
+  color: #9a6700;
+  background: #fff0c7;
+}
+
+.dashboard-v2-days {
+  display: inline-grid;
+  min-width: 38px;
+  place-items: center;
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: #e8f1f8;
+  font-size: .74rem;
+  font-weight: 800;
+}
+
+.dashboard-v2-days.soon {
+  color: #8b6100;
+  background: #ffedb4;
+}
+
+.dashboard-v2-days.urgent {
+  color: #b4232d;
+  background: #ffd9dd;
+}
+
+@media (max-width: 1180px) {
+  .dashboard-v2-filter-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dashboard-v2-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .dashboard-v2-filter-grid,
+  .dashboard-v2-kpis,
+  .dashboard-v2-local-filters,
+  .dashboard-v2-due-filters {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-v2-filter-actions,
+  .dashboard-v2-section-head {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .dashboard-v2-meta {
+    text-align: left;
+  }
+
+  .dashboard-v2-table-scroll {
+    max-height: 360px;
+  }
+}
+
+/* =========================================================
+   ALANSA - REMISIONES V2
+   ========================================================= */
+
+.shipment-header-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.shipments-v2-content {
+  display: grid;
+  gap: 16px;
+}
+
+.shipments-v2-filters {
+  display: grid;
+  grid-template-columns:
+    repeat(4, minmax(135px, 1fr))
+    minmax(220px, 1.4fr)
+    auto;
+  gap: 12px;
+  align-items: end;
+}
+
+.shipments-table-count {
+  display: block;
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: .76rem;
+}
+
+.shipments-v2-scroll {
+  max-height: 560px;
+  overflow: auto;
+}
+
+.shipments-v2-table {
+  min-width: 1320px;
+}
+
+.shipments-v2-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  background: #eef3f1;
+}
+
+.shipment-row-actions {
+  display: flex;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.shipment-status {
+  display: inline-flex;
+  min-width: 76px;
+  justify-content: center;
+  padding: 5px 9px;
+  border-radius: 999px;
+  font-size: .72rem;
+  font-weight: 800;
+}
+
+.shipment-status.pending {
+  color: #8c6200;
+  background: #fff0c4;
+}
+
+.shipment-status.partial {
+  color: #1d5f9c;
+  background: #dfedfb;
+}
+
+.shipment-status.paid {
+  color: #166c3d;
+  background: #def3e6;
+}
+
+.shipments-empty {
+  padding: 24px;
+}
+
+
+/* MODAL */
+
+.shipment-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: grid;
+  place-items: center;
+  padding: 22px;
+  background: rgba(12, 24, 34, .55);
+  backdrop-filter: blur(4px);
+}
+
+.shipment-modal {
+  width: min(1180px, 96vw);
+  max-height: 94vh;
+  overflow: auto;
+  padding: 0;
+}
+
+.shipment-modal-head {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--border);
+  background: #fff;
+}
+
+.shipment-modal-head span {
+  color: var(--muted);
+  font-size: .76rem;
+  font-weight: 700;
+}
+
+.shipment-modal-head h2 {
+  margin: 3px 0 0;
+  font-size: 1.1rem;
+}
+
+#shipmentForm {
+  padding: 20px;
+}
+
+.shipment-form-grid {
+  display: grid;
+  grid-template-columns:
+    repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.shipment-lines-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  margin-top: 24px;
+  padding: 13px 0;
+  border-top: 1px solid var(--border);
+}
+
+.shipment-lines-head span {
+  display: block;
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: .76rem;
+}
+
+.shipment-lines-scroll {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.shipment-lines-table {
+  width: 100%;
+  min-width: 900px;
+  border-collapse: collapse;
+}
+
+.shipment-lines-table th,
+.shipment-lines-table td {
+  padding: 9px;
+  border-bottom: 1px solid var(--border);
+  text-align: right;
+}
+
+.shipment-lines-table th:first-child,
+.shipment-lines-table td:first-child {
+  text-align: left;
+}
+
+.shipment-lines-table th {
+  background: #eef4f1;
+  font-size: .76rem;
+}
+
+.shipment-lines-table .input {
+  min-width: 110px;
+}
+
+.shipment-lines-table
+.shipment-line-product {
+  min-width: 180px;
+}
+
+.shipment-form-bottom {
+  display: grid;
+  grid-template-columns:
+    minmax(0, 1fr)
+    minmax(300px, 420px);
+  gap: 20px;
+  align-items: start;
+  margin-top: 20px;
+}
+
+.shipment-notes-field textarea {
+  min-height: 126px;
+  resize: vertical;
+}
+
+.shipment-totals {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #f7faf8;
+}
+
+.shipment-totals > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 10px 13px;
+  border-bottom: 1px solid var(--border);
+}
+
+.shipment-totals > div:last-child {
+  border-bottom: 0;
+}
+
+.shipment-totals span {
+  color: var(--muted);
+  font-size: .78rem;
+}
+
+.shipment-totals strong {
+  text-align: right;
+}
+
+.shipment-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 22px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.money-input {
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 1100px) {
+  .shipments-v2-filters {
+    grid-template-columns:
+      repeat(3, minmax(0, 1fr));
+  }
+
+  .shipment-form-grid {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .shipment-header-actions,
+  .shipment-lines-head,
+  .shipment-modal-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .shipments-v2-filters,
+  .shipment-form-grid,
+  .shipment-form-bottom {
+    grid-template-columns: 1fr;
+  }
+
+  .shipment-modal-backdrop {
+    padding: 0;
+  }
+
+  .shipment-modal {
+    width: 100vw;
+    max-height: 100vh;
+    min-height: 100vh;
+    border-radius: 0;
+  }
+
+  #shipmentForm {
+    padding: 15px;
+  }
+}
+
+/* =========================================================
+   ALANSA - REMISIONES
+   Filtros tipo Excel + totales fijos
+   ========================================================= */
+
+.shipments-table-card {
+  overflow: visible;
+}
+
+.shipments-filter-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 2px 12px;
+  color: #66736d;
+  font-size: 13px;
+}
+
+.shipments-v2-scroll {
+  position: relative;
+  overflow: auto;
+  max-height: 68vh;
+}
+
+.shipments-v2-table {
+  position: relative;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.shipments-v2-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 12;
+  overflow: visible;
+}
+
+.shipments-v2-table tfoot td {
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+  background: #f2f7f4;
+  border-top: 2px solid #cbd9d1;
+  box-shadow: 0 -5px 12px rgba(24, 63, 44, 0.06);
+}
+
+.shipment-th-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: max-content;
+}
+
+.shipment-filter-trigger {
+  width: 26px;
+  height: 26px;
+  flex: 0 0 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.shipment-filter-trigger:hover,
+.shipment-filter-trigger.active {
+  border-color: #b8cec1;
+  background: #e5f0e9;
+  color: #1b6b45;
+}
+
+.shipment-filter-active {
+  background: #e9f3ed !important;
+}
+
+.shipment-filter-menu {
+  position: absolute;
+  top: calc(100% - 2px);
+  left: 6px;
+  z-index: 80;
+  width: 285px;
+  max-width: calc(100vw - 32px);
+  padding: 12px;
+  border: 1px solid #cfdad4;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 12px 30px rgba(20, 48, 35, 0.18);
+  color: #172536;
+  text-align: left;
+  font-weight: 400;
+}
+
+.shipments-v2-table th:nth-last-child(-n+4) .shipment-filter-menu {
+  right: 6px;
+  left: auto;
+}
+
+.shipment-filter-menu-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.shipment-filter-close {
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+  font-size: 20px;
+  line-height: 1;
+}
+
+.shipment-filter-close:hover {
+  background: #eef2f0;
+}
+
+.shipment-filter-range {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.shipment-filter-range label {
+  display: grid;
+  gap: 5px;
+  font-size: 11px;
+  color: #66736d;
+}
+
+.shipment-filter-select-row {
+  padding: 9px 2px;
+  margin-top: 8px;
+  border-bottom: 1px solid #e5ebe7;
+  font-size: 12px;
+}
+
+.shipment-filter-select-row label,
+.shipment-filter-value {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.shipment-filter-values {
+  max-height: 210px;
+  overflow: auto;
+  padding: 5px 0;
+}
+
+.shipment-filter-value {
+  padding: 6px 2px;
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.shipment-filter-value:hover {
+  background: #f5f8f6;
+}
+
+.shipment-filter-no-values {
+  padding: 14px 4px;
+  color: #7b8781;
+  font-size: 12px;
+  text-align: center;
+}
+
+.shipment-filter-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px solid #e5ebe7;
+}
+
+.shipment-table-empty-cell {
+  padding: 34px 16px !important;
+  color: #77827d;
+  text-align: center !important;
+}
+
+.shipment-totals-row td {
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.shipment-total-records {
+  margin-left: 10px;
+  color: #6b7785;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+@media (max-width: 760px) {
+  .shipments-filter-summary {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .shipments-v2-scroll {
+    max-height: 64vh;
+  }
+
+  .shipment-filter-menu {
+    position: fixed;
+    top: 90px;
+    right: 16px !important;
+    left: 16px !important;
+    width: auto;
+    max-width: none;
+  }
+
+  .shipment-filter-range {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* =========================================================
+   ALANSA - REMISIONES
+   Tabla limpia, columnas legibles y scroll visible
+   ========================================================= */
+
+.shipments-v2-scroll {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  max-height: calc(100vh - 260px);
+
+  overflow-x: auto;
+  overflow-y: auto;
+
+  scrollbar-gutter: stable;
+  overscroll-behavior: contain;
+
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Scroll visible en Chrome, Edge y Safari */
+.shipments-v2-scroll::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.shipments-v2-scroll::-webkit-scrollbar-track {
+  background: #edf2ef;
+  border-radius: 999px;
+}
+
+.shipments-v2-scroll::-webkit-scrollbar-thumb {
+  background: #9bada4;
+  border: 2px solid #edf2ef;
+  border-radius: 999px;
+}
+
+.shipments-v2-scroll::-webkit-scrollbar-thumb:hover {
+  background: #71877c;
+}
+
+/* Firefox */
+.shipments-v2-scroll {
+  scrollbar-width: auto;
+  scrollbar-color: #9bada4 #edf2ef;
+}
+
+
+/* =========================================================
+   TABLA
+   ========================================================= */
+
+.shipments-v2-table {
+  width: 100%;
+  min-width: 1420px !important;
+
+  table-layout: fixed;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.shipments-v2-table th,
+.shipments-v2-table td {
+  box-sizing: border-box;
+
+  padding: 12px 10px;
+
+  font-size: 12px;
+  line-height: 1.3;
+
+  vertical-align: middle;
+
+  word-break: normal;
+  overflow-wrap: normal;
+}
+
+
+/* =========================================================
+   ENCABEZADOS
+   ========================================================= */
+
+.shipments-v2-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+
+  white-space: normal;
+  word-break: keep-all;
+  overflow-wrap: normal;
+
+  text-align: left;
+}
+
+
+/* Columnas numéricas centradas */
+.shipments-v2-table th:nth-child(6),
+.shipments-v2-table td:nth-child(6),
+.shipments-v2-table th:nth-child(7),
+.shipments-v2-table td:nth-child(7) {
+  text-align: center;
+}
+
+
+/* Montos alineados a la derecha */
+.shipments-v2-table th:nth-child(8),
+.shipments-v2-table td:nth-child(8),
+.shipments-v2-table th:nth-child(9),
+.shipments-v2-table td:nth-child(9) {
+  text-align: right;
+}
+
+
+/* =========================================================
+   ANCHOS DE COLUMNAS
+   ========================================================= */
+
+.shipments-v2-table th:nth-child(1),
+.shipments-v2-table td:nth-child(1) {
+  width: 210px;
+}
+
+.shipments-v2-table th:nth-child(2),
+.shipments-v2-table td:nth-child(2) {
+  width: 110px;
+}
+
+.shipments-v2-table th:nth-child(3),
+.shipments-v2-table td:nth-child(3) {
+  width: 110px;
+}
+
+.shipments-v2-table th:nth-child(4),
+.shipments-v2-table td:nth-child(4) {
+  width: 150px;
+}
+
+.shipments-v2-table th:nth-child(5),
+.shipments-v2-table td:nth-child(5) {
+  width: 140px;
+}
+
+.shipments-v2-table th:nth-child(6),
+.shipments-v2-table td:nth-child(6) {
+  width: 75px;
+}
+
+.shipments-v2-table th:nth-child(7),
+.shipments-v2-table td:nth-child(7) {
+  width: 80px;
+}
+
+.shipments-v2-table th:nth-child(8),
+.shipments-v2-table td:nth-child(8) {
+  width: 125px;
+}
+
+.shipments-v2-table th:nth-child(9),
+.shipments-v2-table td:nth-child(9) {
+  width: 120px;
+}
+
+.shipments-v2-table th:nth-child(10),
+.shipments-v2-table td:nth-child(10) {
+  width: 120px;
+}
+
+.shipments-v2-table th:nth-child(11),
+.shipments-v2-table td:nth-child(11) {
+  width: 105px;
+}
+
+.shipments-v2-table th:nth-child(12),
+.shipments-v2-table td:nth-child(12) {
+  width: 130px;
+}
+
+
+/* =========================================================
+   CELDAS QUE NO DEBEN PARTIRSE
+   ========================================================= */
+
+.shipment-cell-folio,
+.shipment-cell-date,
+
+.shipments-v2-table td:nth-child(6),
+.shipments-v2-table td:nth-child(7),
+.shipments-v2-table td:nth-child(8),
+.shipments-v2-table td:nth-child(9),
+.shipments-v2-table td:nth-child(10),
+.shipments-v2-table td:nth-child(11),
+.shipments-v2-table td:nth-child(12) {
+  white-space: nowrap;
+}
+
+
+/* =========================================================
+   TOTALES FIJOS
+   ========================================================= */
+
+.shipments-v2-table tfoot td {
+  position: sticky;
+  bottom: 0;
+  z-index: 18;
+
+  white-space: nowrap;
+}
+
+
+/* =========================================================
+   ACCIONES
+   ========================================================= */
+
+.shipment-actions-head {
+  text-align: center !important;
+}
+
+.shipment-row-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  flex-wrap: nowrap;
+
+  gap: 6px;
+
+  white-space: nowrap;
+}
+
+.shipment-row-actions .btn {
+  min-width: 0;
+  height: 34px;
+
+  padding: 0 10px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  line-height: 1;
+}
+
+.shipment-row-actions .shipment-pdf {
+  min-width: 48px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.shipment-icon-btn {
+  width: 34px;
+  min-width: 34px !important;
+
+  padding: 0 !important;
+}
+
+.shipment-icon-btn svg {
+  display: block;
+
+  width: 16px;
+  height: 16px;
+
+  pointer-events: none;
+}
+
+
+/* =========================================================
+   FILTROS
+   ========================================================= */
+
+.shipment-filter-menu {
+  display: flex;
+  flex-direction: column;
+
+  width: 290px;
+  max-width: min(290px, calc(100vw - 32px));
+
+  max-height: min(520px, calc(100vh - 130px));
+
+  overflow: hidden;
+}
+
+.shipment-filter-values {
+  flex: 1 1 auto;
+
+  min-height: 90px;
+  max-height: none !important;
+
+  overflow-y: auto !important;
+  overflow-x: hidden;
+
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+
+  padding-right: 3px;
+}
+
+.shipment-filter-menu-head,
+.shipment-filter-actions {
+  flex: 0 0 auto;
+}
+
+
+/* =========================================================
+   MÓVIL
+   ========================================================= */
+
+@media (max-width: 760px) {
+
+  .shipments-v2-scroll {
+    max-height: calc(100vh - 220px);
+
+    overflow-x: auto;
+    overflow-y: auto;
+  }
+
+  .shipments-v2-table {
+    min-width: 1320px !important;
+  }
+
+  .shipments-v2-table th,
+  .shipments-v2-table td {
+    padding: 9px 8px;
+    font-size: 11px;
+  }
+
+  .shipment-filter-menu {
+    position: fixed;
+
+    top: 70px;
+    right: 12px !important;
+    bottom: 12px;
+    left: 12px !important;
+
+    width: auto;
+    max-width: none;
+    max-height: none;
+  }
+
+  .shipment-filter-values {
+    min-height: 0;
+  }
+
+  .shipment-row-actions .btn {
+    height: 32px;
+  }
+
+  .shipment-icon-btn {
+    width: 32px;
+    min-width: 32px !important;
+  }
+
+  .shipment-icon-btn svg {
+    width: 15px;
+    height: 15px;
+  }
+}
+/* =========================================================
+   ALANSA - DASHBOARD
+   Separación visual entre bloques
+   ========================================================= */
+
+#dashboardBlocks {
+  display: grid;
+  gap: 18px;
+}
+
+#dashboardBlocks > .dashboard-v2-section {
+  margin: 0;
+}
+
+@media (max-width: 760px) {
+  #dashboardBlocks {
+    gap: 14px;
+  }
+}
+
+/* =========================================================
+   ALANSA - REMISIONES
+   TABLA PROFESIONAL / FILTROS TIPO EXCEL
+
+   Este bloque sustituye visualmente los ajustes anteriores
+   de Remisiones sin afectar formularios, PDF o Dashboard.
+   ========================================================= */
+
+.shipments-v2-content {
+  min-width: 0;
+}
+
+.shipments-table-card {
+  min-width: 0;
+  overflow: visible !important;
+}
+
+.shipments-table-card .table-toolbar {
+  padding-bottom: 12px;
+}
+
+.shipments-table-count {
+  display: block;
+  margin-top: 4px;
+  color: #6d7973;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.shipments-filter-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  min-height: 42px;
+  padding: 8px 4px 12px;
+  color: #637069;
+  font-size: 12.5px;
+}
+
+.shipments-filter-summary strong {
+  color: #1f3329;
+  font-size: 13px;
+}
+
+/* ---------------------------------------------------------
+   CONTENEDOR DE TABLA
+   El ancho queda limitado al espacio real disponible.
+   Solo aparece scroll vertical cuando las filas exceden
+   la altura útil de la pantalla.
+   --------------------------------------------------------- */
+
+.shipments-v2-scroll {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  max-height: calc(100vh - 285px);
+  min-height: 150px;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  border: 1px solid #dfe7e2;
+  border-radius: 10px;
+  background: #fff;
+  scrollbar-gutter: stable;
+}
+
+.shipments-v2-table {
+  width: 100% !important;
+  min-width: 0 !important;
+  table-layout: fixed !important;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: #fff;
+}
+
+.shipments-v2-table th,
+.shipments-v2-table td {
+  min-width: 0 !important;
+  padding: 11px 8px !important;
+  border-right: 0;
+  border-bottom: 1px solid #e5ebe7;
+  color: #25362d;
+  font-size: 12.5px !important;
+  line-height: 1.35;
+  vertical-align: middle;
+}
+
+.shipments-v2-table tbody tr {
+  background: #fff;
+  transition: background-color 120ms ease;
+}
+
+.shipments-v2-table tbody tr:hover {
+  background: #f8fbf9;
+}
+
+.shipments-v2-table thead th {
+  position: sticky !important;
+  top: 0;
+  z-index: 22;
+  padding-top: 10px !important;
+  padding-bottom: 10px !important;
+  background: #edf4f0 !important;
+  border-bottom: 1px solid #cfdbd4;
+  color: #43584d;
+  font-size: 10.5px !important;
+  font-weight: 800;
+  letter-spacing: .035em;
+  text-transform: uppercase;
+}
+
+.shipments-v2-table tfoot td {
+  position: sticky !important;
+  bottom: 0;
+  z-index: 18;
+  padding-top: 10px !important;
+  padding-bottom: 10px !important;
+  background: #eef5f1 !important;
+  border-top: 2px solid #c8d8cf;
+  border-bottom: 0;
+  box-shadow: 0 -5px 14px rgba(22, 54, 38, .06);
+  font-size: 12px !important;
+}
+
+.shipment-totals-row strong {
+  color: #163d2a;
+}
+
+/* ---------------------------------------------------------
+   ANCHOS DE COLUMNA
+   Diseñados para mantener la tabla completa en escritorio.
+   --------------------------------------------------------- */
+
+.shipments-v2-table th:nth-child(1),
+.shipments-v2-table td:nth-child(1) {
+  width: 15%;
+}
+
+.shipments-v2-table th:nth-child(2),
+.shipments-v2-table td:nth-child(2) {
+  width: 7.5%;
+}
+
+.shipments-v2-table th:nth-child(3),
+.shipments-v2-table td:nth-child(3) {
+  width: 7%;
+}
+
+.shipments-v2-table th:nth-child(4),
+.shipments-v2-table td:nth-child(4) {
+  width: 9%;
+}
+
+.shipments-v2-table th:nth-child(5),
+.shipments-v2-table td:nth-child(5) {
+  width: 8%;
+}
+
+.shipments-v2-table th:nth-child(6),
+.shipments-v2-table td:nth-child(6) {
+  width: 5%;
+  text-align: right;
+}
+
+.shipments-v2-table th:nth-child(7),
+.shipments-v2-table td:nth-child(7) {
+  width: 6%;
+  text-align: right;
+}
+
+.shipments-v2-table th:nth-child(8),
+.shipments-v2-table td:nth-child(8),
+.shipments-v2-table th:nth-child(9),
+.shipments-v2-table td:nth-child(9) {
+  width: 8%;
+  text-align: right;
+}
+
+.shipments-v2-table th:nth-child(10),
+.shipments-v2-table td:nth-child(10) {
+  width: 8%;
+}
+
+.shipments-v2-table th:nth-child(11),
+.shipments-v2-table td:nth-child(11) {
+  width: 7%;
+  text-align: center;
+}
+
+.shipments-v2-table th:nth-child(12),
+.shipments-v2-table td:nth-child(12) {
+  width: 11.5%;
+}
+
+.shipment-cell-folio {
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+.shipment-cell-folio strong {
+  color: #184f36;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.shipment-cell-date {
+  white-space: nowrap;
+}
+
+/* ---------------------------------------------------------
+   ENCABEZADOS + BOTÓN DE FILTRO
+   --------------------------------------------------------- */
+
+.shipment-th-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 5px;
+  min-width: 0;
+}
+
+.shipment-th-inner > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.shipment-filter-trigger {
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 !important;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: #52675b;
+  cursor: pointer;
+  font-size: 12px !important;
+}
+
+.shipment-filter-trigger:hover,
+.shipment-filter-trigger.active {
+  border-color: #b9cec1;
+  background: #dfece4;
+  color: #17623f;
+}
+
+.shipment-filter-active {
+  background: #e4f0e8 !important;
+}
+
+/* ---------------------------------------------------------
+   MENÚ DE FILTRO
+   Se monta en document.body desde shipments.js para que
+   NUNCA quede recortado por la tabla ni por la tarjeta.
+   --------------------------------------------------------- */
+
+.shipment-filter-menu,
+.shipment-filter-menu-portal {
+  position: fixed !important;
+  z-index: 10000 !important;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden !important;
+  padding: 14px;
+  border: 1px solid #ccd8d1;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 18px 45px rgba(21, 45, 33, .20);
+  color: #1f3027;
+  text-align: left;
+  text-transform: none;
+  letter-spacing: normal;
+  font-size: 12.5px !important;
+  font-weight: 400;
+}
+
+.shipment-filter-menu-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex: 0 0 auto;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.shipment-filter-menu-head strong {
+  color: #27372f;
+  font-size: 12px;
+  letter-spacing: .02em;
+  text-transform: uppercase;
+}
+
+.shipment-filter-close {
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: #526058;
+  cursor: pointer;
+  font-size: 20px;
+  line-height: 1;
+}
+
+.shipment-filter-close:hover {
+  background: #eef3f0;
+}
+
+.shipment-filter-menu .input {
+  min-height: 40px;
+  font-size: 12.5px;
+}
+
+.shipment-filter-range {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  flex: 0 0 auto;
+  gap: 8px;
+  margin-bottom: 9px;
+}
+
+.shipment-filter-range label {
+  display: grid;
+  gap: 5px;
+  color: #637069;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.shipment-filter-select-row {
+  flex: 0 0 auto;
+  margin-top: 9px;
+  padding: 9px 3px;
+  border-bottom: 1px solid #e3eae6;
+  font-size: 12px;
+}
+
+.shipment-filter-select-row label,
+.shipment-filter-value {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  cursor: pointer;
+}
+
+.shipment-filter-values {
+  flex: 1 1 auto !important;
+  min-height: 80px !important;
+  max-height: none !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  padding: 5px 2px 5px 0;
+}
+
+.shipment-filter-value {
+  min-height: 34px;
+  padding: 7px 4px;
+  border-radius: 6px;
+  color: #2b3a32;
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.shipment-filter-value:hover {
+  background: #f1f6f3;
+}
+
+.shipment-filter-value[hidden] {
+  display: none !important;
+}
+
+.shipment-filter-no-values {
+  padding: 18px 5px;
+  color: #7b8781;
+  font-size: 12px;
+  text-align: center;
+}
+
+.shipment-filter-actions {
+  display: flex;
+  justify-content: flex-end;
+  flex: 0 0 auto;
+  gap: 8px;
+  padding-top: 11px;
+  border-top: 1px solid #e2e9e5;
+}
+
+.shipment-filter-actions .btn {
+  min-height: 34px;
+  padding: 7px 12px;
+  font-size: 11.5px;
+}
+
+/* ---------------------------------------------------------
+   ESTADO Y ACCIONES
+   --------------------------------------------------------- */
+
+.shipment-status {
+  white-space: nowrap;
+}
+
+.shipment-row-actions {
+  display: flex !important;
+  align-items: center;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  gap: 5px !important;
+}
+
+.shipment-row-actions .btn {
+  min-width: 0 !important;
+  min-height: 30px;
+  padding: 6px 8px !important;
+  border-radius: 7px;
+  font-size: 10.5px !important;
+  line-height: 1;
+}
+
+.shipment-table-empty-cell {
+  padding: 40px 16px !important;
+  color: #77847d;
+  text-align: center !important;
+  font-size: 13px !important;
+}
+
+.shipment-total-records {
+  margin-left: 9px;
+  color: #66736c;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+/* ---------------------------------------------------------
+   PANTALLAS MEDIANAS
+   Mantiene legibilidad sin reducir la tipografía a tamaños
+   poco profesionales.
+   --------------------------------------------------------- */
+
+@media (max-width: 1180px) {
+  .shipments-v2-table th,
+  .shipments-v2-table td {
+    padding-right: 6px !important;
+    padding-left: 6px !important;
+    font-size: 11.5px !important;
+  }
+
+  .shipments-v2-table thead th {
+    font-size: 9.8px !important;
+  }
+
+  .shipment-row-actions .btn {
+    padding: 6px 6px !important;
+    font-size: 10px !important;
+  }
+}
+
+/* ---------------------------------------------------------
+   MÓVIL
+   En móvil se prioriza lectura. Allí sí se permite scroll
+   horizontal porque 12 columnas no caben de forma legible.
+   --------------------------------------------------------- */
+
+@media (max-width: 760px) {
+  .shipments-v2-scroll {
+    max-height: calc(100vh - 225px);
+    overflow-x: auto !important;
+  }
+
+  .shipments-v2-table {
+    min-width: 1050px !important;
+    table-layout: fixed !important;
+  }
+
+  .shipments-v2-table th,
+  .shipments-v2-table td {
+    padding: 9px 7px !important;
+    font-size: 11.5px !important;
+  }
+
+  .shipments-v2-table thead th {
+    font-size: 10px !important;
+  }
+
+  .shipment-filter-menu,
+  .shipment-filter-menu-portal {
+    right: 12px !important;
+    left: 12px !important;
+    width: auto !important;
+    max-width: none !important;
+  }
+
+  .shipment-filter-range {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* =========================================================
+   ALANSA - DASHBOARD
+   TABLAS LIMPIAS + FILTROS TIPO EXCEL
+   ========================================================= */
+
+#dashboardBlocks {
+  display: grid;
+  gap: 20px;
+}
+
+#dashboardBlocks > .dashboard-v2-section {
+  margin: 0;
+}
+
+.dashboard-v2-section {
+  overflow: visible !important;
+}
+
+.dashboard-v2-section-head {
+  min-height: 74px;
+  padding: 16px 20px;
+  align-items: center;
+}
+
+.dashboard-v2-section-title {
+  align-items: center;
+  gap: 12px;
+}
+
+.dashboard-v2-section-title h2 {
+  margin: 0 0 3px;
+  font-size: 17px;
+  line-height: 1.2;
+}
+
+.dashboard-v2-section-title p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.dashboard-table-summary {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-height: 34px;
+  padding: 7px 16px 8px;
+  color: #6a7770;
+  font-size: 12px;
+}
+
+.dashboard-excel-table-scroll {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  max-height: calc(100vh - 285px);
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  border-top: 1px solid #dde5e1;
+  background: #fff;
+  scrollbar-gutter: stable;
+}
+
+.dashboard-excel-table {
+  width: 100% !important;
+  min-width: 0 !important;
+  table-layout: fixed !important;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.dashboard-excel-table th,
+.dashboard-excel-table td {
+  min-width: 0 !important;
+  padding: 11px 12px !important;
+  border-right: 1px solid #e0e7e3;
+  border-bottom: 1px solid #e0e7e3;
+  color: #26372e;
+  font-size: 12.5px !important;
+  line-height: 1.35;
+  vertical-align: middle;
+}
+
+.dashboard-excel-table th:last-child,
+.dashboard-excel-table td:last-child {
+  border-right: 0;
+}
+
+.dashboard-excel-table tbody tr {
+  background: #fff;
+  transition: background-color 120ms ease;
+}
+
+.dashboard-excel-table tbody tr:hover {
+  background: #f8fbf9;
+}
+
+.dashboard-excel-table thead th {
+  position: sticky !important;
+  top: 0;
+  z-index: 20;
+  background: #edf3f0 !important;
+  color: #42564b;
+  font-size: 10.5px !important;
+  font-weight: 800;
+  letter-spacing: .035em;
+  text-transform: uppercase;
+}
+
+.dashboard-excel-table tfoot td {
+  position: sticky !important;
+  bottom: 0;
+  z-index: 18;
+  background: #edf4f9 !important;
+  border-top: 1px solid #cddbe4;
+  border-bottom: 0;
+  font-size: 12px !important;
+  box-shadow: 0 -4px 12px rgba(30, 60, 44, .05);
+}
+
+/* Remisiones: 6 columnas */
+.dashboard-excel-table:not(.dashboard-due-excel-table) th:nth-child(1),
+.dashboard-excel-table:not(.dashboard-due-excel-table) td:nth-child(1) {
+  width: 24%;
+}
+
+.dashboard-excel-table:not(.dashboard-due-excel-table) th:nth-child(2),
+.dashboard-excel-table:not(.dashboard-due-excel-table) td:nth-child(2) {
+  width: 13%;
+}
+
+.dashboard-excel-table:not(.dashboard-due-excel-table) th:nth-child(3),
+.dashboard-excel-table:not(.dashboard-due-excel-table) td:nth-child(3) {
+  width: 19%;
+}
+
+.dashboard-excel-table:not(.dashboard-due-excel-table) th:nth-child(4),
+.dashboard-excel-table:not(.dashboard-due-excel-table) td:nth-child(4),
+.dashboard-excel-table:not(.dashboard-due-excel-table) th:nth-child(5),
+.dashboard-excel-table:not(.dashboard-due-excel-table) td:nth-child(5) {
+  width: 15%;
+  text-align: right;
+}
+
+.dashboard-excel-table:not(.dashboard-due-excel-table) th:nth-child(6),
+.dashboard-excel-table:not(.dashboard-due-excel-table) td:nth-child(6) {
+  width: 14%;
+  text-align: center;
+}
+
+/* Próximas a vencer: 7 columnas */
+.dashboard-due-excel-table th:nth-child(1),
+.dashboard-due-excel-table td:nth-child(1) {
+  width: 26%;
+}
+
+.dashboard-due-excel-table th:nth-child(2),
+.dashboard-due-excel-table td:nth-child(2) {
+  width: 10%;
+}
+
+.dashboard-due-excel-table th:nth-child(3),
+.dashboard-due-excel-table td:nth-child(3) {
+  width: 13%;
+}
+
+.dashboard-due-excel-table th:nth-child(4),
+.dashboard-due-excel-table td:nth-child(4) {
+  width: 16%;
+}
+
+.dashboard-due-excel-table th:nth-child(5),
+.dashboard-due-excel-table td:nth-child(5),
+.dashboard-due-excel-table th:nth-child(6),
+.dashboard-due-excel-table td:nth-child(6) {
+  width: 12%;
+  text-align: right;
+}
+
+.dashboard-due-excel-table th:nth-child(7),
+.dashboard-due-excel-table td:nth-child(7) {
+  width: 11%;
+  text-align: center;
+}
+
+.dashboard-excel-th {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  min-width: 0;
+}
+
+.dashboard-excel-th > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dashboard-excel-filter-trigger {
+  width: 25px;
+  height: 25px;
+  flex: 0 0 25px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: #52675b;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.dashboard-excel-filter-trigger:hover,
+.dashboard-excel-filter-trigger.active {
+  border-color: #b8cdc0;
+  background: #deebe3;
+  color: #17613f;
+}
+
+.dashboard-excel-filter-active {
+  background: #e4efe8 !important;
+}
+
+/* El menú se monta en BODY para que jamás sea recortado. */
+.dashboard-excel-filter-menu,
+.dashboard-excel-filter-menu-portal {
+  position: fixed !important;
+  z-index: 10000 !important;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden !important;
+  padding: 14px;
+  border: 1px solid #ccd8d1;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 18px 45px rgba(21, 45, 33, .20);
+  color: #1f3027;
+  text-align: left;
+  text-transform: none;
+  letter-spacing: normal;
+  font-size: 12.5px !important;
+  font-weight: 400;
+}
+
+.dashboard-excel-filter-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex: 0 0 auto;
+  gap: 10px;
+  margin-bottom: 9px;
+}
+
+.dashboard-excel-filter-head strong {
+  color: #2b3a32;
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.dashboard-excel-filter-close {
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: #5a665f;
+  cursor: pointer;
+  font-size: 20px;
+}
+
+.dashboard-excel-filter-close:hover {
+  background: #eef3f0;
+}
+
+.dashboard-excel-sort-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  flex: 0 0 auto;
+  gap: 7px;
+  margin-bottom: 9px;
+}
+
+.dashboard-excel-sort-actions .btn {
+  min-height: 34px;
+  padding: 6px 8px;
+  font-size: 11px;
+}
+
+.dashboard-excel-filter-menu .input {
+  min-height: 39px;
+  font-size: 12px;
+}
+
+.dashboard-excel-filter-range {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  flex: 0 0 auto;
+  gap: 8px;
+  margin-bottom: 9px;
+}
+
+.dashboard-excel-filter-range label {
+  display: grid;
+  gap: 5px;
+  color: #627068;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.dashboard-excel-select-all {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 9px 3px;
+  border-bottom: 1px solid #e2e9e5;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.dashboard-excel-values {
+  flex: 1 1 auto;
+  min-height: 80px;
+  overflow-y: auto !important;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  padding: 5px 0;
+}
+
+.dashboard-excel-value {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 34px;
+  padding: 7px 4px;
+  border-radius: 6px;
+  color: #2c3a33;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.dashboard-excel-value:hover {
+  background: #f1f6f3;
+}
+
+.dashboard-excel-value[hidden] {
+  display: none !important;
+}
+
+.dashboard-excel-filter-actions {
+  display: flex;
+  justify-content: flex-end;
+  flex: 0 0 auto;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px solid #e2e9e5;
+}
+
+.dashboard-excel-filter-actions .btn {
+  min-height: 34px;
+  padding: 7px 12px;
+  font-size: 11.5px;
+}
+
+.dashboard-table-empty-cell {
+  padding: 36px 16px !important;
+  color: #77847d;
+  text-align: center !important;
+  font-size: 13px !important;
+}
+
+@media (max-width: 1100px) {
+  .dashboard-excel-table th,
+  .dashboard-excel-table td {
+    padding: 9px 8px !important;
+    font-size: 11.5px !important;
+  }
+
+  .dashboard-excel-table thead th {
+    font-size: 9.8px !important;
+  }
+}
+
+@media (max-width: 760px) {
+  #dashboardBlocks {
+    gap: 14px;
+  }
+
+  .dashboard-v2-section-head {
+    min-height: auto;
+    padding: 14px 15px;
+  }
+
+  .dashboard-excel-table-scroll {
+    max-height: calc(100vh - 230px);
+    overflow-x: auto !important;
+  }
+
+  .dashboard-excel-table {
+    min-width: 900px !important;
+  }
+
+  .dashboard-excel-filter-menu,
+  .dashboard-excel-filter-menu-portal {
+    right: 12px !important;
+    left: 12px !important;
+    width: auto !important;
+    max-width: none !important;
+  }
+
+  .dashboard-excel-filter-range,
+  .dashboard-excel-sort-actions {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* =========================================================
+   REMISIONES · ALINEACIÓN EXACTA DE COLUMNAS Y TOTALES
+   ========================================================= */
+
+/* Columnas numéricas:
+   6 Cajas
+   7 Libras
+   8 Total MXN
+   9 Total USD */
+.shipments-v2-table thead th:nth-child(6),
+.shipments-v2-table thead th:nth-child(7),
+.shipments-v2-table thead th:nth-child(8),
+.shipments-v2-table thead th:nth-child(9),
+.shipments-v2-table tbody td:nth-child(6),
+.shipments-v2-table tbody td:nth-child(7),
+.shipments-v2-table tbody td:nth-child(8),
+.shipments-v2-table tbody td:nth-child(9) {
+  text-align: right !important;
+}
+
+/* Mismo espacio interno para encabezados y registros */
+.shipments-v2-table thead th,
+.shipments-v2-table tbody td,
+.shipments-v2-table tfoot td {
+  box-sizing: border-box;
+}
+
+/* Números perfectamente alineados */
+.shipments-v2-table tbody td:nth-child(6),
+.shipments-v2-table tbody td:nth-child(7),
+.shipments-v2-table tbody td:nth-child(8),
+.shipments-v2-table tbody td:nth-child(9),
+.shipments-v2-table tfoot td {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------------------------------------------------------
+   FILA DE TOTALES
+   El primer td ocupa las columnas 1 a 5 mediante colspan="5".
+   Por eso los siguientes td corresponden visualmente a:
+   td 2 = Cajas
+   td 3 = Libras
+   td 4 = Total MXN
+   td 5 = Total USD
+   --------------------------------------------------------- */
+
+.shipments-v2-table tfoot td:nth-child(2),
+.shipments-v2-table tfoot td:nth-child(3),
+.shipments-v2-table tfoot td:nth-child(4),
+.shipments-v2-table tfoot td:nth-child(5) {
+  text-align: right !important;
+}
+
+/* Evita diferencias de padding entre dato y total */
+.shipments-v2-table tbody td:nth-child(6),
+.shipments-v2-table tbody td:nth-child(7),
+.shipments-v2-table tbody td:nth-child(8),
+.shipments-v2-table tbody td:nth-child(9),
+.shipments-v2-table tfoot td:nth-child(2),
+.shipments-v2-table tfoot td:nth-child(3),
+.shipments-v2-table tfoot td:nth-child(4),
+.shipments-v2-table tfoot td:nth-child(5) {
+  padding-left: 8px !important;
+  padding-right: 8px !important;
+}
+
+/* Encabezados numéricos alineados al mismo borde derecho */
+.shipments-v2-table thead th:nth-child(6) .shipment-filter-header,
+.shipments-v2-table thead th:nth-child(7) .shipment-filter-header,
+.shipments-v2-table thead th:nth-child(8) .shipment-filter-header,
+.shipments-v2-table thead th:nth-child(9) .shipment-filter-header {
+  justify-content: flex-end;
+}
+
+/* =========================================================
+   REMISIONES · VISTA MÓVIL POR TARJETAS
+   La tabla de escritorio se conserva sin cambios.
+   ========================================================= */
+.shipments-mobile-list { display: none; }
+
+@media (max-width: 760px) {
+  .shipments-v2-scroll { display: none !important; }
+  .shipments-mobile-list { display: grid; gap: 12px; padding: 12px; }
+  .shipment-mobile-card { overflow: hidden; border: 1px solid #dfe7e2; border-radius: 14px; background: #fff; box-shadow: 0 2px 8px rgba(20,55,35,.05); }
+  .shipment-mobile-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 14px; border-bottom: 1px solid #e8eeea; }
+  .shipment-mobile-card-head > div { min-width: 0; }
+  .shipment-mobile-label, .shipment-mobile-grid span { display: block; margin-bottom: 4px; color: #6b776f; font-size: .68rem; font-weight: 700; }
+  .shipment-mobile-folio { display: block; color: #145f3a; font-size: .9rem; line-height: 1.3; overflow-wrap: anywhere; word-break: normal; }
+  .shipment-mobile-primary { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 14px; padding: 13px 14px; background: #f8faf9; }
+  .shipment-mobile-primary strong { display: block; font-size: .82rem; overflow-wrap: anywhere; }
+  .shipment-mobile-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); padding: 4px 14px; }
+  .shipment-mobile-grid > div { min-width: 0; padding: 11px 8px 11px 0; border-bottom: 1px solid #edf1ee; }
+  .shipment-mobile-grid > div:nth-child(even) { padding-right: 0; padding-left: 8px; border-left: 1px solid #edf1ee; }
+  .shipment-mobile-grid strong { display: block; font-size: .78rem; line-height: 1.35; overflow-wrap: anywhere; }
+  .shipment-mobile-actions { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; padding: 13px 14px 14px; }
+  .shipment-mobile-actions .btn { width: 100%; min-width: 0; padding-inline: 7px; }
+  .shipments-mobile-empty { padding: 32px 16px; color: var(--muted); text-align: center; }
+}
+
+/* =========================================================
+   ALANSA · REMISIONES
+   TABLA MAESTRA TIPO EXCEL
+   Este bloque debe permanecer al FINAL de components.css
+   ========================================================= */
+
+
+/* ---------------------------------------------------------
+   CONTENEDOR
+   --------------------------------------------------------- */
+
+.shipments-v2-scroll {
+  position: relative !important;
+
+  width: 100% !important;
+  max-width: 100% !important;
+
+  min-height: 0 !important;
+  max-height: calc(100vh - 285px) !important;
+
+  overflow-x: scroll !important;
+  overflow-y: auto !important;
+
+  border: 1px solid #d9e3dd !important;
+  border-radius: 10px !important;
+
+  background: #fff !important;
+
+  scrollbar-gutter: stable both-edges;
+  overscroll-behavior: contain;
+
+  -webkit-overflow-scrolling: touch;
+}
+
+
+/* ---------------------------------------------------------
+   SCROLLBAR VISIBLE
+   --------------------------------------------------------- */
+
+.shipments-v2-scroll::-webkit-scrollbar {
+  width: 11px;
+  height: 11px;
+}
+
+.shipments-v2-scroll::-webkit-scrollbar-track {
+  background: #edf1ef;
+}
+
+.shipments-v2-scroll::-webkit-scrollbar-thumb {
+  background: #a6ada9;
+  border: 2px solid #edf1ef;
+  border-radius: 999px;
+}
+
+.shipments-v2-scroll::-webkit-scrollbar-thumb:hover {
+  background: #7f8984;
+}
+
+.shipments-v2-scroll {
+  scrollbar-width: auto;
+  scrollbar-color: #a6ada9 #edf1ef;
+}
+
+
+/* ---------------------------------------------------------
+   TABLA
+   No se comprime para intentar entrar en pantalla.
+   --------------------------------------------------------- */
+
+.shipments-v2-table {
+  width: 100% !important;
+  min-width: 1500px !important;
+
+  table-layout: fixed !important;
+
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+
+  background: #fff !important;
+}
+
+
+/* ---------------------------------------------------------
+   TODAS LAS CELDAS
+   --------------------------------------------------------- */
+
+.shipments-v2-table th,
+.shipments-v2-table td {
+  box-sizing: border-box !important;
+
+  min-width: unset !important;
+
+  padding: 14px 10px !important;
+
+  border-right: 1px solid #dfe7e2 !important;
+  border-bottom: 1px solid #dfe7e2 !important;
+
+  vertical-align: middle !important;
+
+  text-align: center !important;
+
+  word-break: normal !important;
+  overflow-wrap: normal !important;
+
+  font-variant-numeric: tabular-nums;
+}
+
+.shipments-v2-table th:last-child,
+.shipments-v2-table td:last-child {
+  border-right: 0 !important;
+}
+
+
+/* ---------------------------------------------------------
+   ENCABEZADOS
+   --------------------------------------------------------- */
+
+.shipments-v2-table thead th {
+  position: sticky !important;
+
+  top: 0 !important;
+  z-index: 20 !important;
+
+  height: 76px;
+
+  padding: 12px 8px !important;
+
+  background: #edf4f0 !important;
+
+  color: #40564b !important;
+
+  font-size: 11px !important;
+  font-weight: 800 !important;
+
+  line-height: 1.25 !important;
+
+  letter-spacing: .025em !important;
+  text-transform: uppercase !important;
+
+  text-align: center !important;
+
+  white-space: normal !important;
+
+  border-bottom: 1px solid #ccd9d2 !important;
+}
+
+
+/* ---------------------------------------------------------
+   TEXTO + FILTRO DEL ENCABEZADO
+   --------------------------------------------------------- */
+
+.shipment-th-inner {
+  display: flex !important;
+
+  align-items: center !important;
+  justify-content: center !important;
+
+  width: 100% !important;
+  min-width: 0 !important;
+
+  gap: 6px !important;
+}
+
+.shipment-th-inner > span {
+  min-width: 0 !important;
+
+  overflow: visible !important;
+  text-overflow: clip !important;
+
+  text-align: center !important;
+
+  white-space: normal !important;
+
+  word-break: keep-all !important;
+  overflow-wrap: normal !important;
+}
+
+.shipment-filter-trigger {
+  width: 22px !important;
+  height: 22px !important;
+
+  min-width: 22px !important;
+  flex: 0 0 22px !important;
+
+  padding: 0 !important;
+}
+
+
+/* ---------------------------------------------------------
+   REGISTROS
+   --------------------------------------------------------- */
+
+.shipments-v2-table tbody td {
+  height: 74px;
+
+  padding: 14px 10px !important;
+
+  background: #fff;
+
+  color: #25362d !important;
+
+  font-size: 12.5px !important;
+  line-height: 1.3 !important;
+
+  text-align: center !important;
+
+  white-space: nowrap !important;
+}
+
+.shipments-v2-table tbody tr:hover td {
+  background: #f8fbf9 !important;
+}
+
+
+/* Folio */
+.shipment-cell-folio {
+  text-align: center !important;
+
+  white-space: nowrap !important;
+
+  overflow-wrap: normal !important;
+  word-break: normal !important;
+}
+
+.shipment-cell-folio strong {
+  color: #184f36 !important;
+
+  font-size: 12px !important;
+  font-weight: 750 !important;
+
+  white-space: nowrap !important;
+}
+
+
+/* Fechas */
+.shipment-cell-date {
+  text-align: center !important;
+  white-space: nowrap !important;
+}
+
+
+/* ---------------------------------------------------------
+   ANCHOS EXACTOS
+   --------------------------------------------------------- */
+
+.shipments-v2-table th:nth-child(1),
+.shipments-v2-table td:nth-child(1) {
+  width: 190px !important;
+}
+
+.shipments-v2-table th:nth-child(2),
+.shipments-v2-table td:nth-child(2) {
+  width: 115px !important;
+}
+
+.shipments-v2-table th:nth-child(3),
+.shipments-v2-table td:nth-child(3) {
+  width: 120px !important;
+}
+
+.shipments-v2-table th:nth-child(4),
+.shipments-v2-table td:nth-child(4) {
+  width: 140px !important;
+}
+
+.shipments-v2-table th:nth-child(5),
+.shipments-v2-table td:nth-child(5) {
+  width: 140px !important;
+}
+
+.shipments-v2-table th:nth-child(6),
+.shipments-v2-table td:nth-child(6) {
+  width: 85px !important;
+}
+
+.shipments-v2-table th:nth-child(7),
+.shipments-v2-table td:nth-child(7) {
+  width: 90px !important;
+}
+
+.shipments-v2-table th:nth-child(8),
+.shipments-v2-table td:nth-child(8) {
+  width: 125px !important;
+}
+
+.shipments-v2-table th:nth-child(9),
+.shipments-v2-table td:nth-child(9) {
+  width: 125px !important;
+}
+
+.shipments-v2-table th:nth-child(10),
+.shipments-v2-table td:nth-child(10) {
+  width: 130px !important;
+}
+
+.shipments-v2-table th:nth-child(11),
+.shipments-v2-table td:nth-child(11) {
+  width: 115px !important;
+}
+
+.shipments-v2-table th:nth-child(12),
+.shipments-v2-table td:nth-child(12) {
+  width: 150px !important;
+}
+
+
+/* ---------------------------------------------------------
+   IMPORTANTE:
+   ANULA ALINEACIONES ANTIGUAS A LA DERECHA
+   --------------------------------------------------------- */
+
+.shipments-v2-table thead th:nth-child(6),
+.shipments-v2-table thead th:nth-child(7),
+.shipments-v2-table thead th:nth-child(8),
+.shipments-v2-table thead th:nth-child(9),
+
+.shipments-v2-table tbody td:nth-child(6),
+.shipments-v2-table tbody td:nth-child(7),
+.shipments-v2-table tbody td:nth-child(8),
+.shipments-v2-table tbody td:nth-child(9) {
+  text-align: center !important;
+}
+
+.shipments-v2-table thead th:nth-child(6) .shipment-th-inner,
+.shipments-v2-table thead th:nth-child(7) .shipment-th-inner,
+.shipments-v2-table thead th:nth-child(8) .shipment-th-inner,
+.shipments-v2-table thead th:nth-child(9) .shipment-th-inner {
+  justify-content: center !important;
+}
+
+
+/* ---------------------------------------------------------
+   ESTADO
+   --------------------------------------------------------- */
+
+.shipment-status {
+  display: inline-flex !important;
+
+  align-items: center;
+  justify-content: center;
+
+  white-space: nowrap !important;
+}
+
+
+/* ---------------------------------------------------------
+   ACCIONES
+   PDF + LÁPIZ + PAPELERA
+   SIEMPRE EN UNA SOLA FILA
+   --------------------------------------------------------- */
+
+.shipments-v2-table td:nth-child(12) {
+  padding-right: 8px !important;
+  padding-left: 8px !important;
+}
+
+.shipment-row-actions {
+  display: flex !important;
+
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+
+  align-items: center !important;
+  justify-content: center !important;
+
+  width: 100% !important;
+
+  gap: 5px !important;
+
+  white-space: nowrap !important;
+}
+
+.shipment-row-actions .btn {
+  display: inline-flex !important;
+
+  align-items: center !important;
+  justify-content: center !important;
+
+  flex: 0 0 auto !important;
+
+  height: 34px !important;
+  min-height: 34px !important;
+
+  margin: 0 !important;
+
+  border-radius: 7px !important;
+
+  line-height: 1 !important;
+}
+
+.shipment-row-actions .shipment-pdf {
+  width: 48px !important;
+  min-width: 48px !important;
+
+  padding: 0 8px !important;
+
+  font-size: 11px !important;
+  font-weight: 750 !important;
+}
+
+.shipment-row-actions .shipment-icon-btn {
+  width: 34px !important;
+  min-width: 34px !important;
+  max-width: 34px !important;
+
+  padding: 0 !important;
+}
+
+.shipment-icon-btn svg {
+  display: block;
+
+  width: 16px;
+  height: 16px;
+
+  pointer-events: none;
+}
+
+
+/* ---------------------------------------------------------
+   FILA DE TOTALES
+   --------------------------------------------------------- */
+
+.shipments-v2-table tfoot td {
+  position: sticky !important;
+
+  bottom: 0 !important;
+  z-index: 18 !important;
+
+  height: 56px;
+
+  padding: 12px 10px !important;
+
+  background: #eef5f1 !important;
+
+  border-top: 2px solid #c8d8cf !important;
+  border-bottom: 0 !important;
+
+  color: #163d2a !important;
+
+  font-size: 12px !important;
+
+  text-align: center !important;
+
+  white-space: nowrap !important;
+
+  box-shadow: 0 -4px 12px rgba(22, 54, 38, .05);
+}
+
+
+/* Primer bloque de totales */
+.shipments-v2-table tfoot td:first-child {
+  text-align: left !important;
+  padding-left: 14px !important;
+}
+
+
+/* Cajas, libras, MXN y USD */
+.shipments-v2-table tfoot td:nth-child(2),
+.shipments-v2-table tfoot td:nth-child(3),
+.shipments-v2-table tfoot td:nth-child(4),
+.shipments-v2-table tfoot td:nth-child(5) {
+  text-align: center !important;
+}
+
+
+/* ---------------------------------------------------------
+   MÓVIL
+   Se conserva la vista móvil por tarjetas que ya existe.
+   --------------------------------------------------------- */
+
+@media (max-width: 760px) {
+
+  .shipments-v2-table {
+    min-width: 1500px !important;
+  }
+
+}
+
+/* =========================================================
+   ALANSA · REMISIONES · REDISEÑO MÓVIL 2026-09
+   Tabla real + formulario estable a pantalla completa
+   ========================================================= */
+@media (max-width: 760px) {
+  /* La vista móvil usa la misma tabla; se eliminan las tarjetas. */
+  .shipments-mobile-list { display: none !important; }
+  .shipments-v2-scroll {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: calc(100dvh - 250px) !important;
+    overflow: auto !important;
+    border: 1px solid #d9e3dd !important;
+    border-radius: 10px !important;
+    background: #fff !important;
+    scrollbar-gutter: stable;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .shipments-v2-table {
+    width: 1500px !important;
+    min-width: 1500px !important;
+    table-layout: fixed !important;
+  }
+
+  .shipments-v2-table th,
+  .shipments-v2-table td {
+    padding: 10px 8px !important;
+    font-size: 11px !important;
+    text-align: center !important;
+    vertical-align: middle !important;
+    white-space: nowrap !important;
+  }
+
+  .shipments-v2-table thead th {
+    top: 0 !important;
+    height: 60px !important;
+    z-index: 30 !important;
+    background: #edf4f0 !important;
+  }
+
+  /* Folio congelado como una hoja de cálculo. */
+  .shipments-v2-table th:first-child,
+  .shipments-v2-table td:first-child {
+    position: sticky !important;
+    left: 0 !important;
+    z-index: 24 !important;
+    background: #fff !important;
+    box-shadow: 2px 0 0 #d9e3dd;
+  }
+
+  .shipments-v2-table thead th:first-child {
+    z-index: 40 !important;
+    background: #edf4f0 !important;
+  }
+
+  .shipments-v2-table tfoot td:first-child {
+    z-index: 35 !important;
+    background: #eef5f1 !important;
+  }
+
+  .shipment-row-actions {
+    display: flex !important;
+    flex-flow: row nowrap !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 5px !important;
+    width: 100% !important;
+  }
+
+  .shipment-row-actions .btn {
+    flex: 0 0 auto !important;
+    margin: 0 !important;
+  }
+
+  /* Cabecera del módulo más compacta. */
+  .shipment-header-actions {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+  }
+
+  .shipment-header-actions .btn {
+    width: 100% !important;
+  }
+
+  /* El modal deja de flotar: se convierte en una pantalla móvil. */
+  .shipment-modal-backdrop {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 2000 !important;
+    display: block !important;
+    padding: 0 !important;
+    background: #f5f7f6 !important;
+    backdrop-filter: none !important;
+    overflow: hidden !important;
+  }
+
+  .shipment-modal {
+    position: fixed !important;
+    inset: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    height: 100dvh !important;
+    min-height: 100dvh !important;
+    max-height: 100dvh !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background: #f5f7f6 !important;
+  }
+
+  .shipment-modal-head {
+    position: relative !important;
+    top: auto !important;
+    z-index: 50 !important;
+    flex: 0 0 auto !important;
+    min-height: 68px !important;
+    padding: max(12px, env(safe-area-inset-top)) 14px 12px !important;
+    border-bottom: 1px solid #dbe4df !important;
+    background: #fff !important;
+    box-shadow: 0 2px 8px rgba(20,55,35,.05) !important;
+  }
+
+  .shipment-modal-head h2 { font-size: 1rem !important; }
+  .shipment-modal-head .btn { min-width: 72px !important; }
+
+  #shipmentForm {
+    display: flex !important;
+    flex-direction: column !important;
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    padding: 14px 14px calc(92px + env(safe-area-inset-bottom)) !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .shipment-form-grid,
+  .shipment-form-bottom {
+    grid-template-columns: minmax(0,1fr) !important;
+    gap: 12px !important;
+  }
+
+  .shipment-form-grid .field,
+  .shipment-form-bottom .field { min-width: 0 !important; }
+
+  .shipment-form-grid .input,
+  .shipment-form-bottom .input,
+  #shipmentForm select,
+  #shipmentForm textarea,
+  #shipmentForm input {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    font-size: 16px !important; /* evita zoom automático de iOS */
+  }
+
+  .shipment-lines-head {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 9px !important;
+    margin-top: 18px !important;
+  }
+
+  .shipment-lines-head .btn { width: 100% !important; }
+
+  .shipment-lines-scroll {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .shipment-lines-table { min-width: 820px !important; }
+
+  .shipment-totals { margin-top: 4px !important; }
+
+  /* Barra de acciones fija al fondo, independiente del contenido. */
+  .shipment-modal-actions {
+    position: fixed !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    z-index: 60 !important;
+    display: grid !important;
+    grid-template-columns: 1fr 1.35fr !important;
+    gap: 8px !important;
+    margin: 0 !important;
+    padding: 10px 14px calc(10px + env(safe-area-inset-bottom)) !important;
+    border-top: 1px solid #dbe4df !important;
+    background: rgba(255,255,255,.98) !important;
+    box-shadow: 0 -5px 16px rgba(20,55,35,.08) !important;
+  }
+
+  .shipment-modal-actions .btn {
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 44px !important;
+    margin: 0 !important;
+  }
+}
