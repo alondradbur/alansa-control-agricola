@@ -4016,3 +4016,481 @@ textarea.input {
   .shipment-mobile-actions .btn { width: 100%; min-width: 0; padding-inline: 7px; }
   .shipments-mobile-empty { padding: 32px 16px; color: var(--muted); text-align: center; }
 }
+
+/* =========================================================
+   ALANSA · REMISIONES
+   TABLA MAESTRA TIPO EXCEL
+   Este bloque debe permanecer al FINAL de components.css
+   ========================================================= */
+
+
+/* ---------------------------------------------------------
+   CONTENEDOR
+   --------------------------------------------------------- */
+
+.shipments-v2-scroll {
+  position: relative !important;
+
+  width: 100% !important;
+  max-width: 100% !important;
+
+  min-height: 0 !important;
+  max-height: calc(100vh - 285px) !important;
+
+  overflow-x: scroll !important;
+  overflow-y: auto !important;
+
+  border: 1px solid #d9e3dd !important;
+  border-radius: 10px !important;
+
+  background: #fff !important;
+
+  scrollbar-gutter: stable both-edges;
+  overscroll-behavior: contain;
+
+  -webkit-overflow-scrolling: touch;
+}
+
+
+/* ---------------------------------------------------------
+   SCROLLBAR VISIBLE
+   --------------------------------------------------------- */
+
+.shipments-v2-scroll::-webkit-scrollbar {
+  width: 11px;
+  height: 11px;
+}
+
+.shipments-v2-scroll::-webkit-scrollbar-track {
+  background: #edf1ef;
+}
+
+.shipments-v2-scroll::-webkit-scrollbar-thumb {
+  background: #a6ada9;
+  border: 2px solid #edf1ef;
+  border-radius: 999px;
+}
+
+.shipments-v2-scroll::-webkit-scrollbar-thumb:hover {
+  background: #7f8984;
+}
+
+.shipments-v2-scroll {
+  scrollbar-width: auto;
+  scrollbar-color: #a6ada9 #edf1ef;
+}
+
+
+/* ---------------------------------------------------------
+   TABLA
+   No se comprime para intentar entrar en pantalla.
+   --------------------------------------------------------- */
+
+.shipments-v2-table {
+  width: 100% !important;
+  min-width: 1500px !important;
+
+  table-layout: fixed !important;
+
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+
+  background: #fff !important;
+}
+
+
+/* ---------------------------------------------------------
+   TODAS LAS CELDAS
+   --------------------------------------------------------- */
+
+.shipments-v2-table th,
+.shipments-v2-table td {
+  box-sizing: border-box !important;
+
+  min-width: unset !important;
+
+  padding: 14px 10px !important;
+
+  border-right: 1px solid #dfe7e2 !important;
+  border-bottom: 1px solid #dfe7e2 !important;
+
+  vertical-align: middle !important;
+
+  text-align: center !important;
+
+  word-break: normal !important;
+  overflow-wrap: normal !important;
+
+  font-variant-numeric: tabular-nums;
+}
+
+.shipments-v2-table th:last-child,
+.shipments-v2-table td:last-child {
+  border-right: 0 !important;
+}
+
+
+/* ---------------------------------------------------------
+   ENCABEZADOS
+   --------------------------------------------------------- */
+
+.shipments-v2-table thead th {
+  position: sticky !important;
+
+  top: 0 !important;
+  z-index: 20 !important;
+
+  height: 76px;
+
+  padding: 12px 8px !important;
+
+  background: #edf4f0 !important;
+
+  color: #40564b !important;
+
+  font-size: 11px !important;
+  font-weight: 800 !important;
+
+  line-height: 1.25 !important;
+
+  letter-spacing: .025em !important;
+  text-transform: uppercase !important;
+
+  text-align: center !important;
+
+  white-space: normal !important;
+
+  border-bottom: 1px solid #ccd9d2 !important;
+}
+
+
+/* ---------------------------------------------------------
+   TEXTO + FILTRO DEL ENCABEZADO
+   --------------------------------------------------------- */
+
+.shipment-th-inner {
+  display: flex !important;
+
+  align-items: center !important;
+  justify-content: center !important;
+
+  width: 100% !important;
+  min-width: 0 !important;
+
+  gap: 6px !important;
+}
+
+.shipment-th-inner > span {
+  min-width: 0 !important;
+
+  overflow: visible !important;
+  text-overflow: clip !important;
+
+  text-align: center !important;
+
+  white-space: normal !important;
+
+  word-break: keep-all !important;
+  overflow-wrap: normal !important;
+}
+
+.shipment-filter-trigger {
+  width: 22px !important;
+  height: 22px !important;
+
+  min-width: 22px !important;
+  flex: 0 0 22px !important;
+
+  padding: 0 !important;
+}
+
+
+/* ---------------------------------------------------------
+   REGISTROS
+   --------------------------------------------------------- */
+
+.shipments-v2-table tbody td {
+  height: 74px;
+
+  padding: 14px 10px !important;
+
+  background: #fff;
+
+  color: #25362d !important;
+
+  font-size: 12.5px !important;
+  line-height: 1.3 !important;
+
+  text-align: center !important;
+
+  white-space: nowrap !important;
+}
+
+.shipments-v2-table tbody tr:hover td {
+  background: #f8fbf9 !important;
+}
+
+
+/* Folio */
+.shipment-cell-folio {
+  text-align: center !important;
+
+  white-space: nowrap !important;
+
+  overflow-wrap: normal !important;
+  word-break: normal !important;
+}
+
+.shipment-cell-folio strong {
+  color: #184f36 !important;
+
+  font-size: 12px !important;
+  font-weight: 750 !important;
+
+  white-space: nowrap !important;
+}
+
+
+/* Fechas */
+.shipment-cell-date {
+  text-align: center !important;
+  white-space: nowrap !important;
+}
+
+
+/* ---------------------------------------------------------
+   ANCHOS EXACTOS
+   --------------------------------------------------------- */
+
+.shipments-v2-table th:nth-child(1),
+.shipments-v2-table td:nth-child(1) {
+  width: 190px !important;
+}
+
+.shipments-v2-table th:nth-child(2),
+.shipments-v2-table td:nth-child(2) {
+  width: 115px !important;
+}
+
+.shipments-v2-table th:nth-child(3),
+.shipments-v2-table td:nth-child(3) {
+  width: 120px !important;
+}
+
+.shipments-v2-table th:nth-child(4),
+.shipments-v2-table td:nth-child(4) {
+  width: 140px !important;
+}
+
+.shipments-v2-table th:nth-child(5),
+.shipments-v2-table td:nth-child(5) {
+  width: 140px !important;
+}
+
+.shipments-v2-table th:nth-child(6),
+.shipments-v2-table td:nth-child(6) {
+  width: 85px !important;
+}
+
+.shipments-v2-table th:nth-child(7),
+.shipments-v2-table td:nth-child(7) {
+  width: 90px !important;
+}
+
+.shipments-v2-table th:nth-child(8),
+.shipments-v2-table td:nth-child(8) {
+  width: 125px !important;
+}
+
+.shipments-v2-table th:nth-child(9),
+.shipments-v2-table td:nth-child(9) {
+  width: 125px !important;
+}
+
+.shipments-v2-table th:nth-child(10),
+.shipments-v2-table td:nth-child(10) {
+  width: 130px !important;
+}
+
+.shipments-v2-table th:nth-child(11),
+.shipments-v2-table td:nth-child(11) {
+  width: 115px !important;
+}
+
+.shipments-v2-table th:nth-child(12),
+.shipments-v2-table td:nth-child(12) {
+  width: 150px !important;
+}
+
+
+/* ---------------------------------------------------------
+   IMPORTANTE:
+   ANULA ALINEACIONES ANTIGUAS A LA DERECHA
+   --------------------------------------------------------- */
+
+.shipments-v2-table thead th:nth-child(6),
+.shipments-v2-table thead th:nth-child(7),
+.shipments-v2-table thead th:nth-child(8),
+.shipments-v2-table thead th:nth-child(9),
+
+.shipments-v2-table tbody td:nth-child(6),
+.shipments-v2-table tbody td:nth-child(7),
+.shipments-v2-table tbody td:nth-child(8),
+.shipments-v2-table tbody td:nth-child(9) {
+  text-align: center !important;
+}
+
+.shipments-v2-table thead th:nth-child(6) .shipment-th-inner,
+.shipments-v2-table thead th:nth-child(7) .shipment-th-inner,
+.shipments-v2-table thead th:nth-child(8) .shipment-th-inner,
+.shipments-v2-table thead th:nth-child(9) .shipment-th-inner {
+  justify-content: center !important;
+}
+
+
+/* ---------------------------------------------------------
+   ESTADO
+   --------------------------------------------------------- */
+
+.shipment-status {
+  display: inline-flex !important;
+
+  align-items: center;
+  justify-content: center;
+
+  white-space: nowrap !important;
+}
+
+
+/* ---------------------------------------------------------
+   ACCIONES
+   PDF + LÁPIZ + PAPELERA
+   SIEMPRE EN UNA SOLA FILA
+   --------------------------------------------------------- */
+
+.shipments-v2-table td:nth-child(12) {
+  padding-right: 8px !important;
+  padding-left: 8px !important;
+}
+
+.shipment-row-actions {
+  display: flex !important;
+
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+
+  align-items: center !important;
+  justify-content: center !important;
+
+  width: 100% !important;
+
+  gap: 5px !important;
+
+  white-space: nowrap !important;
+}
+
+.shipment-row-actions .btn {
+  display: inline-flex !important;
+
+  align-items: center !important;
+  justify-content: center !important;
+
+  flex: 0 0 auto !important;
+
+  height: 34px !important;
+  min-height: 34px !important;
+
+  margin: 0 !important;
+
+  border-radius: 7px !important;
+
+  line-height: 1 !important;
+}
+
+.shipment-row-actions .shipment-pdf {
+  width: 48px !important;
+  min-width: 48px !important;
+
+  padding: 0 8px !important;
+
+  font-size: 11px !important;
+  font-weight: 750 !important;
+}
+
+.shipment-row-actions .shipment-icon-btn {
+  width: 34px !important;
+  min-width: 34px !important;
+  max-width: 34px !important;
+
+  padding: 0 !important;
+}
+
+.shipment-icon-btn svg {
+  display: block;
+
+  width: 16px;
+  height: 16px;
+
+  pointer-events: none;
+}
+
+
+/* ---------------------------------------------------------
+   FILA DE TOTALES
+   --------------------------------------------------------- */
+
+.shipments-v2-table tfoot td {
+  position: sticky !important;
+
+  bottom: 0 !important;
+  z-index: 18 !important;
+
+  height: 56px;
+
+  padding: 12px 10px !important;
+
+  background: #eef5f1 !important;
+
+  border-top: 2px solid #c8d8cf !important;
+  border-bottom: 0 !important;
+
+  color: #163d2a !important;
+
+  font-size: 12px !important;
+
+  text-align: center !important;
+
+  white-space: nowrap !important;
+
+  box-shadow: 0 -4px 12px rgba(22, 54, 38, .05);
+}
+
+
+/* Primer bloque de totales */
+.shipments-v2-table tfoot td:first-child {
+  text-align: left !important;
+  padding-left: 14px !important;
+}
+
+
+/* Cajas, libras, MXN y USD */
+.shipments-v2-table tfoot td:nth-child(2),
+.shipments-v2-table tfoot td:nth-child(3),
+.shipments-v2-table tfoot td:nth-child(4),
+.shipments-v2-table tfoot td:nth-child(5) {
+  text-align: center !important;
+}
+
+
+/* ---------------------------------------------------------
+   MÓVIL
+   Se conserva la vista móvil por tarjetas que ya existe.
+   --------------------------------------------------------- */
+
+@media (max-width: 760px) {
+
+  .shipments-v2-table {
+    min-width: 1500px !important;
+  }
+
+}
