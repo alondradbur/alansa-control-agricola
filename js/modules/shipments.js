@@ -1072,12 +1072,6 @@ function tableAreaHtml() {
 
     </div>
 
-    <div class="shipments-mobile-list">
-      ${rows.length
-        ? rows.map(shipmentMobileCardHtml).join('')
-        : `<div class="shipments-mobile-empty">No se encontraron remisiones con los filtros seleccionados.</div>`
-      }
-    </div>
   `;
 }
 
@@ -4848,4 +4842,6 @@ function safeDate(value) {
     return String(value);
   }
 }
+
+
 
