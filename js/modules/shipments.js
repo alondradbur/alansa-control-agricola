@@ -1297,33 +1297,89 @@ function tableRowHtml(row) {
       <td>
         <div class="shipment-row-actions">
 
-          <button
+                    <button
             class="btn shipment-pdf"
             data-id="${row.id}"
             type="button"
+            title="Generar PDF"
+            aria-label="Generar PDF"
           >
             PDF
           </button>
 
           <button
-            class="btn shipment-edit"
+            class="btn shipment-icon-btn shipment-edit"
             data-id="${row.id}"
             type="button"
+            title="Editar remisión"
+            aria-label="Editar remisión"
           >
-            Editar
+            <svg
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <path
+                d="M12 20h9"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              />
+              <path
+                d="M16.5 3.5a2.12 2.12 0 0 1 3 3L8 18l-4 1 1-4Z"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
           </button>
 
           <button
-            class="btn danger shipment-delete"
+            class="btn danger shipment-icon-btn shipment-delete"
             data-id="${row.id}"
             data-folio="${escapeHtml(
               row.folio
             )}"
             type="button"
+            title="Eliminar remisión"
+            aria-label="Eliminar remisión"
           >
-            Eliminar
+            <svg
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <path
+                d="M3 6h18"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              />
+              <path
+                d="M8 6V4h8v2"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linejoin="round"
+              />
+              <path
+                d="M19 6l-1 14H6L5 6"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linejoin="round"
+              />
+              <path
+                d="M10 11v5M14 11v5"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              />
+            </svg>
           </button>
-
         </div>
       </td>
     </tr>
