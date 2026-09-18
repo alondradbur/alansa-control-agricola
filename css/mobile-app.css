@@ -1059,3 +1059,353 @@
     overflow: visible !important;
   }
 }
+
+/* =========================================================
+   ALANSA · REMISIONES · CORRECCIÓN FINAL MÓVIL
+   2026-09-17
+   - Tabla HTML real (NO tarjetas)
+   - Scroll horizontal
+   - Folio fijo
+   - Formulario estable y acciones accesibles
+   ========================================================= */
+@media (max-width: 760px) {
+
+  /* ---------- REMISIONES: TABLA REAL ---------- */
+  .shipments-mobile-list {
+    display: none !important;
+  }
+
+  .shipments-table-card {
+    overflow: hidden !important;
+  }
+
+  .shipments-v2-scroll {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: 62svh !important;
+    overflow-x: auto !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior: contain !important;
+    scrollbar-gutter: stable !important;
+    border-top: 1px solid var(--border) !important;
+    border-radius: 0 0 14px 14px !important;
+    background: #fff !important;
+  }
+
+  .shipments-v2-table {
+    display: table !important;
+    width: 1320px !important;
+    min-width: 1320px !important;
+    max-width: none !important;
+    table-layout: fixed !important;
+    border-collapse: separate !important;
+    border-spacing: 0 !important;
+    background: #fff !important;
+  }
+
+  .shipments-v2-table thead {
+    display: table-header-group !important;
+  }
+
+  .shipments-v2-table tbody {
+    display: table-row-group !important;
+  }
+
+  .shipments-v2-table tfoot {
+    display: table-footer-group !important;
+  }
+
+  .shipments-v2-table tr,
+  .shipments-v2-table tbody tr,
+  .shipments-v2-table tfoot tr {
+    display: table-row !important;
+    width: auto !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background: transparent !important;
+  }
+
+  .shipments-v2-table th,
+  .shipments-v2-table td,
+  .shipments-v2-table tbody td,
+  .shipments-v2-table tfoot td {
+    display: table-cell !important;
+    width: auto;
+    min-width: 0 !important;
+    max-width: none !important;
+    height: 58px !important;
+    padding: 9px 8px !important;
+    vertical-align: middle !important;
+    text-align: center !important;
+    white-space: nowrap !important;
+    word-break: normal !important;
+    overflow-wrap: normal !important;
+    border: 0 !important;
+    border-right: 1px solid #dfe7e2 !important;
+    border-bottom: 1px solid #dfe7e2 !important;
+    background: #fff !important;
+    font-size: 11px !important;
+    line-height: 1.2 !important;
+  }
+
+  /* Elimina definitivamente las etiquetas de la antigua tarjeta. */
+  .shipments-v2-table tbody td::before,
+  .shipments-v2-table tfoot td::before {
+    content: none !important;
+    display: none !important;
+  }
+
+  .shipments-v2-table thead th {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 30 !important;
+    height: 58px !important;
+    background: #edf4f0 !important;
+    color: #40564b !important;
+    font-size: 10px !important;
+    font-weight: 800 !important;
+    line-height: 1.15 !important;
+    white-space: normal !important;
+    word-break: keep-all !important;
+    overflow-wrap: normal !important;
+    border-bottom: 1px solid #ccd9d2 !important;
+  }
+
+  .shipment-th-inner {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 4px !important;
+    width: 100% !important;
+  }
+
+  .shipment-th-inner > span {
+    min-width: 0 !important;
+    white-space: normal !important;
+    word-break: keep-all !important;
+    overflow-wrap: normal !important;
+    text-align: center !important;
+  }
+
+  /* Anchos compactos pero legibles. */
+  .shipments-v2-table th:nth-child(1),
+  .shipments-v2-table td:nth-child(1) { width: 180px !important; }
+  .shipments-v2-table th:nth-child(2),
+  .shipments-v2-table td:nth-child(2) { width: 105px !important; }
+  .shipments-v2-table th:nth-child(3),
+  .shipments-v2-table td:nth-child(3) { width: 105px !important; }
+  .shipments-v2-table th:nth-child(4),
+  .shipments-v2-table td:nth-child(4) { width: 125px !important; }
+  .shipments-v2-table th:nth-child(5),
+  .shipments-v2-table td:nth-child(5) { width: 115px !important; }
+  .shipments-v2-table th:nth-child(6),
+  .shipments-v2-table td:nth-child(6) { width: 70px !important; }
+  .shipments-v2-table th:nth-child(7),
+  .shipments-v2-table td:nth-child(7) { width: 75px !important; }
+  .shipments-v2-table th:nth-child(8),
+  .shipments-v2-table td:nth-child(8) { width: 115px !important; }
+  .shipments-v2-table th:nth-child(9),
+  .shipments-v2-table td:nth-child(9) { width: 105px !important; }
+  .shipments-v2-table th:nth-child(10),
+  .shipments-v2-table td:nth-child(10) { width: 110px !important; }
+  .shipments-v2-table th:nth-child(11),
+  .shipments-v2-table td:nth-child(11) { width: 100px !important; }
+  .shipments-v2-table th:nth-child(12),
+  .shipments-v2-table td:nth-child(12) { width: 135px !important; }
+
+  /* Folio congelado al desplazar horizontalmente. */
+  .shipments-v2-table th:first-child,
+  .shipments-v2-table td:first-child,
+  .shipments-v2-table tbody td:first-child,
+  .shipments-v2-table tfoot td:first-child {
+    position: sticky !important;
+    left: 0 !important;
+    z-index: 20 !important;
+    background: #fff !important;
+    box-shadow: 2px 0 0 #d8e2dc !important;
+  }
+
+  .shipments-v2-table thead th:first-child {
+    z-index: 40 !important;
+    background: #edf4f0 !important;
+  }
+
+  .shipments-v2-table tfoot td {
+    position: sticky !important;
+    bottom: 0 !important;
+    z-index: 25 !important;
+    height: 48px !important;
+    background: #eef5f1 !important;
+    color: #163d2a !important;
+    font-weight: 750 !important;
+    border-top: 1px solid #cad9d1 !important;
+  }
+
+  .shipments-v2-table tfoot td:first-child {
+    z-index: 35 !important;
+    background: #eef5f1 !important;
+  }
+
+  .shipment-row-actions,
+  .shipments-v2-table tbody td:nth-child(12) > * {
+    display: flex !important;
+    flex-flow: row nowrap !important;
+    align-items: center !important;
+    justify-content: center !important;
+    justify-self: auto !important;
+    gap: 4px !important;
+    width: 100% !important;
+    white-space: nowrap !important;
+  }
+
+  .shipment-row-actions .btn {
+    flex: 0 0 auto !important;
+    width: auto !important;
+    min-width: 0 !important;
+    height: 32px !important;
+    min-height: 32px !important;
+    margin: 0 !important;
+    padding: 0 8px !important;
+  }
+
+  .shipment-row-actions .shipment-pdf {
+    width: 44px !important;
+  }
+
+  .shipment-row-actions .shipment-icon-btn {
+    width: 32px !important;
+    min-width: 32px !important;
+    padding: 0 !important;
+  }
+
+  /* ---------- FORMULARIO: PANTALLA ESTABLE ---------- */
+  .shipment-modal-backdrop {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 5000 !important;
+    display: block !important;
+    width: 100% !important;
+    height: 100svh !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    background: #f5f7f6 !important;
+    backdrop-filter: none !important;
+  }
+
+  .shipment-modal {
+    position: absolute !important;
+    inset: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background: #f5f7f6 !important;
+  }
+
+  .shipment-modal-head {
+    position: relative !important;
+    inset: auto !important;
+    z-index: 5 !important;
+    flex: 0 0 auto !important;
+    min-height: 70px !important;
+    padding: max(12px, env(safe-area-inset-top)) 14px 12px !important;
+    background: #fff !important;
+    border-bottom: 1px solid #dbe4df !important;
+    box-shadow: none !important;
+  }
+
+  .shipment-modal-head .btn {
+    min-width: 72px !important;
+    min-height: 42px !important;
+  }
+
+  #shipmentForm {
+    position: relative !important;
+    display: flex !important;
+    flex-direction: column !important;
+    flex: 1 1 0 !important;
+    min-height: 0 !important;
+    width: 100% !important;
+    padding: 14px 14px 0 !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior: contain !important;
+  }
+
+  .shipment-form-grid,
+  .shipment-form-bottom {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 12px !important;
+    width: 100% !important;
+  }
+
+  #shipmentForm input,
+  #shipmentForm select,
+  #shipmentForm textarea,
+  #shipmentForm .input {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    font-size: 16px !important;
+  }
+
+  .shipment-lines-head {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+  }
+
+  .shipment-lines-head .btn {
+    width: 100% !important;
+  }
+
+  .shipment-lines-scroll {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  /* Ya no es fixed al viewport: queda pegada dentro del formulario. */
+  .shipment-modal-actions {
+    position: sticky !important;
+    right: auto !important;
+    bottom: 0 !important;
+    left: auto !important;
+    z-index: 10 !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, .85fr) minmax(0, 1.15fr) !important;
+    gap: 8px !important;
+    flex: 0 0 auto !important;
+    width: calc(100% + 28px) !important;
+    margin: 18px -14px 0 !important;
+    padding: 10px 14px max(12px, env(safe-area-inset-bottom)) !important;
+    background: #fff !important;
+    border-top: 1px solid #dbe4df !important;
+    box-shadow: 0 -4px 12px rgba(20,55,35,.07) !important;
+  }
+
+  .shipment-modal-actions .btn {
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 48px !important;
+    margin: 0 !important;
+    padding: 0 10px !important;
+    font-size: 15px !important;
+  }
+}
+
