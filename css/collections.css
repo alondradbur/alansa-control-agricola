@@ -143,11 +143,44 @@
 }
 
 .collections-table-scroll {
+  width: 100%;
+  max-width: 100%;
   max-height: min(58vh, 650px);
-  overflow: auto;
+
+  overflow-x: auto;
+  overflow-y: auto;
+
   scrollbar-gutter: stable;
+  overscroll-behavior: contain;
+
+  -webkit-overflow-scrolling: touch;
+
+  /* Firefox */
+  scrollbar-width: auto;
+  scrollbar-color: #9bada4 #edf2ef;
 }
 
+
+/* Scroll visible en Chrome, Edge y Safari */
+.collections-table-scroll::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.collections-table-scroll::-webkit-scrollbar-track {
+  background: #edf2ef;
+  border-radius: 999px;
+}
+
+.collections-table-scroll::-webkit-scrollbar-thumb {
+  background: #9bada4;
+  border: 2px solid #edf2ef;
+  border-radius: 999px;
+}
+
+.collections-table-scroll::-webkit-scrollbar-thumb:hover {
+  background: #71877c;
+}
 .collections-table {
   width: 100%;
   min-width: 1420px;
