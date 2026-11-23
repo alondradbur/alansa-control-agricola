@@ -41,6 +41,7 @@ let rows = [];
 let catalogs = {
   plantings: [],
   expense_categories: [],
+  expense_units: [],
   suppliers: [],
   payment_methods: []
 };
@@ -67,6 +68,8 @@ export async function expenses() {
       plantings: plantingData,
       expense_categories:
         catalogData.expense_categories || [],
+      expense_units:
+        catalogData.expense_units || [],
       suppliers:
         catalogData.suppliers || [],
       payment_methods:
@@ -78,6 +81,7 @@ export async function expenses() {
     catalogs = {
       plantings: [],
       expense_categories: [],
+      expense_units: [],
       suppliers: [],
       payment_methods: []
     };
@@ -687,15 +691,47 @@ function openExpenseForm(
               'required'
             )}
 
-            ${moneyField(
-              'amount',
-              'Monto',
-              row?.amount !== undefined
-                ? formatMoneyText(
-                    row.amount
-                  )
-                : ''
+            ${selectField(
+              'expense_unit_id',
+              'Cómo se aplica el monto',
+              expenseUnitOptions(
+                row?.expense_unit_id
+              ),
+              true
             )}
+
+            ${moneyField(
+              'unit_amount',
+              'Monto unitario',
+              unitAmountValue(
+                row
+              )
+            )}
+
+            <div class="field">
+
+              <label>
+                Cantidad
+              </label>
+
+              <input
+                class="input"
+                name="quantity"
+                type="number"
+                min="0"
+                step="0.0001"
+                value="${escapeHtml(
+                  row?.quantity ?? 1
+                )}"
+                required
+              >
+
+              <small
+                class="muted"
+                id="expenseQuantityRule"
+              ></small>
+
+            </div>
 
             ${currencyField(
               'currency',
@@ -748,12 +784,33 @@ function openExpenseForm(
           <div class="expense-calculation">
 
             <span>
+              Importe total
+            </span>
+
+            <strong id="expenseTotalPreview">
+              ${money(
+                expenseTotal(
+                  unitAmountValue(row),
+                  row?.quantity ?? 1
+                ),
+                currency
+              )}
+            </strong>
+
+          </div>
+
+          <div class="expense-calculation">
+
+            <span>
               Equivalente estimado en MXN
             </span>
 
             <strong id="expenseMxnPreview">
               ${previewMxn(
-                row?.amount,
+                expenseTotal(
+                  unitAmountValue(row),
+                  row?.quantity ?? 1
+                ),
                 currency,
                 row?.exchange_rate
               )}
@@ -784,6 +841,10 @@ function openExpenseForm(
   `;
 
   bindMoneyInputs(
+    modalRoot
+  );
+
+  bindQuantityRule(
     modalRoot
   );
 
@@ -829,6 +890,12 @@ function openExpenseForm(
 
         payload.exchange_rate =
           payload.exchange_rate || null;
+
+        payload.amount =
+          expenseTotal(
+            payload.unit_amount,
+            payload.quantity
+          );
 
         try {
           await api(
@@ -972,6 +1039,27 @@ function supplierOptions(
     </option>
 
     ${catalogs.suppliers
+      .map(item => {
+        return option(
+          item.id,
+          item.name,
+          selectedId
+        );
+      })
+      .join('')}
+  `;
+}
+
+
+function expenseUnitOptions(
+  selectedId
+) {
+  return `
+    <option value="">
+      Seleccionar cómo se aplica
+    </option>
+
+    ${catalogs.expense_units
       .map(item => {
         return option(
           item.id,
@@ -1160,12 +1248,151 @@ function selectField(
    13. VISTA PREVIA MXN
    ========================================================= */
 
+function bindQuantityRule(
+  root
+) {
+  const unitSelect =
+    root.querySelector(
+      '[name="expense_unit_id"]'
+    );
+
+  const plantingSelect =
+    root.querySelector(
+      '[name="planting_id"]'
+    );
+
+  const quantityInput =
+    root.querySelector(
+      '[name="quantity"]'
+    );
+
+  const rule =
+    root.querySelector(
+      '#expenseQuantityRule'
+    );
+
+  const apply = () => {
+    if (!quantityInput) {
+      return;
+    }
+
+    const unit =
+      catalogs.expense_units
+        .find(item => {
+          return Number(item.id) ===
+            Number(unitSelect?.value);
+        });
+
+    const source =
+      unit?.quantity_source ||
+      'MANUAL';
+
+    if (source === 'ONE') {
+      quantityInput.value = 1;
+      quantityInput.readOnly = true;
+
+    } else if (source === 'HECTARES') {
+      const planting =
+        catalogs.plantings
+          .find(item => {
+            return Number(item.id) ===
+              Number(plantingSelect?.value);
+          });
+
+      quantityInput.value =
+        planting?.hectares ?? '';
+
+      quantityInput.readOnly = true;
+
+    } else {
+      quantityInput.readOnly = false;
+    }
+
+    if (rule) {
+      rule.textContent =
+        quantitySourceLabel(
+          source
+        );
+    }
+
+    quantityInput.dispatchEvent(
+      new Event('input')
+    );
+  };
+
+  unitSelect?.addEventListener(
+    'change',
+    apply
+  );
+
+  plantingSelect?.addEventListener(
+    'change',
+    apply
+  );
+
+  if (unitSelect?.value) {
+    apply();
+  }
+}
+
+
+function quantitySourceLabel(
+  value
+) {
+  const labels = {
+    ONE: '1 por registro',
+    HECTARES: 'Hectáreas de la siembra',
+    MANUAL: 'Captura manual'
+  };
+
+  return labels[value] || '';
+}
+
+
+function unitAmountValue(
+  row
+) {
+  const value =
+    row?.unit_amount ??
+    row?.amount;
+
+  return value === undefined ||
+    value === null
+    ? ''
+    : formatMoneyText(
+        value
+      );
+}
+
+
+function expenseTotal(
+  unitAmount,
+  quantity
+) {
+  return numericMoney(
+    unitAmount
+  ) * numeric(
+    quantity
+  );
+}
+
+
 function bindMxnPreview(
   root
 ) {
-  const amount =
+  const unitAmount =
     root.querySelector(
-      '[name="amount"]'
+      '[name="unit_amount"]'
+    );
+
+  const quantity =
+    root.querySelector(
+      '[name="quantity"]'
+    );
+
+  const total =
+    root.querySelector(
+      '#expenseTotalPreview'
     );
 
   const currency =
@@ -1184,19 +1411,38 @@ function bindMxnPreview(
     );
 
   const update = () => {
+    const amount =
+      expenseTotal(
+        unitAmount?.value,
+        quantity?.value
+      );
+
+    if (total) {
+      total.textContent =
+        money(
+          amount,
+          currency?.value || 'MXN'
+        );
+    }
+
     if (!preview) {
       return;
     }
 
     preview.textContent =
       previewMxn(
-        amount?.value,
+        amount,
         currency?.value,
         exchangeRate?.value
       );
   };
 
-  amount?.addEventListener(
+  unitAmount?.addEventListener(
+    'input',
+    update
+  );
+
+  quantity?.addEventListener(
     'input',
     update
   );
