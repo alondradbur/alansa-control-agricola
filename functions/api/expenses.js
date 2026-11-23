@@ -405,13 +405,6 @@ function validateExpense(
     };
   }
 
-  if (!concept) {
-    return {
-      error:
-        'El concepto del gasto es obligatorio.'
-    };
-  }
-
   if (
     unitAmount === null ||
     unitAmount < 0

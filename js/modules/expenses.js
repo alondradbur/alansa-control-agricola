@@ -301,7 +301,7 @@ function desktopRow(
 
       <td>
         ${escapeHtml(
-          row.concept
+          row.concept || '—'
         )}
       </td>
 
@@ -380,7 +380,9 @@ function mobileList() {
                 <div>
                   <div class="mobile-record-title">
                     ${escapeHtml(
-                      row.concept
+                      row.concept ||
+                      row.category_name ||
+                      'Gasto'
                     )}
                   </div>
 
@@ -685,10 +687,9 @@ function openExpenseForm(
 
             ${inputField(
               'concept',
-              'Concepto',
+              'Concepto (opcional)',
               row?.concept || '',
-              'text',
-              'required'
+              'text'
             )}
 
             ${selectField(
