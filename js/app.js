@@ -80,8 +80,8 @@ function renderLogin() {
   <div class="login-access-heading">
 
     <img
-      src="/assets/icon-512.png"
-      alt="Sistema Agrícola"
+      src="/assets/logo-alansa.png?v=2"
+      alt="ALANSA"
       class="login-access-icon"
     >
 

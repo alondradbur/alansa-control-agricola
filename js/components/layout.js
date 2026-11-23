@@ -319,8 +319,8 @@ export function shell(content) {
       >
         <div class="sidebar-brand">
           <img
-            src="/assets/icon-512.png"
-            alt="Sistema Agrícola"
+            src="/assets/icon-512.png?v=2"
+            alt="ALANSA"
             class="sidebar-brand-icon"
           >
 

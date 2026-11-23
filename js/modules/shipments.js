@@ -3591,7 +3591,7 @@ function printShipmentsReport() {
             <div class="report-logo-wrap">
 
               <img
-                src="/assets/logo-alansa.png"
+                src="/assets/logo-alansa.png?v=2"
                 alt="ALANSA"
                 class="report-logo"
               >
@@ -4134,7 +4134,7 @@ async function printShipmentPdf(id) {
         <header class="head">
           <div class="pdf-brand">
   <img
-    src="/assets/logo-alansa.png"
+    src="/assets/logo-alansa.png?v=2"
     alt="ALANSA"
     class="pdf-logo"
   >
