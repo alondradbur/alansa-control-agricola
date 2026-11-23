@@ -286,6 +286,19 @@ export function shell(content) {
           <span>Agrícola</span>
         </div>
 
+        <button
+          class="mobile-refresh-button"
+          type="button"
+          data-refresh
+          aria-label="Actualizar"
+          title="Actualizar"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M20 11a8 8 0 1 0-2.3 5.7"></path>
+            <path d="M20 4v7h-7"></path>
+          </svg>
+        </button>
+
         <div class="mobile-user-badge" aria-label="Usuario actual">
           ${state.user?.display_name || '—'}
         </div>
@@ -344,6 +357,19 @@ export function shell(content) {
               <span>${state.user?.role || '—'}</span>
             </div>
           </div>
+
+          <button
+            class="sidebar-logout sidebar-refresh"
+            type="button"
+            data-refresh
+            title="Volver a cargar los datos y la versión más reciente"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M20 11a8 8 0 1 0-2.3 5.7"></path>
+            <path d="M20 4v7h-7"></path>
+          </svg>
+            <span>Actualizar</span>
+          </button>
 
           <button
             class="sidebar-logout"
@@ -426,9 +452,53 @@ export function bindLayout(navigate) {
   );
 
   document
+    .querySelectorAll('[data-refresh]')
+    .forEach(btn => {
+      btn.addEventListener('click', () => refreshApp(btn));
+    });
+
+  document
     .querySelector('#logoutBtn')
     ?.addEventListener('click', () => {
       logout();
       location.reload();
     });
+}
+
+
+/* =========================================================
+   5. ACTUALIZAR SISTEMA
+   Recarga la página completa para traer datos y la versión
+   más reciente del sistema, y regresa al mismo módulo.
+   ========================================================= */
+
+async function refreshApp(button) {
+  document
+    .querySelectorAll('[data-refresh]')
+    .forEach(btn => {
+      btn.disabled = true;
+      btn.classList.add('is-refreshing');
+    });
+
+  try {
+    sessionStorage.setItem('alansa_route', state.route);
+  } catch {
+    /* sin almacenamiento: se abrirá el Dashboard */
+  }
+
+  try {
+    if ('caches' in window) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map(key => caches.delete(key)));
+    }
+
+    if ('serviceWorker' in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(reg => reg.update().catch(() => {})));
+    }
+  } catch {
+    /* si falla la limpieza, igual recargamos */
+  }
+
+  location.reload();
 }

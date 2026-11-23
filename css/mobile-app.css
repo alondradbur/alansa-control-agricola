@@ -49,7 +49,7 @@
     z-index: 80;
     height: var(--mobile-header-height);
     display: grid;
-    grid-template-columns: 44px minmax(0, 1fr) 38px;
+    grid-template-columns: 44px minmax(0, 1fr) 42px 38px;
     align-items: end;
     gap: 10px;
     padding: env(safe-area-inset-top) 14px 8px;
@@ -75,6 +75,36 @@
 
   .mobile-menu-button {
     display: flex;
+  }
+
+  .mobile-refresh-button {
+    width: 42px;
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    align-self: center;
+    margin-top: env(safe-area-inset-top);
+    padding: 0;
+    border: 0;
+    border-radius: 12px;
+    background: transparent;
+    color: var(--alansa-900);
+  }
+
+  .mobile-refresh-button:active {
+    background: var(--alansa-100);
+    transform: scale(.96);
+  }
+
+  .mobile-refresh-button svg {
+    width: 22px;
+    height: 22px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
   }
 
   .mobile-menu-button:active,
