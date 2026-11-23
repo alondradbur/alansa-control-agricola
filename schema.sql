@@ -173,6 +173,14 @@ CREATE TABLE IF NOT EXISTS payment_applications (
   FOREIGN KEY(shipment_id) REFERENCES shipments(id)
 );
 
+CREATE TABLE IF NOT EXISTS expense_units (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL UNIQUE,
+  quantity_source TEXT NOT NULL DEFAULT 'MANUAL'
+    CHECK(quantity_source IN ('ONE','HECTARES','MANUAL')),
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE IF NOT EXISTS expenses (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   expense_date TEXT NOT NULL,
@@ -187,12 +195,16 @@ CREATE TABLE IF NOT EXISTS expenses (
   payment_method_id INTEGER,
   invoice_number TEXT,
   notes TEXT,
+  expense_unit_id INTEGER,
+  unit_amount REAL,
+  quantity REAL,
   created_by INTEGER,
   updated_by INTEGER,
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY(planting_id) REFERENCES plantings(id),
   FOREIGN KEY(category_id) REFERENCES expense_categories(id),
+  FOREIGN KEY(expense_unit_id) REFERENCES expense_units(id),
   FOREIGN KEY(supplier_id) REFERENCES suppliers(id),
   FOREIGN KEY(payment_method_id) REFERENCES payment_methods(id),
   FOREIGN KEY(created_by) REFERENCES users(id),
