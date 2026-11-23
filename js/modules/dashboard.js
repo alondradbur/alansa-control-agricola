@@ -1539,7 +1539,6 @@ function dashboardFilters() {
       <div class="dashboard-v2-filter-actions">
         <span class="dashboard-v2-filter-note">
           Las fechas afectan Remisiones, Gastos y Situación real.
-          La Proyección corresponde a la siembra seleccionada.
         </span>
 
         <button
@@ -1596,17 +1595,10 @@ function readDashboardFilters(
    ========================================================= */
 
 function dashboardBlocks() {
-  const projection =
-    calculateProjection();
-
   const real =
     calculateRealSituation();
 
   return `
-    ${projectionBlock(
-      projection
-    )}
-
     ${realBlock(
       real
     )}
@@ -1640,184 +1632,7 @@ function renderDashboardBlocks(
 
 
 /* =========================================================
-   5. BLOQUE 1 - PROYECCIÓN
-   ========================================================= */
-
-function projectionBlock(
-  projection
-) {
-  return `
-    <section class="card dashboard-v2-section dashboard-v2-projection">
-
-      ${sectionHead(
-        '1',
-        'Proyección de la siembra',
-        'Información registrada en el módulo de Siembras',
-        'green',
-        projection.meta
-      )}
-
-      ${
-        projection.count === 0
-          ? emptyState(
-              'No hay una siembra que coincida con los filtros seleccionados.'
-            )
-          : `
-              <div class="dashboard-v2-table-wrap">
-
-                <table class="dashboard-v2-table projection-dashboard-table">
-
-                  <thead>
-                    <tr>
-                      <th rowspan="2">
-                        Concepto
-                      </th>
-
-                      <th colspan="2">
-                        Por hectárea
-                      </th>
-
-                      <th colspan="2">
-                        Por siembra
-                      </th>
-                    </tr>
-
-                    <tr>
-                      <th>MXN</th>
-                      <th>USD</th>
-                      <th>MXN</th>
-                      <th>USD</th>
-                    </tr>
-                  </thead>
-
-                  <tbody>
-                    <tr>
-                      <td>
-                        <strong>
-                          Cajas proyectadas
-                        </strong>
-                      </td>
-
-                      <td colspan="2">
-                        ${number(
-                          projection.boxesPerHa,
-                          0
-                        )}
-                      </td>
-
-                      <td colspan="2">
-                        ${number(
-                          projection.boxesTotal,
-                          0
-                        )}
-                      </td>
-                    </tr>
-
-                    ${projectionMoneyRow(
-                      'Ingresos proyectados',
-                      projection.revenueMxnPerHa,
-                      projection.revenueUsdPerHa,
-                      projection.revenueMxn,
-                      projection.revenueUsd
-                    )}
-
-                    ${projectionMoneyRow(
-                      'Gastos estimados',
-                      projection.costMxnPerHa,
-                      projection.costUsdPerHa,
-                      projection.costMxn,
-                      projection.costUsd
-                    )}
-
-                    ${projectionMoneyRow(
-                      'Utilidad proyectada',
-                      projection.profitMxnPerHa,
-                      projection.profitUsdPerHa,
-                      projection.profitMxn,
-                      projection.profitUsd,
-                      true
-                    )}
-                  </tbody>
-
-                </table>
-
-              </div>
-            `
-      }
-
-    </section>
-  `;
-}
-
-
-function projectionMoneyRow(
-  label,
-  mxnPerHa,
-  usdPerHa,
-  mxnTotal,
-  usdTotal,
-  strong = false
-) {
-  const tagOpen =
-    strong ? '<strong>' : '';
-
-  const tagClose =
-    strong ? '</strong>' : '';
-
-  return `
-    <tr class="${strong
-      ? 'dashboard-v2-profit-row'
-      : ''}">
-
-      <td>
-        ${tagOpen}
-          ${label}
-        ${tagClose}
-      </td>
-
-      <td>
-        ${tagOpen}
-          ${money(
-            mxnPerHa,
-            'MXN'
-          )}
-        ${tagClose}
-      </td>
-
-      <td>
-        ${tagOpen}
-          ${money(
-            usdPerHa,
-            'USD'
-          )}
-        ${tagClose}
-      </td>
-
-      <td>
-        ${tagOpen}
-          ${money(
-            mxnTotal,
-            'MXN'
-          )}
-        ${tagClose}
-      </td>
-
-      <td>
-        ${tagOpen}
-          ${money(
-            usdTotal,
-            'USD'
-          )}
-        ${tagClose}
-      </td>
-
-    </tr>
-  `;
-}
-
-
-/* =========================================================
-   6. BLOQUE 2 - SITUACIÓN REAL
+   6. BLOQUE 1 - SITUACIÓN REAL
    ========================================================= */
 
 function realBlock(
@@ -1827,7 +1642,7 @@ function realBlock(
     <section class="card dashboard-v2-section dashboard-v2-real">
 
       ${sectionHead(
-        '2',
+        '1',
         'Situación real',
         'Información de Remisiones y Gastos según los filtros seleccionados',
         'blue'
@@ -1942,7 +1757,7 @@ function realKpi(
 
 
 /* =========================================================
-   7. BLOQUE 3 - REMISIONES
+   7. BLOQUE 2 - REMISIONES
    ========================================================= */
 
 function shipmentsBlock() {
@@ -1950,7 +1765,7 @@ function shipmentsBlock() {
     <section class="card dashboard-v2-section">
 
       ${sectionHead(
-        '3',
+        '2',
         'Remisiones',
         'Detalle de remisiones según los filtros seleccionados',
         'dark'
@@ -2153,7 +1968,7 @@ function shipmentRow(
 
 
 /* =========================================================
-   8. BLOQUE 4 - PRÓXIMAS A VENCER
+   8. BLOQUE 3 - PRÓXIMAS A VENCER
    ========================================================= */
 
 function dueBlock() {
@@ -2161,7 +1976,7 @@ function dueBlock() {
     <section class="card dashboard-v2-section dashboard-v2-due">
 
       ${sectionHead(
-        '4',
+        '3',
         'Próximas remisiones a vencer',
         'Basado en la fecha de vencimiento y los días de crédito del cliente',
         'red'
@@ -2412,208 +2227,6 @@ function dueRow(
 
 
 /* =========================================================
-   9. CÁLCULOS - PROYECCIÓN
-   ========================================================= */
-
-function calculateProjection() {
-  const rows =
-    filteredPlantings();
-
-  const result = {
-    count: rows.length,
-    hectares: 0,
-    boxesTotal: 0,
-    boxesPerHa: 0,
-
-    revenueMxn: 0,
-    revenueUsd: 0,
-    revenueMxnPerHa: 0,
-    revenueUsdPerHa: 0,
-
-    costMxn: 0,
-    costUsd: 0,
-    costMxnPerHa: 0,
-    costUsdPerHa: 0,
-
-    profitMxn: 0,
-    profitUsd: 0,
-    profitMxnPerHa: 0,
-    profitUsdPerHa: 0,
-
-    meta: ''
-  };
-
-  rows.forEach(row => {
-    const hectares =
-      numeric(
-        row.hectares
-      );
-
-    const boxes =
-      numeric(
-        row.projected_boxes
-      ) ||
-      (
-        hectares *
-        numeric(
-          row.expected_yield_boxes_ha
-        )
-      );
-
-    const rate =
-      numeric(
-        row.projection_exchange_rate
-      );
-
-    const revenueOriginal =
-      numeric(
-        row.projected_revenue
-      ) ||
-      (
-        boxes *
-        numeric(
-          row.price_per_box
-        )
-      );
-
-    const revenue =
-      convertBoth(
-        revenueOriginal,
-        row.price_currency || 'USD',
-        rate
-      );
-
-    const costs =
-      sumEstimatedCosts(
-        row.estimated_costs || [],
-        rate
-      );
-
-    result.hectares +=
-      hectares;
-
-    result.boxesTotal +=
-      boxes;
-
-    result.revenueMxn +=
-      revenue.mxn;
-
-    result.revenueUsd +=
-      revenue.usd;
-
-    result.costMxn +=
-      costs.mxn;
-
-    result.costUsd +=
-      costs.usd;
-  });
-
-  if (result.hectares > 0) {
-    result.boxesPerHa =
-      result.boxesTotal /
-      result.hectares;
-
-    result.revenueMxnPerHa =
-      result.revenueMxn /
-      result.hectares;
-
-    result.revenueUsdPerHa =
-      result.revenueUsd /
-      result.hectares;
-
-    result.costMxnPerHa =
-      result.costMxn /
-      result.hectares;
-
-    result.costUsdPerHa =
-      result.costUsd /
-      result.hectares;
-  }
-
-  result.profitMxn =
-    result.revenueMxn -
-    result.costMxn;
-
-  result.profitUsd =
-    result.revenueUsd -
-    result.costUsd;
-
-  if (result.hectares > 0) {
-    result.profitMxnPerHa =
-      result.profitMxn /
-      result.hectares;
-
-    result.profitUsdPerHa =
-      result.profitUsd /
-      result.hectares;
-  }
-
-  if (rows.length === 1) {
-    const row =
-      rows[0];
-
-    result.meta = `
-      Contrato ${escapeHtml(
-        row.contract_number || ''
-      )}
-      · ${number(
-        row.hectares,
-        2
-      )} ha
-      · TC ${number(
-        row.projection_exchange_rate,
-        2
-      )} MXN/USD
-    `;
-  } else if (rows.length > 1) {
-    result.meta = `
-      ${number(
-        rows.length,
-        0
-      )} siembras
-      · ${number(
-        result.hectares,
-        2
-      )} ha
-    `;
-  }
-
-  return result;
-}
-
-
-function sumEstimatedCosts(
-  costs,
-  exchangeRate
-) {
-  return costs.reduce(
-    (sum, cost) => {
-      const converted =
-        convertBoth(
-          numeric(
-            cost.amount
-          ),
-          cost.currency || 'MXN',
-          exchangeRate
-        );
-
-      sum.mxn +=
-        converted.mxn;
-
-      sum.usd +=
-        converted.usd;
-
-      return sum;
-    },
-    {
-      mxn: 0,
-      usd: 0
-    }
-  );
-}
-
-
-/* =========================================================
    10. CÁLCULOS - SITUACIÓN REAL
    ========================================================= */
 
@@ -2735,39 +2348,6 @@ function calculateRealSituation() {
 /* =========================================================
    11. FILTROS DE DATOS
    ========================================================= */
-
-function filteredPlantings() {
-  return (
-    dashboardData?.plantings ||
-    []
-  ).filter(row => {
-    if (
-      filtersState.plantingId &&
-      String(row.id) !==
-        String(
-          filtersState.plantingId
-        )
-    ) {
-      return false;
-    }
-
-    if (
-      filtersState.productId &&
-      String(
-        row.planting_product_id ??
-        row.product_id
-      ) !==
-        String(
-          filtersState.productId
-        )
-    ) {
-      return false;
-    }
-
-    return true;
-  });
-}
-
 
 function filteredShipments(
   includeLocalFilters
