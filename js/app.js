@@ -1,5 +1,5 @@
 import { state, setUser, restoreUser } from './core/state.js';
-import { shell, bindLayout } from './components/layout.js';
+import { shell, bindLayout, isRouteEnabled } from './components/layout.js';
 import {
   dashboard,
   bindDashboard
@@ -28,7 +28,8 @@ async function boot() {
 
 function savedRoute() {
   try {
-    return sessionStorage.getItem('alansa_route') || 'dashboard';
+    const route = sessionStorage.getItem('alansa_route') || 'dashboard';
+    return isRouteEnabled(route) ? route : 'dashboard';
   } catch {
     return 'dashboard';
   }
@@ -226,6 +227,10 @@ function renderLogin() {
 async function navigate(
   route
 ) {
+  if (!isRouteEnabled(route)) {
+    route = 'dashboard';
+  }
+
   state.route = route;
 
   try {

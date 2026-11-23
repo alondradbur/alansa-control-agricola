@@ -233,6 +233,17 @@ const icons = {
    2. OPCIONES DEL MENÚ
    ========================================================= */
 
+/*
+  Módulos en construcción: se ocultan del menú (escritorio y
+  móvil) sin borrar su código. Para activarlos de nuevo, quita
+  su id de esta lista.
+*/
+export const HIDDEN_ROUTES = ['reports', 'settings'];
+
+export function isRouteEnabled(route) {
+  return !HIDDEN_ROUTES.includes(route);
+}
+
 const items = [
   ['dashboard', 'Dashboard'],
   ['plantings', 'Siembras'],
@@ -251,7 +262,9 @@ const items = [
 
 export function shell(content) {
 
-  const nav = items.map(([id, label]) => `
+  const nav = items
+    .filter(([id]) => isRouteEnabled(id))
+    .map(([id, label]) => `
     <button
       data-route="${id}"
       class="nav-item ${state.route === id ? 'active' : ''}"
