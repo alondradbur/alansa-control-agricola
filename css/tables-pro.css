@@ -994,3 +994,90 @@
   font-size: 12.5px;
   line-height: 1.4;
 }
+
+
+/* =========================================================
+   6. GASTOS · FILTROS POR COLUMNA
+   Los menús reutilizan los estilos de Cobranza
+   (collections-filter-*). Aquí solo va lo propio de Gastos.
+   ========================================================= */
+
+.expenses-toolbar.expenses-toolbar {
+  flex-wrap: wrap;
+}
+
+.expenses-toolbar-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.expenses-toolbar-meta .muted {
+  margin-top: 0;
+  white-space: nowrap;
+}
+
+.expenses-table.expenses-table thead th .collections-th {
+  gap: 4px;
+}
+
+.expenses-table.expenses-table thead th:nth-child(n+6):nth-child(-n+8) .collections-th {
+  justify-content: flex-end;
+}
+
+.expenses-filter-title {
+  padding: 2px 8px 0;
+  font-size: .78rem;
+  color: #1d3b29;
+}
+
+.expenses-filter-menu .collections-filter-values label[hidden] {
+  display: none;
+}
+
+/* Chips de filtro: solo en celular, donde no se ve el encabezado. */
+.expenses-filter-chips {
+  display: none;
+}
+
+@media (max-width: 760px) {
+
+  .expenses-filter-chips {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .expenses-filter-chips::-webkit-scrollbar {
+    display: none;
+  }
+
+  .expenses-filter-chip {
+    flex: 0 0 auto;
+    min-height: 34px;
+    padding: 6px 12px;
+    border: 1px solid #d9e2dc;
+    border-radius: 999px;
+    background: #fff;
+    color: #34443b;
+    font: inherit;
+    font-size: 12px;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+
+  .expenses-filter-chip.active {
+    border-color: #1d6537;
+    background: #dcebe1;
+    color: #1d6537;
+    font-weight: 700;
+  }
+
+  .expenses-toolbar-meta .btn {
+    min-height: 32px;
+  }
+}

@@ -38,6 +38,35 @@ import {
 
 let rows = [];
 
+let rerenderModule = null;
+
+let outsideCloseBound = false;
+
+/*
+ * Filtros por columna (combinables).
+ * search: texto que debe contener la columna.
+ * selected: valores marcados en la lista.
+ */
+let tableState = {
+  search: {},
+  selected: {},
+  sortKey: '',
+  sortDirection: 'asc',
+  openColumn: ''
+};
+
+const COLUMNS = [
+  { key: 'expense_date', label: 'Fecha', type: 'date' },
+  { key: 'contract_number', label: 'Siembra', type: 'text' },
+  { key: 'category_name', label: 'Categoría', type: 'text' },
+  { key: 'supplier_name', label: 'Proveedor', type: 'text' },
+  { key: 'concept', label: 'Concepto', type: 'text' },
+  { key: 'amount', label: 'Importe', type: 'number' },
+  { key: 'exchange_rate', label: 'Tipo de cambio', type: 'number' },
+  { key: 'mxn_equivalent', label: 'Equivalente MXN', type: 'number' },
+  { key: 'payment_method_name', label: 'Método de pago', type: 'text' }
+];
+
 let catalogs = {
   plantings: [],
   expense_categories: [],
@@ -104,19 +133,15 @@ export async function expenses() {
 
     <div class="content">
 
-      ${summaryCards()}
+      <div id="expensesSummary">
+        ${summaryCards()}
+      </div>
 
       <section class="card table-card">
 
-        <div class="table-toolbar">
-          <strong>
-            Gastos registrados
-          </strong>
+        <div id="expensesTableArea">
+          ${tableArea()}
         </div>
-
-        ${desktopTable()}
-
-        ${mobileList()}
 
       </section>
 
@@ -132,7 +157,15 @@ export async function expenses() {
    ========================================================= */
 
 function summaryCards() {
-  const totals = rows.reduce(
+  const list = visibleRows();
+
+  const filtered = hasActiveFilters();
+
+  const scopeNote = filtered
+    ? `Filtrado: ${list.length} de ${rows.length} gastos`
+    : '';
+
+  const totals = list.reduce(
     (accumulator, row) => {
       const amount = numeric(
         row.amount
@@ -176,7 +209,7 @@ function summaryCards() {
         </div>
 
         <div class="dashboard-kpi-meta">
-          Importe registrado en pesos
+          ${scopeNote || 'Importe registrado en pesos'}
         </div>
       </article>
 
@@ -193,7 +226,7 @@ function summaryCards() {
         </div>
 
         <div class="dashboard-kpi-meta">
-          Importe registrado en dólares
+          ${scopeNote || 'Importe registrado en dólares'}
         </div>
       </article>
 
@@ -210,7 +243,7 @@ function summaryCards() {
         </div>
 
         <div class="dashboard-kpi-meta">
-          Según tipo de cambio capturado
+          ${scopeNote || 'Según tipo de cambio capturado'}
         </div>
       </article>
 
@@ -223,16 +256,110 @@ function summaryCards() {
    5. TABLA DE ESCRITORIO
    ========================================================= */
 
-function desktopTable() {
-  const body = rows.length
-    ? rows
+function emptyMessage() {
+  return rows.length
+    ? 'Ningún gasto coincide con los filtros.'
+    : 'Todavía no hay gastos registrados.';
+}
+
+function tableArea() {
+  const filtered = hasActiveFilters();
+
+  const list = visibleRows();
+
+  return `
+    <div class="table-toolbar expenses-toolbar">
+      <strong>
+        Gastos registrados
+      </strong>
+
+      <div class="expenses-toolbar-meta">
+        <span class="muted">
+          ${filtered
+            ? `${list.length} de ${rows.length}`
+            : `${rows.length}`
+          }
+          ${rows.length === 1 ? 'gasto' : 'gastos'}
+        </span>
+
+        ${filtered
+          ? `
+            <button
+              class="btn soft"
+              id="clearExpenseFilters"
+              type="button"
+            >
+              Quitar filtros
+            </button>
+          `
+          : ''
+        }
+      </div>
+    </div>
+
+    <div class="expenses-filter-chips">
+      ${COLUMNS.map(column => {
+        const active = isColumnActive(
+          column.key
+        );
+
+        return `
+          <button
+            class="expenses-filter-chip ${active ? 'active' : ''}"
+            data-expense-column="${column.key}"
+            type="button"
+          >
+            ${escapeHtml(column.label)} ⌄
+          </button>
+        `;
+      }).join('')}
+    </div>
+
+    ${desktopTable(list)}
+
+    ${mobileList(list)}
+  `;
+}
+
+function headerCell(
+  column
+) {
+  const active = isColumnActive(
+    column.key
+  );
+
+  const sorted =
+    tableState.sortKey === column.key
+      ? (tableState.sortDirection === 'asc' ? ' ↑' : ' ↓')
+      : '';
+
+  return `
+    <th>
+      <div class="collections-th">
+        <span>${escapeHtml(column.label)}${sorted}</span>
+        <button
+          class="collections-filter-trigger ${active ? 'active' : ''}"
+          data-expense-column="${column.key}"
+          type="button"
+          aria-label="Filtrar ${escapeHtml(column.label)}"
+        >⌄</button>
+      </div>
+    </th>
+  `;
+}
+
+function desktopTable(
+  list
+) {
+  const body = list.length
+    ? list
         .map(row => desktopRow(row))
         .join('')
     : `
         <tr>
           <td colspan="10">
             ${empty(
-              'Todavía no hay gastos registrados.'
+              emptyMessage()
             )}
           </td>
         </tr>
@@ -245,15 +372,7 @@ function desktopTable() {
 
         <thead>
           <tr>
-            <th>Fecha</th>
-            <th>Siembra</th>
-            <th>Categoría</th>
-            <th>Proveedor</th>
-            <th>Concepto</th>
-            <th>Importe</th>
-            <th>Tipo de cambio</th>
-            <th>Equivalente MXN</th>
-            <th>Método de pago</th>
+            ${COLUMNS.map(headerCell).join('')}
             <th>Acciones</th>
           </tr>
         </thead>
@@ -356,12 +475,14 @@ function desktopRow(
    6. LISTA MÓVIL
    ========================================================= */
 
-function mobileList() {
-  if (!rows.length) {
+function mobileList(
+  list
+) {
+  if (!list.length) {
     return `
       <div class="mobile-records">
         ${empty(
-          'Todavía no hay gastos registrados.'
+          emptyMessage()
         )}
       </div>
     `;
@@ -370,7 +491,7 @@ function mobileList() {
   return `
     <div class="mobile-records">
 
-      ${rows
+      ${list
         .map(row => {
           return `
             <article class="mobile-record">
@@ -518,6 +639,12 @@ function actionButtons(
 export function bindExpenses(
   rerender
 ) {
+  rerenderModule = rerender;
+
+  closeFilterMenu();
+
+  bindOutsideClose();
+
   document
     .querySelector(
       '#newExpenseBtn'
@@ -530,6 +657,55 @@ export function bindExpenses(
         );
       }
     );
+
+  bindTableEvents();
+}
+
+
+function bindTableEvents() {
+  const rerender = rerenderModule;
+
+  document
+    .querySelector(
+      '#clearExpenseFilters'
+    )
+    ?.addEventListener(
+      'click',
+      () => {
+        tableState.search = {};
+        tableState.selected = {};
+        renderDynamic();
+      }
+    );
+
+  document
+    .querySelectorAll(
+      '[data-expense-column]'
+    )
+    .forEach(button => {
+      button.addEventListener(
+        'click',
+        event => {
+          event.preventDefault();
+          event.stopPropagation();
+
+          const key =
+            button.dataset.expenseColumn;
+
+          const isSame =
+            tableState.openColumn === key;
+
+          closeFilterMenu();
+
+          if (!isSame) {
+            openFilterMenu(
+              key,
+              button
+            );
+          }
+        }
+      );
+    });
 
   document
     .querySelectorAll(
@@ -576,6 +752,518 @@ export function bindExpenses(
         }
       );
     });
+}
+
+
+/* =========================================================
+   8.1 FILTROS POR COLUMNA
+   ========================================================= */
+
+function isColumnActive(
+  key
+) {
+  return Boolean(
+    tableState.search[key] ||
+    tableState.selected[key]?.length
+  );
+}
+
+function hasActiveFilters() {
+  return COLUMNS.some(column => {
+    return isColumnActive(
+      column.key
+    );
+  });
+}
+
+function filterDisplay(
+  row,
+  column
+) {
+  const value = row[column.key];
+
+  const missing =
+    value === null ||
+    value === undefined ||
+    value === '';
+
+  if (column.key === 'amount') {
+    return money(
+      value,
+      row.currency || 'MXN'
+    );
+  }
+
+  if (missing) {
+    return '—';
+  }
+
+  if (column.key === 'expense_date') {
+    return date(value);
+  }
+
+  if (column.key === 'exchange_rate') {
+    return number(value, 4);
+  }
+
+  if (column.key === 'mxn_equivalent') {
+    return money(value, 'MXN');
+  }
+
+  return String(value);
+}
+
+function sortValue(
+  row,
+  column
+) {
+  if (column.key === 'amount') {
+    return `${row.currency || 'MXN'}|${numeric(row.amount).toFixed(2).padStart(20, '0')}`;
+  }
+
+  return row[column.key];
+}
+
+function compareValues(
+  a,
+  b,
+  type
+) {
+  if (type === 'number') {
+    const aMissing = a === null || a === undefined || a === '';
+    const bMissing = b === null || b === undefined || b === '';
+
+    if (aMissing || bMissing) {
+      return Number(aMissing) - Number(bMissing);
+    }
+
+    if (typeof a === 'string' && a.includes('|')) {
+      return a.localeCompare(b);
+    }
+
+    return numeric(a) - numeric(b);
+  }
+
+  return String(a ?? '').localeCompare(
+    String(b ?? ''),
+    'es',
+    { numeric: true }
+  );
+}
+
+function matchesColumn(
+  row,
+  column
+) {
+  const search = String(
+    tableState.search[column.key] || ''
+  ).trim().toLowerCase();
+
+  const selected =
+    tableState.selected[column.key];
+
+  const display = filterDisplay(
+    row,
+    column
+  );
+
+  if (
+    search &&
+    !display.toLowerCase().includes(search)
+  ) {
+    return false;
+  }
+
+  if (
+    selected?.length &&
+    !selected.includes(display)
+  ) {
+    return false;
+  }
+
+  return true;
+}
+
+/*
+ * Filas que pasan todos los filtros excepto
+ * el de una columna: sirve para que la lista
+ * de valores de cada filtro muestre solo lo
+ * que existe con los demás filtros aplicados.
+ */
+function rowsExcept(
+  exceptKey
+) {
+  return rows.filter(row => {
+    return COLUMNS.every(column => {
+      return column.key === exceptKey ||
+        matchesColumn(row, column);
+    });
+  });
+}
+
+function visibleRows() {
+  let list = rowsExcept('');
+
+  const column = COLUMNS.find(item => {
+    return item.key === tableState.sortKey;
+  });
+
+  if (column) {
+    list = [...list].sort((a, b) => {
+      return compareValues(
+        sortValue(a, column),
+        sortValue(b, column),
+        column.type
+      );
+    });
+
+    if (tableState.sortDirection === 'desc') {
+      list.reverse();
+    }
+  }
+
+  return list;
+}
+
+function filterMenu(
+  column
+) {
+  const seen = new Map();
+
+  rowsExcept(column.key).forEach(row => {
+    const display = filterDisplay(
+      row,
+      column
+    );
+
+    if (!seen.has(display)) {
+      seen.set(
+        display,
+        sortValue(row, column)
+      );
+    }
+  });
+
+  (tableState.selected[column.key] || [])
+    .forEach(value => {
+      if (!seen.has(value)) {
+        seen.set(value, value);
+      }
+    });
+
+  const values = [...seen.entries()]
+    .sort((a, b) => {
+      return compareValues(
+        a[1],
+        b[1],
+        column.type
+      );
+    })
+    .map(entry => entry[0]);
+
+  const selected =
+    tableState.selected[column.key] || [];
+
+  const ascLabel =
+    column.type === 'date'
+      ? 'Más antiguo primero'
+      : column.type === 'number'
+        ? 'Menor a mayor'
+        : 'Ordenar A → Z';
+
+  const descLabel =
+    column.type === 'date'
+      ? 'Más reciente primero'
+      : column.type === 'number'
+        ? 'Mayor a menor'
+        : 'Ordenar Z → A';
+
+  return `
+    <div class="collections-filter-menu collections-filter-menu-portal expenses-filter-menu" data-expense-menu="${column.key}">
+
+      <strong class="expenses-filter-title">
+        ${escapeHtml(column.label)}
+      </strong>
+
+      <button class="collections-sort" data-expense-sort="asc" type="button">
+        ${ascLabel}
+      </button>
+
+      <button class="collections-sort" data-expense-sort="desc" type="button">
+        ${descLabel}
+      </button>
+
+      <input
+        class="collections-filter-search"
+        data-expense-search
+        type="search"
+        placeholder="Buscar..."
+        value="${escapeHtml(tableState.search[column.key] || '')}"
+      >
+
+      <div class="collections-filter-values">
+        ${values.length
+          ? values.map(value => `
+            <label>
+              <input
+                type="checkbox"
+                data-expense-value
+                value="${escapeHtml(value)}"
+                ${selected.includes(value) ? 'checked' : ''}
+              >
+              <span>${escapeHtml(value)}</span>
+            </label>
+          `).join('')
+          : '<span class="muted">Sin valores</span>'
+        }
+      </div>
+
+      <div class="collections-filter-actions">
+        <button class="btn" data-expense-clear type="button">Limpiar</button>
+        <button class="btn primary" data-expense-apply type="button">Aplicar</button>
+      </div>
+
+    </div>
+  `;
+}
+
+function openFilterMenu(
+  key,
+  trigger
+) {
+  const column = COLUMNS.find(item => {
+    return item.key === key;
+  });
+
+  if (!column) {
+    return;
+  }
+
+  tableState.openColumn = key;
+
+  const holder = document.createElement('div');
+
+  holder.innerHTML = filterMenu(column).trim();
+
+  const menu = holder.firstElementChild;
+
+  document.body.appendChild(menu);
+
+  positionMenu(
+    menu,
+    trigger.closest('th') || trigger
+  );
+
+  menu.addEventListener('click', event => {
+    event.stopPropagation();
+  });
+
+  const search = menu.querySelector(
+    '[data-expense-search]'
+  );
+
+  const labels = [
+    ...menu.querySelectorAll(
+      '.collections-filter-values label'
+    )
+  ];
+
+  // La búsqueda va acotando la lista de valores.
+  const narrow = () => {
+    const text = search.value
+      .trim()
+      .toLowerCase();
+
+    labels.forEach(label => {
+      label.hidden = Boolean(text) &&
+        !label.textContent
+          .toLowerCase()
+          .includes(text);
+    });
+  };
+
+  narrow();
+
+  search.addEventListener('input', narrow);
+
+  const apply = () => {
+    tableState.search[key] =
+      search.value.trim();
+
+    tableState.selected[key] = [
+      ...menu.querySelectorAll(
+        '[data-expense-value]:checked'
+      )
+    ].map(input => input.value);
+
+    if (!tableState.search[key]) {
+      delete tableState.search[key];
+    }
+
+    if (!tableState.selected[key].length) {
+      delete tableState.selected[key];
+    }
+
+    closeFilterMenu();
+    renderDynamic();
+  };
+
+  search.addEventListener('keydown', event => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      apply();
+    }
+  });
+
+  menu
+    .querySelector('[data-expense-apply]')
+    .addEventListener('click', apply);
+
+  menu
+    .querySelector('[data-expense-clear]')
+    .addEventListener('click', () => {
+      delete tableState.search[key];
+      delete tableState.selected[key];
+
+      closeFilterMenu();
+      renderDynamic();
+    });
+
+  menu
+    .querySelectorAll('[data-expense-sort]')
+    .forEach(button => {
+      button.addEventListener('click', () => {
+        tableState.sortKey = key;
+        tableState.sortDirection =
+          button.dataset.expenseSort;
+
+        closeFilterMenu();
+        renderDynamic();
+      });
+    });
+
+  if (window.matchMedia('(min-width: 761px)').matches) {
+    search.focus();
+  }
+}
+
+function positionMenu(
+  menu,
+  anchor
+) {
+  const rect = anchor.getBoundingClientRect();
+
+  const padding = 12;
+  const gap = 7;
+
+  const width = Math.min(
+    300,
+    window.innerWidth - padding * 2
+  );
+
+  const maxHeight = Math.min(
+    440,
+    window.innerHeight - padding * 2
+  );
+
+  menu.style.width = `${width}px`;
+  menu.style.maxHeight = `${maxHeight}px`;
+  menu.style.visibility = 'hidden';
+
+  const height = Math.min(
+    menu.getBoundingClientRect().height,
+    maxHeight
+  );
+
+  let left = rect.left;
+
+  if (left + width > window.innerWidth - padding) {
+    left = rect.right - width;
+  }
+
+  left = Math.max(
+    padding,
+    Math.min(
+      left,
+      window.innerWidth - width - padding
+    )
+  );
+
+  const spaceBelow =
+    window.innerHeight - rect.bottom - padding - gap;
+
+  const spaceAbove =
+    rect.top - padding - gap;
+
+  let top =
+    height <= spaceBelow || spaceBelow >= spaceAbove
+      ? rect.bottom + gap
+      : rect.top - height - gap;
+
+  top = Math.max(
+    padding,
+    Math.min(
+      top,
+      window.innerHeight - height - padding
+    )
+  );
+
+  menu.style.left = `${left}px`;
+  menu.style.top = `${top}px`;
+  menu.style.visibility = 'visible';
+}
+
+function closeFilterMenu() {
+  tableState.openColumn = '';
+
+  document
+    .querySelectorAll(
+      '.expenses-filter-menu'
+    )
+    .forEach(menu => menu.remove());
+}
+
+function bindOutsideClose() {
+  if (outsideCloseBound) {
+    return;
+  }
+
+  outsideCloseBound = true;
+
+  document.addEventListener('click', () => {
+    if (tableState.openColumn) {
+      closeFilterMenu();
+    }
+  });
+
+  document.addEventListener('keydown', event => {
+    if (
+      event.key === 'Escape' &&
+      tableState.openColumn
+    ) {
+      closeFilterMenu();
+    }
+  });
+}
+
+function renderDynamic() {
+  const summary = document.getElementById(
+    'expensesSummary'
+  );
+
+  const table = document.getElementById(
+    'expensesTableArea'
+  );
+
+  if (summary) {
+    summary.innerHTML = summaryCards();
+  }
+
+  if (table) {
+    table.innerHTML = tableArea();
+  }
+
+  bindTableEvents();
 }
 
 
