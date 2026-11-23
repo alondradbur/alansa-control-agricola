@@ -241,7 +241,7 @@ function desktopTable() {
   return `
     <div class="table-scroll desktop-table">
 
-      <table>
+      <table class="expenses-table">
 
         <thead>
           <tr>

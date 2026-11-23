@@ -132,7 +132,7 @@ export async function plantings() {
 
         <div class="table-scroll">
 
-          <table>
+          <table class="plantings-table">
 
             <thead>
               <tr>
