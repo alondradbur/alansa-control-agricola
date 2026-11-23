@@ -1,0 +1,996 @@
+/* =========================================================
+   ALANSA · TABLAS PROFESIONALES (capa final)
+   ---------------------------------------------------------
+   Esta hoja se carga al final y solo afecta la presentación
+   de las tablas. No cambia datos, filtros ni acciones.
+
+   Criterios:
+   - Ancho de columnas automático: el texto largo (clientes,
+     proveedores, conceptos) se acomoda en 2 líneas en vez de
+     encimarse o empujar la tabla.
+   - Números, fechas y folios nunca se parten y se alinean
+     a la derecha con cifras tabulares.
+   - Si aun así no cabe, el desplazamiento horizontal ocurre
+     SOLO dentro de la tabla, con la primera columna fija.
+   - En celular se conservan las tarjetas y la tabla de
+     Remisiones (con folio fijo) ya existentes, compactadas.
+   ========================================================= */
+
+:root {
+  --tbl-font: 12.5px;
+  --tbl-head-font: 10.5px;
+  --tbl-pad-y: 9px;
+  --tbl-pad-x: 10px;
+  --tbl-border: #e3e9e5;
+  --tbl-head-bg: #f2f6f3;
+  --tbl-head-color: #4a5c52;
+  --tbl-row-hover: #f7faf8;
+  --tbl-sticky-shadow: 6px 0 8px -6px rgba(16, 42, 19, .18);
+}
+
+
+/* =========================================================
+   1. CONTENEDORES CON SCROLL (todas las vistas)
+   ========================================================= */
+
+.table-scroll,
+.collections-table-scroll,
+.collections-history-scroll,
+.shipment-lines-scroll,
+.dashboard-excel-table-scroll {
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: #b9c7bf transparent;
+}
+
+.table-scroll::-webkit-scrollbar,
+.collections-table-scroll::-webkit-scrollbar,
+.dashboard-excel-table-scroll::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.table-scroll::-webkit-scrollbar-thumb,
+.collections-table-scroll::-webkit-scrollbar-thumb,
+.dashboard-excel-table-scroll::-webkit-scrollbar-thumb {
+  background: #b9c7bf;
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background-clip: padding-box;
+}
+
+.table-scroll::-webkit-scrollbar-track,
+.collections-table-scroll::-webkit-scrollbar-track,
+.dashboard-excel-table-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+
+/* Los elementos de rejilla que contienen tablas no deben
+   estirar la página: el scroll se queda dentro de la tabla. */
+.content > *,
+.dashboard-v2-content > *,
+.dashboard-v2-section,
+.table-card,
+.collections-panel {
+  min-width: 0;
+}
+
+
+/* =========================================================
+   2. ESCRITORIO Y TABLET (761 px en adelante)
+   ========================================================= */
+
+@media (min-width: 761px) {
+
+  /* ---------- 2.1 Base común ---------- */
+
+  .plantings-table.plantings-table,
+  .expenses-table.expenses-table,
+  .catalog-table.catalog-table,
+  .shipments-v2-table.shipments-v2-table,
+  .collections-table.collections-table,
+  .dashboard-excel-table.dashboard-excel-table {
+    width: 100% !important;
+    table-layout: auto !important;
+    border-collapse: separate !important;
+    border-spacing: 0 !important;
+    font-size: var(--tbl-font) !important;
+  }
+
+  .plantings-table.plantings-table th,
+  .plantings-table.plantings-table td,
+  .expenses-table.expenses-table th,
+  .expenses-table.expenses-table td,
+  .catalog-table.catalog-table th,
+  .catalog-table.catalog-table td,
+  .shipments-v2-table.shipments-v2-table th,
+  .shipments-v2-table.shipments-v2-table td,
+  .collections-table.collections-table th,
+  .collections-table.collections-table td,
+  .dashboard-excel-table.dashboard-excel-table th,
+  .dashboard-excel-table.dashboard-excel-table td {
+    width: auto !important;
+    min-width: 0;
+    max-width: none !important;
+    height: auto !important;
+    padding: var(--tbl-pad-y) var(--tbl-pad-x) !important;
+    border-bottom: 1px solid var(--tbl-border) !important;
+    font-size: var(--tbl-font) !important;
+    line-height: 1.35 !important;
+    vertical-align: middle !important;
+    white-space: nowrap;
+    overflow: visible !important;
+    text-overflow: clip !important;
+  }
+
+  /* Encabezados: compactos, en 1 o 2 líneas, siempre fijos. */
+  .plantings-table.plantings-table thead th,
+  .expenses-table.expenses-table thead th,
+  .catalog-table.catalog-table thead th,
+  .shipments-v2-table.shipments-v2-table thead th,
+  .collections-table.collections-table thead th,
+  .dashboard-excel-table.dashboard-excel-table thead th {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 6;
+    padding-top: 10px !important;
+    padding-bottom: 10px !important;
+    background: var(--tbl-head-bg) !important;
+    color: var(--tbl-head-color) !important;
+    font-size: var(--tbl-head-font) !important;
+    font-weight: 800 !important;
+    line-height: 1.2 !important;
+    letter-spacing: .025em !important;
+    text-transform: uppercase;
+    white-space: normal !important;
+    vertical-align: middle !important;
+    box-shadow: inset 0 -1px 0 #d7e0da;
+  }
+
+  .plantings-table.plantings-table tbody tr:hover > td,
+  .expenses-table.expenses-table tbody tr:hover > td,
+  .catalog-table.catalog-table tbody tr:hover > td,
+  .shipments-v2-table.shipments-v2-table tbody tr:hover > td,
+  .collections-table.collections-table tbody tr:hover > td,
+  .dashboard-excel-table.dashboard-excel-table tbody tr:hover > td {
+    background-color: var(--tbl-row-hover);
+  }
+
+  /* Texto largo: hasta dos o tres renglones, sin encimarse. */
+  .tbl-wrap,
+  .shipments-v2-table.shipments-v2-table tbody td:nth-child(4),
+  .shipments-v2-table.shipments-v2-table tbody td:nth-child(5),
+  .collections-table.collections-table td.collections-client,
+  .dashboard-excel-table.dashboard-excel-table:not(.dashboard-due-excel-table.dashboard-due-excel-table) td:nth-child(3),
+  .dashboard-due-excel-table.dashboard-due-excel-table td:nth-child(4),
+  .plantings-table.plantings-table td:nth-child(2),
+  .expenses-table.expenses-table td:nth-child(3),
+  .expenses-table.expenses-table td:nth-child(4),
+  .expenses-table.expenses-table td:nth-child(5),
+  .expenses-table.expenses-table td:nth-child(9),
+  .catalog-table.catalog-table td {
+    white-space: normal !important;
+    overflow-wrap: break-word;
+    word-break: normal;
+  }
+
+  /* Cifras: a la derecha, tabulares y sin partirse. */
+  .shipments-v2-table.shipments-v2-table tbody td:nth-child(n+6):nth-child(-n+9),
+  .shipments-v2-table.shipments-v2-table tfoot td:not(:first-child),
+  .collections-table.collections-table td.num,
+  .dashboard-excel-table.dashboard-excel-table:not(.dashboard-due-excel-table.dashboard-due-excel-table) td:nth-child(4),
+  .dashboard-excel-table.dashboard-excel-table:not(.dashboard-due-excel-table.dashboard-due-excel-table) td:nth-child(5),
+  .dashboard-due-excel-table.dashboard-due-excel-table td:nth-child(5),
+  .dashboard-due-excel-table.dashboard-due-excel-table td:nth-child(6),
+  .plantings-table.plantings-table td:nth-child(n+4):nth-child(-n+8),
+  .expenses-table.expenses-table td:nth-child(n+6):nth-child(-n+8) {
+    font-variant-numeric: tabular-nums;
+    text-align: right !important;
+    white-space: nowrap !important;
+  }
+
+  .shipments-v2-table.shipments-v2-table thead th:nth-child(n+6):nth-child(-n+9),
+  .plantings-table.plantings-table thead th:nth-child(n+4):nth-child(-n+8),
+  .expenses-table.expenses-table thead th:nth-child(n+6):nth-child(-n+8) {
+    text-align: right !important;
+  }
+
+  /* Botones de acción compactos dentro de la fila. */
+  .plantings-table.plantings-table .row-actions,
+  .expenses-table.expenses-table .row-actions,
+  .catalog-table.catalog-table .row-actions {
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: flex-end;
+    gap: 6px;
+  }
+
+  .plantings-table.plantings-table .row-actions .btn,
+  .expenses-table.expenses-table .row-actions .btn,
+  .catalog-table.catalog-table .row-actions .btn {
+    min-height: 30px !important;
+    padding: 4px 9px !important;
+    border-radius: 8px;
+    font-size: 11.5px !important;
+    white-space: nowrap;
+  }
+
+  .plantings-table.plantings-table th:last-child,
+  .expenses-table.expenses-table th:last-child,
+  .catalog-table.catalog-table th:last-child {
+    text-align: right !important;
+  }
+
+  .plantings-table.plantings-table td:last-child,
+  .expenses-table.expenses-table td:last-child,
+  .catalog-table.catalog-table td:last-child {
+    width: 1% !important;
+    white-space: nowrap !important;
+  }
+
+
+  /* ---------- 2.2 Siembras ---------- */
+
+  .table-scroll:has(> .plantings-table.plantings-table),
+  .table-scroll:has(> .catalog-table.catalog-table) {
+    overflow-x: auto;
+  }
+
+  .plantings-table.plantings-table {
+    min-width: 900px !important;
+  }
+
+  .plantings-table.plantings-table td:first-child {
+    font-weight: 700;
+    white-space: nowrap !important;
+  }
+
+  .plantings-table.plantings-table td:nth-child(2) {
+    min-width: 130px !important;
+  }
+
+  .plantings-table.plantings-table .status {
+    white-space: nowrap;
+  }
+
+
+  /* ---------- 2.3 Gastos ---------- */
+
+  .expenses-table.expenses-table {
+    min-width: 980px !important;
+  }
+
+  .expenses-table.expenses-table td:nth-child(5) {
+    min-width: 140px !important;
+  }
+
+  .expenses-table.expenses-table td:nth-child(3),
+  .expenses-table.expenses-table td:nth-child(4),
+  .expenses-table.expenses-table td:nth-child(9) {
+    min-width: 88px !important;
+  }
+
+
+  /* ---------- 2.4 Catálogos ---------- */
+
+  .catalog-table.catalog-table {
+    min-width: 560px !important;
+  }
+
+  .catalog-table.catalog-table td:first-child {
+    font-weight: 650;
+  }
+
+
+  /* ---------- 2.5 Remisiones ---------- */
+
+  .shipments-v2-scroll {
+    overflow-x: auto !important;
+  }
+
+  .shipments-v2-table.shipments-v2-table {
+    min-width: 1060px !important;
+  }
+
+  .shipments-v2-table.shipments-v2-table tbody td {
+    height: auto !important;
+    text-align: left !important;
+  }
+
+  .shipments-v2-table.shipments-v2-table tbody td:nth-child(n+6):nth-child(-n+9),
+  .shipments-v2-table.shipments-v2-table tfoot td:not(:first-child) {
+    text-align: right !important;
+  }
+
+  .shipments-v2-table.shipments-v2-table tbody td:nth-child(4) {
+    min-width: 140px !important;
+  }
+
+  .shipments-v2-table.shipments-v2-table tbody td:nth-child(5) {
+    min-width: 84px !important;
+  }
+
+  .shipment-th-inner {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 4px !important;
+    min-width: 0;
+  }
+
+  .shipment-th-inner > span {
+    min-width: 0;
+    white-space: normal !important;
+    text-align: left;
+  }
+
+  .shipments-v2-table.shipments-v2-table thead th:nth-child(n+6):nth-child(-n+9) .shipment-th-inner {
+    justify-content: flex-end !important;
+  }
+
+  .shipments-v2-table.shipments-v2-table thead th:nth-child(n+6):nth-child(-n+9) .shipment-th-inner > span {
+    text-align: right;
+  }
+
+  .shipment-filter-trigger {
+    flex: 0 0 20px !important;
+    width: 20px !important;
+    height: 20px !important;
+    min-height: 20px !important;
+    padding: 0 !important;
+  }
+
+  .shipments-v2-table.shipments-v2-table td.shipment-cell-folio {
+    font-weight: 800;
+    white-space: nowrap !important;
+  }
+
+  .shipment-row-actions {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    justify-content: flex-end !important;
+    align-items: center !important;
+    gap: 5px !important;
+  }
+
+  .shipment-row-actions .btn {
+    min-height: 30px !important;
+    height: 30px !important;
+    padding: 0 9px !important;
+    font-size: 12px !important;
+  }
+
+  .shipment-row-actions .shipment-icon-btn {
+    width: 30px !important;
+    min-width: 30px !important;
+    padding: 0 !important;
+  }
+
+  .shipments-v2-table.shipments-v2-table td:last-child,
+  .shipments-v2-table.shipments-v2-table th:last-child {
+    width: 1% !important;
+  }
+
+  .shipments-v2-table.shipments-v2-table tfoot td {
+    position: sticky !important;
+    bottom: 0 !important;
+    z-index: 5;
+    background: #eef4f0 !important;
+    font-weight: 800;
+  }
+
+  .shipments-v2-table.shipments-v2-table tfoot td:first-child {
+    text-align: left !important;
+    white-space: nowrap !important;
+  }
+
+  /* Folio fijo cuando la tabla necesita desplazarse. */
+  .shipments-v2-table.shipments-v2-table th:first-child,
+  .shipments-v2-table.shipments-v2-table td:first-child {
+    position: sticky !important;
+    left: 0 !important;
+    z-index: 3;
+    background: #fff;
+    box-shadow: var(--tbl-sticky-shadow);
+  }
+
+  .shipments-v2-table.shipments-v2-table thead th:first-child {
+    z-index: 8 !important;
+    background: var(--tbl-head-bg) !important;
+  }
+
+  .shipments-v2-table.shipments-v2-table tfoot td:first-child {
+    z-index: 7 !important;
+    background: #eef4f0 !important;
+  }
+
+
+  /* ---------- 2.6 Cobranza ---------- */
+
+  .collections-table-scroll {
+    overflow-x: auto !important;
+  }
+
+  .collections-table.collections-table {
+    min-width: 1180px !important;
+  }
+
+  .collections-table.collections-table th,
+  .collections-table.collections-table td {
+    border-right: 0 !important;
+  }
+
+  .collections-table.collections-table td.collections-client {
+    min-width: 140px !important;
+  }
+
+  /* Folios largos (REM-PRODUCTO-00-2026) completos en un renglón. */
+  .collections-table.collections-table th:first-child,
+  .collections-table.collections-table td:first-child {
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    white-space: nowrap !important;
+  }
+
+  .collections-table.collections-table .collections-folio {
+    text-align: left;
+    white-space: nowrap;
+  }
+
+  .collections-th {
+    gap: 4px !important;
+  }
+
+  .collections-th > span {
+    white-space: normal;
+  }
+
+  .collections-filter-trigger {
+    flex: 0 0 20px !important;
+    width: 20px !important;
+    height: 20px !important;
+  }
+
+  .collections-table.collections-table td:nth-child(12) {
+    text-align: center !important;
+  }
+
+  /* La celda de acciones sigue siendo celda de tabla;
+     los botones se alinean con un contenedor en línea. */
+  .collections-table.collections-table td.collections-row-actions {
+    display: table-cell !important;
+    width: 1% !important;
+    white-space: nowrap !important;
+    text-align: right !important;
+  }
+
+  .collections-table.collections-table td.collections-row-actions > * {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    vertical-align: middle;
+    min-height: 30px !important;
+    height: 30px;
+    margin-left: 5px;
+    padding: 0 10px !important;
+    font-size: 12px !important;
+    white-space: nowrap;
+  }
+
+  .collections-table.collections-table td.collections-row-actions > *:first-child {
+    margin-left: 0;
+  }
+
+  /* Folio (izquierda) y acciones (derecha) fijos al desplazar. */
+  .collections-table.collections-table th:first-child,
+  .collections-table.collections-table td:first-child {
+    position: sticky !important;
+    left: 0 !important;
+    z-index: 3;
+    background: #fff;
+    box-shadow: var(--tbl-sticky-shadow);
+  }
+
+  .collections-table.collections-table th:last-child,
+  .collections-table.collections-table td:last-child {
+    position: sticky !important;
+    right: var(--tbl-actions-right, 0) !important;
+    z-index: 3;
+    background: #fff;
+    box-shadow: var(--tbl-actions-shadow, -6px 0 8px -6px rgba(16, 42, 19, .18));
+  }
+
+  .collections-table.collections-table thead th:first-child,
+  .collections-table.collections-table thead th:last-child {
+    z-index: 8 !important;
+    background: var(--tbl-head-bg) !important;
+  }
+
+  .collections-table.collections-table tfoot td {
+    background: #f2f6f3 !important;
+    white-space: nowrap !important;
+  }
+
+  .collections-table.collections-table tfoot td:first-child {
+    z-index: 7 !important;
+  }
+
+  /* El pie agrupa 3 columnas al final: no debe tapar los totales. */
+  .collections-table.collections-table tfoot td:last-child {
+    position: sticky !important;
+    right: auto !important;
+    left: auto !important;
+    box-shadow: none !important;
+  }
+
+  .collections-table.collections-table td.collections-row-actions > .icon-btn {
+    border: 1px solid var(--border, #dfe7e2) !important;
+    border-radius: 8px !important;
+    background: #fff !important;
+    color: var(--text, #1d2b22) !important;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+
+  /* ---------- 2.7 Dashboard ---------- */
+
+  .dashboard-excel-table-scroll {
+    overflow-x: auto !important;
+  }
+
+  .dashboard-excel-table.dashboard-excel-table tbody td:first-child {
+    font-weight: 700;
+    white-space: nowrap !important;
+  }
+
+  .dashboard-excel-th {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 4px !important;
+  }
+
+  .dashboard-excel-th > span {
+    min-width: 0;
+    white-space: normal !important;
+  }
+
+  .dashboard-excel-filter-trigger {
+    flex: 0 0 20px !important;
+    width: 20px !important;
+    height: 20px !important;
+    min-height: 20px !important;
+    padding: 0 !important;
+  }
+
+  .dashboard-excel-table.dashboard-excel-table:not(.dashboard-due-excel-table.dashboard-due-excel-table) td:nth-child(3),
+  .dashboard-due-excel-table.dashboard-due-excel-table td:nth-child(4) {
+    min-width: 140px !important;
+    text-align: left !important;
+  }
+
+  .dashboard-excel-table.dashboard-excel-table:not(.dashboard-due-excel-table.dashboard-due-excel-table) td:nth-child(6),
+  .dashboard-due-excel-table.dashboard-due-excel-table td:nth-child(7) {
+    width: 1% !important;
+    text-align: center !important;
+  }
+
+  .dashboard-excel-table.dashboard-excel-table tfoot td {
+    white-space: nowrap !important;
+  }
+
+  /* No. de remisión fijo si la tabla se desplaza (tablet). */
+  .dashboard-excel-table.dashboard-excel-table th:first-child,
+  .dashboard-excel-table.dashboard-excel-table td:first-child {
+    position: sticky !important;
+    left: 0;
+    z-index: 3;
+    background: #fff;
+    box-shadow: var(--tbl-sticky-shadow);
+  }
+
+  .dashboard-excel-table.dashboard-excel-table thead th:first-child {
+    z-index: 22 !important;
+    background: var(--tbl-head-bg) !important;
+  }
+
+  .dashboard-excel-table.dashboard-excel-table tfoot td:first-child {
+    z-index: 19 !important;
+    background: #edf4f9 !important;
+  }
+}
+
+
+/* Acciones fijas a la derecha cuando la tabla necesita
+   desplazarse (solo en pantallas de 1101 px o más; en tablet
+   se prioriza el espacio para los datos). */
+@media (min-width: 1101px) {
+
+  .shipments-v2-table.shipments-v2-table tbody td:last-child,
+  .shipments-v2-table.shipments-v2-table thead th:last-child,
+  .plantings-table.plantings-table tbody td:last-child,
+  .plantings-table.plantings-table thead th:last-child,
+  .expenses-table.expenses-table tbody td:last-child,
+  .expenses-table.expenses-table thead th:last-child {
+    position: sticky !important;
+    right: 0 !important;
+    z-index: 3;
+    background: #fff;
+    box-shadow: -6px 0 8px -6px rgba(16, 42, 19, .18);
+  }
+
+  .shipments-v2-table.shipments-v2-table thead th:last-child,
+  .plantings-table.plantings-table thead th:last-child,
+  .expenses-table.expenses-table thead th:last-child {
+    z-index: 8 !important;
+    background: var(--tbl-head-bg) !important;
+  }
+}
+
+/* Primera columna (contrato / fecha) fija al desplazar. */
+@media (min-width: 761px) {
+
+  .plantings-table.plantings-table th:first-child,
+  .plantings-table.plantings-table td:first-child,
+  .expenses-table.expenses-table th:first-child,
+  .expenses-table.expenses-table td:first-child {
+    position: sticky !important;
+    left: 0;
+    z-index: 3;
+    background: #fff;
+  }
+
+  .plantings-table.plantings-table thead th:first-child,
+  .expenses-table.expenses-table thead th:first-child {
+    z-index: 8 !important;
+    background: var(--tbl-head-bg) !important;
+  }
+}
+
+
+/* =========================================================
+   LAPTOP (1101 – 1500 px): un poco menos de relleno.
+   ========================================================= */
+
+@media (min-width: 1101px) and (max-width: 1500px) {
+
+  :root {
+    --tbl-pad-x: 7px;
+  }
+}
+
+
+/* =========================================================
+   3. TABLET Y LAPTOP CHICA (761 – 1100 px)
+   Menos relleno para que quepan más columnas sin apretar.
+   ========================================================= */
+
+@media (min-width: 761px) and (max-width: 1100px) {
+
+  :root {
+    --tbl-actions-right: auto;
+    --tbl-actions-shadow: none;
+    --tbl-font: 12px;
+    --tbl-head-font: 10px;
+    --tbl-pad-x: 8px;
+    --tbl-pad-y: 8px;
+  }
+}
+
+
+/* =========================================================
+   4. CELULAR (hasta 760 px)
+   ========================================================= */
+
+@media (max-width: 760px) {
+
+  /* ---------- Remisiones: tabla real compacta ---------- */
+
+  .shipments-v2-table.shipments-v2-table {
+    width: auto !important;
+    min-width: 0 !important;
+    table-layout: auto !important;
+  }
+
+  .shipments-v2-table.shipments-v2-table th,
+  .shipments-v2-table.shipments-v2-table td,
+  .shipments-v2-table.shipments-v2-table tbody td,
+  .shipments-v2-table.shipments-v2-table tfoot td {
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    padding: 9px 10px !important;
+    font-size: 12px !important;
+    line-height: 1.3 !important;
+    white-space: nowrap !important;
+  }
+
+  .shipments-v2-table.shipments-v2-table thead th {
+    padding-top: 9px !important;
+    padding-bottom: 9px !important;
+    font-size: 10px !important;
+  }
+
+  .shipments-v2-table.shipments-v2-table td:nth-child(4),
+  .shipments-v2-table.shipments-v2-table td:nth-child(5) {
+    min-width: 130px !important;
+    max-width: 170px !important;
+    white-space: normal !important;
+    overflow-wrap: break-word;
+  }
+
+  .shipments-v2-table.shipments-v2-table td:nth-child(n+6):nth-child(-n+9) {
+    text-align: right !important;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .shipments-v2-table.shipments-v2-table th:first-child,
+  .shipments-v2-table.shipments-v2-table td:first-child {
+    min-width: 118px !important;
+    max-width: 124px !important;
+  }
+
+  .shipments-v2-table.shipments-v2-table tbody td:first-child,
+  .shipments-v2-table.shipments-v2-table tbody td:first-child strong {
+    white-space: normal !important;
+    overflow-wrap: break-word;
+    text-align: left !important;
+  }
+
+  .shipments-v2-table.shipments-v2-table tbody td:nth-child(n+2):nth-child(-n+5) {
+    text-align: left !important;
+  }
+
+  .shipment-row-actions .btn {
+    min-height: 34px !important;
+  }
+
+
+  /* ---------- Dashboard y Siembras: tarjetas compactas ----------
+     Cada fila es una tarjeta con los datos en dos columnas
+     (etiqueta arriba, valor abajo). Mismos datos, la mitad
+     de alto. */
+
+  .dashboard-excel-table.dashboard-excel-table tbody tr,
+  .content > .table-card .table-scroll > .plantings-table.plantings-table tbody tr {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 10px 14px;
+    padding: 13px 14px !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 13px !important;
+    background: #fff !important;
+  }
+
+  .dashboard-excel-table.dashboard-excel-table tbody td,
+  .content > .table-card .table-scroll > .plantings-table.plantings-table tbody td {
+    display: flex !important;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    min-width: 0 !important;
+    width: auto !important;
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    font-size: 13px !important;
+    line-height: 1.3 !important;
+    text-align: left !important;
+    white-space: normal !important;
+    overflow-wrap: break-word;
+  }
+
+  .dashboard-excel-table.dashboard-excel-table tbody td::before,
+  .content > .table-card .table-scroll > .plantings-table.plantings-table tbody td::before {
+    display: block;
+    color: var(--muted);
+    font-size: 10px !important;
+    font-weight: 750;
+    letter-spacing: .03em;
+    line-height: 1.2;
+    text-transform: uppercase;
+  }
+
+  /* Encabezado de la tarjeta: folio / contrato a todo lo ancho. */
+  .dashboard-excel-table.dashboard-excel-table tbody td:first-child,
+  .content > .table-card .table-scroll > .plantings-table.plantings-table tbody td:first-child {
+    grid-column: 1 / -1;
+    padding-bottom: 9px !important;
+    border-bottom: 1px solid var(--border) !important;
+    font-size: 14px !important;
+    font-weight: 800;
+  }
+
+  /* Cliente a todo lo ancho. */
+  .dashboard-excel-table.dashboard-excel-table:not(.dashboard-due-excel-table) tbody td:nth-child(3),
+  .dashboard-due-excel-table.dashboard-due-excel-table tbody td:nth-child(4),
+  .content > .table-card .table-scroll > .plantings-table.plantings-table tbody td:nth-child(2) {
+    grid-column: 1 / -1;
+    font-weight: 650;
+  }
+
+  .dashboard-excel-table.dashboard-excel-table tbody td:last-child {
+    border-bottom: 0 !important;
+  }
+
+  /* Fila vacía ("no se encontraron…") */
+  .dashboard-excel-table.dashboard-excel-table tbody td[colspan] {
+    grid-column: 1 / -1;
+    align-items: center;
+    text-align: center !important;
+  }
+
+  .dashboard-excel-table.dashboard-excel-table tbody td[colspan]::before {
+    content: none !important;
+  }
+
+  /* Siembras: estado y acciones al pie de la tarjeta. */
+  .content > .table-card .table-scroll > .plantings-table.plantings-table tbody td:nth-last-child(2) {
+    justify-content: flex-start;
+  }
+
+  .content > .table-card .table-scroll > .plantings-table.plantings-table tbody td:last-child {
+    grid-column: 1 / -1;
+    padding-top: 10px !important;
+    border-top: 1px solid var(--border) !important;
+  }
+
+  .content > .table-card .table-scroll > .plantings-table.plantings-table tbody td:last-child::before {
+    content: none !important;
+  }
+
+  .content > .table-card .table-scroll > .plantings-table.plantings-table td:last-child .row-actions {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .content > .table-card .table-scroll > .plantings-table.plantings-table td:last-child .row-actions .btn {
+    width: 100%;
+    min-height: 42px;
+  }
+
+  .content > .table-card .table-scroll > .plantings-table.plantings-table tbody td[colspan] {
+    grid-column: 1 / -1;
+  }
+
+  .content > .table-card .table-scroll > .plantings-table.plantings-table tbody td[colspan]::before {
+    content: none !important;
+  }
+
+  /* ---------- Siembras: tarjetas más limpias ---------- */
+
+  .content > .table-card .table-scroll > .plantings-table.plantings-table .status {
+    justify-self: end;
+    width: auto !important;
+  }
+
+  .content > .table-card .table-scroll > .plantings-table.plantings-table td:last-child .row-actions {
+    justify-content: flex-end;
+  }
+
+  /* ---------- Cobranza · historial de pagos (detalle) ----------
+     Cada pago es una mini tarjeta: nada queda escondido a la
+     derecha y los botones Editar/Eliminar siempre se ven. */
+
+  .collections-history-scroll {
+    overflow: visible !important;
+    border: 0 !important;
+  }
+
+  .collections-history-table.collections-history-table,
+  .collections-history-table.collections-history-table tbody {
+    display: block !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .collections-history-table.collections-history-table thead {
+    display: none !important;
+  }
+
+  .collections-history-table.collections-history-table tbody tr {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 9px 14px;
+    margin-bottom: 10px;
+    padding: 12px 13px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: #fff;
+  }
+
+  .collections-history-table.collections-history-table tbody td {
+    display: flex !important;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    padding: 0 !important;
+    border: 0 !important;
+    font-size: 13px;
+    text-align: left !important;
+    white-space: normal !important;
+    overflow-wrap: break-word;
+  }
+
+  .collections-history-table.collections-history-table tbody td::before {
+    color: var(--muted);
+    font-size: 10px;
+    font-weight: 750;
+    letter-spacing: .03em;
+    text-transform: uppercase;
+  }
+
+  .collections-history-table.collections-history-table tbody td:nth-child(1)::before { content: 'Fecha'; }
+  .collections-history-table.collections-history-table tbody td:nth-child(2)::before { content: 'Monto'; }
+  .collections-history-table.collections-history-table tbody td:nth-child(3)::before { content: 'Moneda'; }
+  .collections-history-table.collections-history-table tbody td:nth-child(4)::before { content: 'Cuenta'; }
+  .collections-history-table.collections-history-table tbody td:nth-child(5)::before { content: 'Referencia'; }
+
+  .collections-history-table.collections-history-table tbody td:nth-child(2) {
+    font-weight: 800;
+  }
+
+  .collections-history-table.collections-history-table tbody td.collections-history-actions {
+    grid-column: 1 / -1;
+    display: grid !important;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    padding-top: 10px !important;
+    border-top: 1px solid var(--border) !important;
+  }
+
+  .collections-history-table.collections-history-table tbody td.collections-history-actions .icon-btn {
+    width: 100%;
+    min-height: 40px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: #fff;
+    font-weight: 700;
+  }
+
+  /* ---------- Catálogos: etiqueta real de cada campo ---------- */
+
+  .catalog-table.catalog-table tbody td[data-label]::before {
+    content: attr(data-label) !important;
+  }
+
+  .catalog-table.catalog-table tbody td:last-child:not([data-label]):not([colspan]) {
+    display: flex !important;
+    justify-content: flex-end;
+    padding-top: 10px !important;
+    padding-bottom: 12px !important;
+  }
+
+  .catalog-table.catalog-table tbody td:last-child:not([data-label])::before {
+    content: none !important;
+  }
+
+  .catalog-table.catalog-table tbody td:last-child .row-actions {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .catalog-table.catalog-table tbody td:last-child .row-actions .btn {
+    width: 100%;
+    min-height: 40px;
+  }
+}
+
+
+/* =========================================================
+   5. ENCABEZADO DE TARJETAS DE TABLA
+   ========================================================= */
+
+.table-toolbar .muted {
+  margin-top: 2px;
+  font-size: 12.5px;
+  line-height: 1.4;
+}

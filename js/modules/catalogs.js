@@ -137,7 +137,7 @@ function card(
           const cells = fields
             .map(field => {
               return `
-                <td>
+                <td data-label="${escapeHtml(fieldLabel(field))}">
                   ${formatCell(
                     entity,
                     field,
@@ -220,7 +220,7 @@ function card(
 
       <div class="table-scroll">
 
-        <table>
+        <table class="catalog-table">
 
           <thead>
             <tr>
