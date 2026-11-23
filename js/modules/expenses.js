@@ -1055,6 +1055,11 @@ function supplierOptions(
 function expenseUnitOptions(
   selectedId
 ) {
+  if (!selectedId) {
+    selectedId =
+      defaultExpenseUnit()?.id;
+  }
+
   return `
     <option value="">
       Seleccionar cómo se aplica
@@ -1070,6 +1075,22 @@ function expenseUnitOptions(
       })
       .join('')}
   `;
+}
+
+
+function defaultExpenseUnit() {
+  const normalize = value =>
+    String(value || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .trim()
+      .toLowerCase();
+
+  return catalogs.expense_units
+    .find(item => {
+      return normalize(item.name) ===
+        'por siembra';
+    });
 }
 
 
