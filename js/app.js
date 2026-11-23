@@ -23,7 +23,15 @@ async function boot() {
     return;
   }
 
-  await navigate('dashboard');
+  await navigate(savedRoute());
+}
+
+function savedRoute() {
+  try {
+    return sessionStorage.getItem('alansa_route') || 'dashboard';
+  } catch {
+    return 'dashboard';
+  }
 }
 
 function renderLogin() {
@@ -219,6 +227,12 @@ async function navigate(
   route
 ) {
   state.route = route;
+
+  try {
+    sessionStorage.setItem('alansa_route', route);
+  } catch {
+    /* sin almacenamiento */
+  }
 
   let content;
 

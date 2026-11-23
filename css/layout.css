@@ -313,6 +313,25 @@
   font-weight: 700;
 }
 
+.sidebar-refresh {
+  margin-bottom: 8px;
+}
+
+.sidebar-logout:disabled {
+  cursor: wait;
+  opacity: .7;
+}
+
+.is-refreshing svg {
+  animation: alansa-spin .8s linear infinite;
+}
+
+@keyframes alansa-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 
 /* =========================================================
    6. ÁREA PRINCIPAL

@@ -27,4 +27,5 @@ export function restoreUser() {
 export function logout() {
   state.user = null;
   sessionStorage.removeItem('alansa_user');
+  sessionStorage.removeItem('alansa_route');
 }
